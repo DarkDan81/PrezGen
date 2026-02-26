@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const { requestMeta } = require('./middleware/request-meta');
 const { presentationsRouter } = require('./routes/presentations');
 const { ApiError } = require('./utils/errors');
@@ -8,6 +9,8 @@ function createApp() {
     const app = express();
     app.use(express.json({ limit: '2mb' }));
     app.use(requestMeta);
+    app.use('/themes', express.static(path.join(__dirname, '../themes')));
+    app.use('/dist', express.static(path.join(__dirname, '../dist')));
 
     app.get('/api/v1/health', (req, res) => sendData(req, res, { ok: true }));
     app.use('/api/v1', presentationsRouter);
@@ -24,4 +27,3 @@ function createApp() {
 }
 
 module.exports = { createApp };
-

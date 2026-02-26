@@ -45,6 +45,45 @@ function getNextOrderForPresentation(presentationId) {
     return row.max_order + 1;
 }
 
+function getSlideById(slideId) {
+    const db = getDb();
+    const row = db.prepare('SELECT * FROM slides WHERE id = ?').get(slideId);
+    return row ? mapSlide(row) : null;
+}
+
+function updateSlideById(slideId, patch) {
+    const db = getDb();
+    const clauses = [];
+    const params = { id: slideId };
+
+    if (patch.type !== undefined) {
+        clauses.push('type = @type');
+        params.type = patch.type;
+    }
+    if (patch.title !== undefined) {
+        clauses.push('title = @title');
+        params.title = patch.title;
+    }
+    if (patch.subtitle !== undefined) {
+        clauses.push('subtitle = @subtitle');
+        params.subtitle = patch.subtitle;
+    }
+    if (patch.notes !== undefined) {
+        clauses.push('notes = @notes');
+        params.notes = patch.notes;
+    }
+    clauses.push('updated_at = @updated_at');
+    params.updated_at = patch.updatedAt;
+
+    db.prepare(`UPDATE slides SET ${clauses.join(', ')} WHERE id = @id`).run(params);
+    return getSlideById(slideId);
+}
+
+function deleteSlideById(slideId) {
+    const db = getDb();
+    return db.prepare('DELETE FROM slides WHERE id = ?').run(slideId).changes > 0;
+}
+
 function listSlidesByPresentation(presentationId) {
     const db = getDb();
     return db
@@ -86,8 +125,11 @@ function reorderSlides(presentationId, slideIds, updatedAt) {
 
 module.exports = {
     createSlide,
+    deleteSlideById,
+    getSlideById,
     getNextOrderForPresentation,
     mapSlide,
     listSlidesByPresentation,
     reorderSlides,
+    updateSlideById,
 };

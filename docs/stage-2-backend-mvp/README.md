@@ -29,6 +29,47 @@ Current limitation in this slice:
 
 - Dataset upload via CSV endpoint is not implemented yet (manual table only).
 
+Implemented in third slice:
+
+1. Blocks CRUD:
+   - `POST /api/v1/slides/:slideId/blocks`
+   - `GET /api/v1/slides/:slideId/blocks`
+   - `GET /api/v1/blocks/:blockId`
+   - `PATCH /api/v1/blocks/:blockId`
+   - `DELETE /api/v1/blocks/:blockId`
+2. Block reorder:
+   - `POST /api/v1/slides/:slideId/blocks/reorder`
+
+Implemented in fourth slice:
+
+1. Slides full CRUD:
+   - `GET /api/v1/presentations/:presentationId/slides`
+   - `GET /api/v1/slides/:slideId`
+   - `PATCH /api/v1/slides/:slideId`
+   - `DELETE /api/v1/slides/:slideId`
+
+Implemented in fifth slice:
+
+1. Themes read endpoints:
+   - `GET /api/v1/themes`
+   - `GET /api/v1/themes/:themeId`
+2. Preview endpoints:
+   - `POST /api/v1/presentations/:presentationId/render/preview`
+   - `GET /api/v1/preview/:presentationId`
+
+Preview note:
+
+- Current preview is generated from DB entities and rendered via existing HTML slide builder.
+- MVP shape is functional for constructor flows; visual parity improvements can be done in next slices.
+
+Implemented in sixth slice:
+
+1. Async PDF export endpoints:
+   - `POST /api/v1/presentations/:presentationId/render/pdf`
+   - `GET /api/v1/render-jobs/:jobId`
+2. `render_jobs` persistence and background queue.
+3. PDF artifacts served from `/dist/export/...`.
+
 Run:
 
 ```bash
