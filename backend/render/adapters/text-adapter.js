@@ -1,8 +1,9 @@
+const { sanitizeRichHtml } = require('../../services/sanitize-service');
+
 function textAdapter(block) {
     return {
-        text: block.config?.html || '',
+        text: sanitizeRichHtml(block.config?.html || ''),
     };
 }
 
 module.exports = { textAdapter };
-

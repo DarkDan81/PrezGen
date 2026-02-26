@@ -35,6 +35,7 @@ const { buildPreviewHtml } = require('../services/preview-service');
 const { createRenderJob, getRenderJobById } = require('../repositories/render-job-repository');
 const { queuePdfJob } = require('../services/render-service');
 const { parseCsvToDatasetShape } = require('../services/csv-service');
+const { sanitizeRichHtml } = require('../services/sanitize-service');
 const { validateBlockConfig } = require('../validation/block-config');
 const { validationError, notFound } = require('../utils/errors');
 const { SCHEMA_VERSION, sendData } = require('../utils/response');
@@ -67,6 +68,14 @@ function isValidBlockType(type) {
 
 function isPlainObject(value) {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function sanitizeBlockConfig(type, config) {
+    if (type !== 'text') return config;
+    return {
+        ...config,
+        html: sanitizeRichHtml(config.html),
+    };
 }
 
 router.post('/presentations', (req, res, next) => {
@@ -500,6 +509,7 @@ router.post('/slides/:slideId/blocks', (req, res, next) => {
         details.push(...validateBlockConfig(type, config));
         if (details.length) throw validationError(details);
 
+        const sanitizedConfig = sanitizeBlockConfig(type, config);
         const now = new Date().toISOString();
         const block = createBlock({
             id: randomUUID(),
@@ -508,7 +518,7 @@ router.post('/slides/:slideId/blocks', (req, res, next) => {
             order: getNextOrderForSlide(slideId),
             type,
             layout: layout || null,
-            config,
+            config: sanitizedConfig,
             createdAt: now,
             updatedAt: now,
         });
@@ -586,10 +596,11 @@ router.patch('/blocks/:blockId', (req, res, next) => {
         }
         if (details.length) throw validationError(details);
 
+        const sanitizedConfig = config !== undefined ? sanitizeBlockConfig(effectiveType, config) : undefined;
         const updated = updateBlockById(blockId, {
             type,
             layout,
-            config,
+            config: sanitizedConfig,
             updatedAt: new Date().toISOString(),
         });
         return sendData(req, res, updated);

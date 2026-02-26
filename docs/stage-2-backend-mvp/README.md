@@ -86,6 +86,13 @@ Implemented in eighth slice:
 3. API smoke script:
    - `npm run api:smoke`
 
+Implemented in ninth slice:
+
+1. Text HTML sanitization on block write and render path.
+2. Extended verification script:
+   - `npm run api:verify`
+   - covers validation errors + sanitizer behavior + preview/pdf path.
+
 Run:
 
 ```bash

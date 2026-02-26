@@ -8,7 +8,8 @@
     "preview": "node preview/server.js",
     "export:pdf": "node export/pdf.js",
     "api": "node backend/server.js",
-    "api:smoke": "node scripts/api-smoke.js"
+    "api:smoke": "node scripts/api-smoke.js",
+    "api:verify": "node scripts/api-verify.js"
   },
   "keywords": [],
   "author": "",
@@ -20,6 +21,7 @@
     "express": "^5.2.1",
     "js-yaml": "^4.1.1",
     "multer": "^2.0.2",
-    "puppeteer": "^24.36.0"
+    "puppeteer": "^24.36.0",
+    "sanitize-html": "^2.17.1"
   }
 }
