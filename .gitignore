@@ -3,6 +3,8 @@ node_modules/
 
 # Build/export artifacts
 dist/
+data/*.sqlite
+data/*.sqlite-*
 
 # Logs
 *.log
