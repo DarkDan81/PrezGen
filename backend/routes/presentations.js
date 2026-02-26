@@ -1,4 +1,5 @@
 const express = require('express');
+const multer = require('multer');
 const { randomUUID } = require('crypto');
 const {
     createPresentation,
@@ -33,10 +34,16 @@ const { getThemeById, listThemes } = require('../services/themes-service');
 const { buildPreviewHtml } = require('../services/preview-service');
 const { createRenderJob, getRenderJobById } = require('../repositories/render-job-repository');
 const { queuePdfJob } = require('../services/render-service');
+const { parseCsvToDatasetShape } = require('../services/csv-service');
+const { validateBlockConfig } = require('../validation/block-config');
 const { validationError, notFound } = require('../utils/errors');
 const { SCHEMA_VERSION, sendData } = require('../utils/response');
 
 const router = express.Router();
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 },
+});
 
 function isValidStatus(status) {
     return new Set(['draft', 'published', 'archived']).has(status);
@@ -330,6 +337,49 @@ router.post('/presentations/:presentationId/datasets', (req, res, next) => {
     }
 });
 
+router.post('/presentations/:presentationId/datasets/upload-csv', upload.single('file'), (req, res, next) => {
+    try {
+        const { presentationId } = req.params;
+        const presentation = getPresentationById(presentationId);
+        if (!presentation) throw notFound('Presentation not found');
+
+        const name = req.body?.name;
+        const file = req.file;
+        const details = [];
+        if (!name || typeof name !== 'string') {
+            details.push({ path: 'name', rule: 'required', message: 'name is required' });
+        }
+        if (!file || !file.buffer) {
+            details.push({ path: 'file', rule: 'required', message: 'CSV file is required' });
+        }
+        if (details.length) throw validationError(details);
+
+        const parsed = parseCsvToDatasetShape(file.buffer);
+        if (!parsed.columns.length) {
+            throw validationError([{ path: 'file', rule: 'content', message: 'CSV must contain header and at least one row' }]);
+        }
+
+        const now = new Date().toISOString();
+        const dataset = createDataset({
+            id: randomUUID(),
+            presentationId,
+            name: name.trim(),
+            sourceType: 'upload_csv',
+            columns: parsed.columns,
+            rows: parsed.rows,
+            meta: {
+                rowCount: parsed.rows.length,
+                fileName: file.originalname,
+            },
+            createdAt: now,
+            updatedAt: now,
+        });
+        return sendData(req, res, dataset, 201);
+    } catch (error) {
+        return next(error);
+    }
+});
+
 router.get('/presentations/:presentationId/datasets', (req, res, next) => {
     try {
         const { presentationId } = req.params;
@@ -447,9 +497,7 @@ router.post('/slides/:slideId/blocks', (req, res, next) => {
         if (layout !== undefined && !isPlainObject(layout)) {
             details.push({ path: 'layout', rule: 'object', message: 'layout must be an object if provided' });
         }
-        if (!isPlainObject(config)) {
-            details.push({ path: 'config', rule: 'object', message: 'config must be an object' });
-        }
+        details.push(...validateBlockConfig(type, config));
         if (details.length) throw validationError(details);
 
         const now = new Date().toISOString();
@@ -532,8 +580,9 @@ router.patch('/blocks/:blockId', (req, res, next) => {
         if (layout !== undefined && !isPlainObject(layout) && layout !== null) {
             details.push({ path: 'layout', rule: 'object', message: 'layout must be an object or null' });
         }
-        if (config !== undefined && !isPlainObject(config)) {
-            details.push({ path: 'config', rule: 'object', message: 'config must be an object' });
+        const effectiveType = type || current.type;
+        if (config !== undefined) {
+            details.push(...validateBlockConfig(effectiveType, config));
         }
         if (details.length) throw validationError(details);
 

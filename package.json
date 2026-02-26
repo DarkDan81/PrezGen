@@ -7,7 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "preview": "node preview/server.js",
     "export:pdf": "node export/pdf.js",
-    "api": "node backend/server.js"
+    "api": "node backend/server.js",
+    "api:smoke": "node scripts/api-smoke.js"
   },
   "keywords": [],
   "author": "",
@@ -15,8 +16,10 @@
   "type": "commonjs",
   "dependencies": {
     "better-sqlite3": "^12.6.2",
+    "csv-parse": "^6.1.0",
     "express": "^5.2.1",
     "js-yaml": "^4.1.1",
+    "multer": "^2.0.2",
     "puppeteer": "^24.36.0"
   }
 }

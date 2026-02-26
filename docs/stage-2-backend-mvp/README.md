@@ -78,6 +78,14 @@ Implemented in seventh slice:
 2. Preview/PDF now rely on the shared pipeline (`DB -> RenderModel -> HTML/PDF`).
 3. Legacy YAML parser is no longer part of backend preview/pdf path.
 
+Implemented in eighth slice:
+
+1. CSV dataset upload endpoint:
+   - `POST /api/v1/presentations/:presentationId/datasets/upload-csv`
+2. Strong block config validation by type (`chart`, `table`, `kpi`, `text`, `image`).
+3. API smoke script:
+   - `npm run api:smoke`
+
 Run:
 
 ```bash
