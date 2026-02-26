@@ -1,0 +1,20 @@
+{
+  "name": "prezgen",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "preview": "node preview/server.js",
+    "export:pdf": "node export/pdf.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.2.1",
+    "js-yaml": "^4.1.1",
+    "puppeteer": "^24.36.0"
+  }
+}

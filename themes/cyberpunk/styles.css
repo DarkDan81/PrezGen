@@ -1,0 +1,317 @@
+/* ============================================================
+   1. CYBERPUNK VARIABLES
+   ============================================================ */
+   :root {
+    --cp-bg: #0a0f1e;
+    --cp-panel: #0f162e;
+    --cp-grid: rgba(0, 255, 255, 0.08);
+
+    --cp-neon-cyan: #00ffff;
+    --cp-neon-pink: #ff2fd2;
+    --cp-neon-green: #39ff14;
+    --cp-neon-purple: #7f5cff;
+
+    --cp-text-main: #e6f1ff;
+    --cp-text-muted: #9bb0d3;
+
+    --cp-border: rgba(0, 255, 255, 0.35);
+
+    --font-main: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+body.viewer-mode {
+    background: radial-gradient(circle at top, #0d132d, #050812);
+    margin: 0;
+    font-family: var(--font-main);
+}
+
+/* ============================================================
+   2. SLIDE BASE
+   ============================================================ */
+.slide {
+    width: 1920px;
+    height: 1080px;
+    background:
+        linear-gradient(transparent 95%, var(--cp-grid) 96%),
+        linear-gradient(90deg, transparent 95%, var(--cp-grid) 96%),
+        var(--cp-bg);
+    background-size: 40px 40px;
+    color: var(--cp-text-main);
+    padding: 90px 110px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Scanline */
+.slide::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+        to bottom,
+        rgba(255,255,255,0.02),
+        rgba(255,255,255,0.02) 1px,
+        transparent 1px,
+        transparent 3px
+    );
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Neon corner */
+.slide::after {
+    content: "";
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    border-right: 3px solid var(--cp-neon-pink);
+    border-bottom: 3px solid var(--cp-neon-pink);
+    box-shadow: 0 0 20px var(--cp-neon-pink);
+}
+
+/* ============================================================
+   3. HEADER
+   ============================================================ */
+.slide-header {
+    position: relative;
+    z-index: 5;
+    margin-bottom: 60px;
+}
+
+.slide-header h2 {
+    font-size: 72px;
+    font-weight: 900;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    padding-left: 30px;
+    border-left: 6px solid var(--cp-neon-cyan);
+    text-shadow:
+        0 0 10px var(--cp-neon-cyan),
+        0 0 30px rgba(0,255,255,0.4);
+}
+
+.corner-logo {
+    position: absolute;
+    top: 50px;
+    right: 80px;
+    height: 60px;
+    filter: drop-shadow(0 0 12px var(--cp-neon-cyan));
+    z-index: 10;
+}
+
+/* ============================================================
+   4. BODY LAYOUT
+   ============================================================ */
+.slide-body {
+    position: relative;
+    z-index: 5;
+    display: flex;
+    gap: 60px;
+    flex-grow: 1;
+    align-items: stretch;
+    width: 100%;
+    min-height: 0;
+}
+
+/* ============================================================
+   5. TEXT BLOCKS
+   ============================================================ */
+.block-text {
+    font-size: 28px;
+    line-height: 1.5;
+    color: var(--cp-text-main);
+}
+
+.text-section {
+    margin-bottom: 45px;
+    padding-left: 20px;
+    border-left: 2px solid var(--cp-border);
+}
+
+.text-section h3 {
+    font-size: 36px;
+    color: var(--cp-neon-green);
+    margin-bottom: 15px;
+    text-shadow: 0 0 10px rgba(57,255,20,0.5);
+}
+
+.text-section h3::before {
+    content: "▸";
+    margin-right: 12px;
+}
+
+.block-text b {
+    color: var(--cp-neon-pink);
+    text-shadow: 0 0 8px rgba(255,47,210,0.6);
+}
+
+.block-text .bullet {
+    list-style: none;
+    padding-left: 28px;
+    position: relative;
+    margin-bottom: 10px;
+}
+
+.block-text .bullet::before {
+    content: "▶";
+    position: absolute;
+    left: 0;
+    color: var(--cp-neon-cyan);
+    text-shadow: 0 0 8px var(--cp-neon-cyan);
+}
+
+/* ============================================================
+   6. TABLES
+   ============================================================ */
+.table-block {
+    flex: 1.2;
+    background: linear-gradient(
+        180deg,
+        rgba(0,255,255,0.08),
+        rgba(0,0,0,0)
+    );
+    border: 1px solid var(--cp-border);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.ef-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 26px;
+}
+
+.ef-table th {
+    padding: 22px 25px;
+    background: rgba(0,255,255,0.1);
+    color: var(--cp-neon-cyan);
+    text-transform: uppercase;
+    border-bottom: 2px solid var(--cp-neon-cyan);
+    letter-spacing: 1px;
+}
+
+.ef-table td {
+    padding: 18px 25px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.ef-table tr:hover {
+    background: rgba(255,47,210,0.08);
+}
+
+/* ============================================================
+   7. KPI CARDS
+   ============================================================ */
+.kpi-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.kpi-grid-horizontal {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 25px;
+}
+
+.kpi-card {
+    background: linear-gradient(
+        145deg,
+        rgba(15,22,46,0.9),
+        rgba(10,15,30,0.9)
+    );
+    border: 1px solid var(--cp-border);
+    border-top: 4px solid var(--cp-neon-pink);
+    padding: 25px 30px;
+    border-radius: 14px;
+    box-shadow:
+        0 0 20px rgba(0,255,255,0.15),
+        inset 0 0 20px rgba(0,255,255,0.05);
+}
+
+.kpi-card .label {
+    font-size: 18px;
+    color: var(--cp-text-muted);
+}
+
+.kpi-card .value {
+    font-size: 54px;
+    font-weight: 900;
+    color: var(--cp-neon-green);
+    text-shadow: 0 0 15px rgba(57,255,20,0.6);
+}
+
+.kpi-card .unit {
+    font-size: 20px;
+    color: var(--cp-text-muted);
+}
+
+.kpi-card .growth {
+    font-size: 26px;
+    color: var(--cp-neon-cyan);
+    margin-top: 10px;
+}
+
+/* ============================================================
+   8. IMAGES
+   ============================================================ */
+.slide-img {
+    max-height: 400px;
+    max-width: 100%;
+    object-fit: contain;
+    border-radius: 10px;
+    border: 1px solid var(--cp-border);
+    box-shadow: 0 0 25px rgba(0,255,255,0.3);
+}
+
+/* ============================================================
+   9. TITLE SLIDE
+   ============================================================ */
+.title-slide {
+    background: radial-gradient(circle at center, #101a3a, #050812);
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.title-logo {
+    width: 600px;
+    margin-bottom: 60px;
+    filter: drop-shadow(0 0 25px var(--cp-neon-cyan));
+}
+
+.title-slide h1 {
+    font-size: 120px;
+    font-weight: 900;
+    text-transform: uppercase;
+    color: var(--cp-neon-cyan);
+    text-shadow:
+        0 0 20px var(--cp-neon-cyan),
+        0 0 60px rgba(0,255,255,0.5);
+}
+
+.title-slide p {
+    font-size: 42px;
+    margin-top: 25px;
+    color: var(--cp-neon-pink);
+    letter-spacing: 4px;
+}
+
+.row.horizontal {
+    display: flex;
+    gap: 60px;
+  }
+  
+.row.horizontal .item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }

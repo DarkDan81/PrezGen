@@ -1,0 +1,577 @@
+/* ============================================================
+   1. ПЕРЕМЕННЫЕ И ОСНОВНЫЕ НАСТРОЙКИ
+   ============================================================ */
+   :root {
+    --ef-red: #E32B22;
+    --ef-green: #8CC63F;
+    --ef-dark-green: #528220; 
+    --ef-grey: #A7A9AC;       
+    --ef-dark: #545359;
+    --ef-light: #F4F4F4;
+    --font-main: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+*, *::before, *::after {
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+}
+
+
+body.viewer-mode {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden; /* Убираем горизонтальный скролл */
+    background: #1a1a1a; /* Цвет фона за пределами слайда */
+}
+
+/* ============================================================
+   2. СТРУКТУРА СЛАЙДА
+   ============================================================ */
+.slide {
+    width: 1920px;
+    height: 1080px;
+    background: white;
+    color: var(--ef-dark);
+    padding: 60px 80px; 
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    transform-origin: top left; /* Для корректного масштабирования */
+}
+
+.slide-subtitle {
+    font-size: 32px;
+    color: var(--ef-green); /* Или var(--ef-grey), если хочешь поспокойнее */
+    font-weight: 700;
+    margin-top: 10px;
+    padding-left: 30px; /* Чтобы был на одной линии с заголовком */
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Общий контейнер для любого блока (график, таблица, текст) */
+.block-wrapper {
+    position: relative;
+    z-index: 10; /* Контент всегда выше декора */
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+}
+
+/* ============================================================
+   3. ДЕКОРАТИВНЫЕ ЭЛЕМЕНТЫ (НИЖНИЙ СЛОЙ - Z-INDEX: 1)
+   ============================================================ */
+.decor-blob, 
+.decor-line-left, 
+.slide-decor-line, 
+.slide::before, 
+.slide::after {
+    z-index: 1 !important;
+    pointer-events: none;
+}
+
+/* 1. Точечный паттерн */
+.slide::before {
+    content: "";
+    position: absolute;
+    top: 40px; left: 40px;
+    width: 200px; height: 200px;
+    background-image: radial-gradient(var(--ef-light) 2px, transparent 2px);
+    background-size: 20px 20px;
+    opacity: 0.8;
+}
+
+/* 2. Мягкое зеленое свечение */
+.decor-blob {
+    position: absolute; top: -200px; right: -100px; width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(140, 198, 63, 0.08) 0%, transparent 70%);
+}
+
+/* 3. Красная линия слева */
+.decor-line-left {
+    position: absolute;
+    left: 0; top: 20%;
+    width: 6px; height: 40%;
+    background: var(--ef-red);
+    opacity: 0.3;
+}
+
+/* 4. Серый фрактал снизу справа (Подложка под таблицы) */
+.slide-decor-line {
+    position: absolute;
+    bottom: 0; right: 0;
+    width: 35%; height: 35%;
+    background: var(--ef-light);
+    clip-path: polygon(100% 0, 100% 100%, 0 100%);
+    opacity: 0.6;
+}
+
+/* 5. Маленький красный треугольник в самом углу */
+.slide::after {
+    content: "";
+    position: absolute;
+    bottom: 0; right: 0;
+    width: 60px; height: 60px;
+    background: var(--ef-red);
+    clip-path: polygon(100% 0, 100% 100%, 0 100%);
+}
+
+/* ============================================================
+   4. ЗАГОЛОВКИ И ЛОГОТИПЫ (Z-INDEX: 10)
+   ============================================================ */
+.corner-logo {
+    position: absolute;
+    top: 40px; right: 60px;
+    height: 50px;
+    z-index: 10;
+}
+
+.slide-header {
+    position: relative;
+    z-index: 10;
+    margin-bottom: 40px;
+}
+
+.slide-header h2 {
+    font-size: 64px;
+    font-weight: 900;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: -1px;
+    border-left: 15px solid var(--ef-green);
+    padding-left: 30px;
+}
+
+.slide-body {
+    display: flex;
+    flex-direction: row;
+    gap: 30px;
+    flex-grow: 1;
+    align-items: stretch;
+    width: 100%;
+    min-height: 0; 
+    max-height: 820px; /* СТРОГОЕ ОГРАНИЧЕНИЕ, чтобы не лезло на заголовок */
+    overflow: hidden;
+    margin-top: 20px;
+}
+
+/* ============================================================
+   5. ТАБЛИЦЫ
+   ============================================================ */
+.table-block {
+    background: white; /* Чтобы подложка-декор не мешала читать текст */
+    padding: 5px;
+    border-radius: 4px;
+}
+
+.ef-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 24px;
+    line-height: 1.1;
+}
+
+.ef-table th {
+    text-align: left;
+    padding: 15px 20px;
+    background: var(--ef-light);
+    color: var(--ef-dark);
+    border-bottom: 5px solid var(--ef-green);
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.ef-table td {
+    padding: 12px 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.ef-table tr:nth-child(even) { background: #fcfcfc; }
+.ef-table tr:hover { background: rgba(140, 198, 63, 0.05); }
+
+/* ============================================================
+   6. KPI КАРТОЧКИ
+   ============================================================ */
+
+.kpi-card {
+    flex: 1;
+    background: white;
+    padding: 30px; /* Уменьшили стандартный паддинг с 40 до 30 */
+    border: 1px solid #eee;
+    border-top: 10px solid var(--ef-red);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 0; /* ВАЖНО: разрешаем карточке сжиматься меньше контента */
+    overflow: hidden;
+    position: relative;
+}
+
+/* КОМПАКТНЫЙ РЕЖИМ (когда карточек > 2) */
+.compact .kpi-card {
+    padding: 15px 25px; /* Резко уменьшаем отступы */
+    border-top-width: 6px;
+}
+
+.kpi-card .label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* Если заголовок слишком длинный, он просто сократится с троеточием */
+}
+
+.compact .kpi-card .growth {
+    font-size: 18px;
+    margin-top: 5px;
+    padding: 2px 8px;
+}
+
+/* Фикс для вертикального расположения */
+.kpi-grid-vertical {
+    flex-direction: column;
+    gap: 15px; /* Уменьшили зазор между карточками */
+}
+
+.kpi-value-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+
+.kpi-card .value {
+    font-size: 80px; 
+    font-weight: 900;
+    line-height: 1;
+    color: var(--ef-dark);
+    /* ФИКС: Запрещаем перенос, чтобы скрипт мог измерить реальную ширину */
+    white-space: nowrap; 
+    display: inline-block;
+}
+
+/* ============================================================
+   7. ГРАФИКИ (ОЧЕНЬ ВАЖНО ДЛЯ ОТОБРАЖЕНИЯ)
+   ============================================================ */
+.chart-block {
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+}
+
+.chart-block canvas {
+    width: 100% !important;
+    height: 100% !important;
+    max-height: 850px;
+}
+
+/* ============================================================
+   8. ТЕКСТОВЫЕ БЛОКИ И ВНУТРЕННЯЯ СЕТКА
+   ============================================================ */
+.text-block {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-height: 800px; /* Чтобы не лезло на заголовок */
+    overflow: hidden;
+}
+
+.block-text {
+    font-size: 28px;
+    line-height: 1.4;
+    color: var(--ef-dark);
+}
+
+.text-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    width: 100%;
+}
+
+.text-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 40px;
+    width: 100%;
+    min-height: 0;
+}
+
+.col-text {
+    flex: 2; /* Текст занимает больше места */
+}
+
+.col-img {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.col-img img {
+    max-width: 100%;
+    max-height: 320px; /* КРИТИЧНО: ограничение картинки по высоте */
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.text-section { margin-bottom: 40px; }
+
+.text-section h3, .col-text h3 {
+    color: var(--ef-green);
+    font-size: 36px;
+    margin: 0 0 15px 0;
+    display: flex;
+    align-items: center;
+}
+
+/* Иконка треугольника перед заголовками */
+.text-section h3::before, .col-text h3::before {
+    content: "▶";
+    font-size: 24px;
+    margin-right: 15px;
+}
+
+.block-text b { color: var(--ef-red); }
+
+/* Списки с треугольниками */
+.block-text .bullet {
+    list-style: none;
+    padding-left: 35px;
+    position: relative;
+    margin-bottom: 12px;
+}
+
+.block-text .bullet::before {
+    content: "▶";
+    color: var(--ef-green);
+    position: absolute;
+    left: 0;
+    font-size: 18px;
+    top: 8px;
+}
+
+/* ============================================================
+   9. ТИТУЛЬНЫЙ СЛАЙД
+   ============================================================ */
+.title-slide {
+    background: white;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.title-logo {
+    width: 650px;
+    margin-bottom: 60px;
+    position: relative;
+    z-index: 10;
+}
+
+.title-slide h1 {
+    font-size: 110px;
+    font-weight: 900;
+    color: var(--ef-dark);
+    margin: 0;
+    text-transform: uppercase;
+    line-height: 1;
+}
+
+.title-slide p {
+    font-size: 44px;
+    color: var(--ef-green);
+    font-weight: 700;
+    margin-top: 30px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+}
+
+/* Фрактал титульника */
+.title-slide::after {
+    content: "";
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 450px; height: 450px;
+    background: var(--ef-red);
+    clip-path: polygon(0 0, 0 100%, 100% 100%);
+    opacity: 0.1;
+    z-index: 1;
+}
+
+/* ============================================================
+   10. КАРТИНКИ
+   ============================================================ */
+.image-block {
+    justify-content: center;
+    align-items: center;
+}
+
+.image-container img {
+    max-height: 800px;
+    max-width: 100%;
+    object-fit: contain;
+    border-radius: 10px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+}
+
+.plans-calendar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 25px;
+  margin-top: 40px;
+}
+
+.plan-cell {
+  position: relative;
+  background: white;
+  border: 1px solid #eee;
+  border-top: 6px solid var(--ef-green);
+  padding: 20px 20px 25px;
+  border-radius: 8px;
+  min-height: 160px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+}
+
+.plan-cell.highlight {
+  border-top-color: var(--ef-red);
+}
+
+.plan-cell.wide {
+  grid-column: span 2;
+}
+
+.plan-cell .month {
+  position: absolute;
+  top: 12px;
+  right: 15px;
+  font-size: 14px;
+  color: #999;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.plan-cell ul {
+  margin: 25px 0 0;
+  padding-left: 18px;
+}
+
+.plan-cell li {
+  margin-bottom: 8px;
+  font-size: 22px;
+  line-height: 1.3;
+}
+
+/* Календарь */
+
+.plans-calendar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 25px;
+    margin-top: 40px;
+  }
+  
+.plan-cell {
+    position: relative;
+    background: white;
+    border: 1px solid #eee;
+    border-top: 6px solid var(--ef-green);
+    padding: 20px 20px 25px;
+    border-radius: 8px;
+    min-height: 160px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+  }
+  
+  .plan-cell.highlight {
+    border-top-color: var(--ef-red);
+  }
+  
+  .plan-cell.wide {
+    grid-column: span 2;
+  }
+  
+  .plan-cell .month {
+    position: absolute;
+    top: 12px;
+    right: 15px;
+    font-size: 14px;
+    color: #999;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  
+  .plan-cell ul {
+    margin: 25px 0 0;
+    padding-left: 18px;
+  }
+  
+  .plan-cell li {
+    margin-bottom: 8px;
+    font-size: 22px;
+    line-height: 1.3;
+  }
+
+@media print {
+    /* Важно продублировать шрифт здесь */
+    html, body, .slide, .slide * {
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+    }
+
+    body {
+        background: none !important;
+        -webkit-print-color-adjust: exact; /* Чтобы цвета и фоны не бледнели */
+        print-color-adjust: exact;
+    }
+
+    .slide {
+        transform: none !important;
+        /* Убедимся, что фон слайда (черный/темный) остается */
+        background-color: #0a0f1e !important; 
+    }
+}
+
+/* ============================================================
+   ПЕРСОНАЖ (ОБНОВЛЕННЫЙ КОРП СТИЛЬ)
+   ============================================================ */
+.slide-character {
+    position: absolute;
+    height: 480px;
+    width: auto;
+    z-index: 100;
+    /* УБРАЛИ: циановое свечение */
+    /* ДОБАВИЛИ: мягкую естественную тень для объема */
+    filter: drop-shadow(0 15px 30px rgba(0, 0, 0, 0.15)); 
+    pointer-events: none;
+    transition: all 0.3s ease;
+    object-fit: contain;
+}
+
+/* Если хочешь добавить легкий брендовый акцент (например, легкое зеленое свечение вместо тени), 
+   используй этот вариант вместо фильтра выше:
+   filter: drop-shadow(0 0 15px rgba(140, 198, 63, 0.3)); 
+*/
+
+/* СЛЕВА: Оригинальный вид (смотрит вправо) */
+.char-bottom-left {
+    bottom: -20px;
+    left: 20px;
+}
+
+.char-top-left {
+    top: 150px;
+    left: 20px;
+}
+
+/* СПРАВА: Отзеркаленный вид */
+.char-bottom-right {
+    bottom: -20px;
+    right: 20px;
+    /* Важно: сохраняем зеркалирование, если персонаж должен смотреть на контент */
+    transform: scaleX(-1); 
+}
+
+.char-top-right {
+    top: 150px;
+    right: 20px;
+    transform: scaleX(-1);
+}

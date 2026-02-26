@@ -1,0 +1,514 @@
+meta:
+  title: ОТЧЕТ EUROFOODS 2025
+  theme: eurofoods
+  characters:
+    fax: "fax.png"
+    shar: "shar.png"
+    documents: "documents.png"
+    telephon: "telephon.png"
+    calendar: "calendar.png"
+    cloud: "cloud.png"
+    parts: "parts.png"
+    goal: "goal.png"
+    case: "case.png"
+    piston: "piston.png"
+  
+
+slides:
+  - type: title
+    title: ИТОГИ ГОДА 2025
+    subtitle: УСПЕХИ И ДОСТИЖЕНИЯ
+
+
+          
+  - title: "ИТОГИ В СРАВНЕНИИ 2024-2025"
+    blocks:
+      - kpi_cards:
+          - label: "ПЛАН ПРОДАЖ"
+            value: "2 000"
+            unit: "МЛН ₽"
+            growth: "80% от цели" # Это подсветит прогресс
+          - label: "ФАКТ ПРОДАЖ"
+            value: "1 594.9"
+            unit: "МЛН ₽"
+            growth: "+0.6% к 2024 1 593.2 Млн ₽"
+          - label: "ОБЪЕМ (ФАКТ 2025)"
+            value: "4 044"
+            unit: "ТЫС КГ"
+            growth: "-1.6% к 2024 4 113 Тыс кг"
+      - chart:
+          kind: line
+          from_csv: 2024_sale_compare
+          series: ["2024", "2025"]
+          trend: true
+
+  - title: "ГРАФИК ПРОДАЖ"
+    subtitle: "ПОКАЗАТЕЛИ В МЛН ₽"
+    blocks:
+      - chart:
+          kind: bar
+          from_csv: sale_sum
+          series: ["Сумма продаж"]
+          trend: true
+          shorten: true
+      - table:
+          from_csv: sale_sum
+          parameter_label: "Год"
+
+  - title: "ДИНАМИКА ПО ОТДЕЛАМ В СУММЕ"
+    blocks:
+      - chart:
+          kind: line
+          from_csv: department_compare
+          series: ["Мальдивы","Развитие", "Тенерифе", "Мальта"]
+
+  - title: "ДИНАМИКА КАМ"
+    blocks:
+      - chart:
+          kind: line
+          from_csv: department_compare
+          series: ["Антропова Татьяна","Жаркевич Надежда", "Жукова Лариса"]
+
+  - title: "ДИНАМИКА Мальдивы"
+    blocks:
+      - chart:
+          kind: line
+          from_csv: department_compare
+          series: ["Кондратова Дарья","Лагошный Максим", "Мищенко Иван"]
+
+  - title: "ДИНАМИКА Развитие"
+    blocks:
+      - chart:
+          kind: line
+          from_csv: department_compare
+          series: ["Герасимова Виктория","Борисов Дмитрий"]
+
+  - title: "ДИНАМИКА Тенерифе"
+    blocks:
+      - chart:
+          kind: line
+          from_csv: department_compare
+          series: ["Веселова Марина","Герасимова Виктория", "Дубченко Екатерина"]
+  
+  - title: "МЕНЕДЖЕРЫ И ЦИФРЫ"
+    blocks:
+      - chart:
+          kind: bar
+          from_csv: managers
+          series: ["Годовой прирост"]
+      - table:
+          from_csv: managers
+          parameter_label: "Менеджер" 
+
+  - title: "Лидеры по сумме продаж"
+    blocks:
+      - chart:
+          kind: horizontalBar
+          from_csv: sales_sums
+          limit: 12
+          show_others: true    # А тут хотим видеть "Прочие", чтобы баланс сошелся
+          show_labels: true
+
+  - title: "ДОЛЯ ПРОДАЖ ПО ТИПАМ ЗАВЕДЕНИЙ"
+    blocks:
+      - chart:
+          kind: horizontalBar
+          from_csv: client_type
+          limit: 8
+          show_others: true    # А тут хотим видеть "Прочие", чтобы баланс сошелся
+          show_labels: true
+
+  - title: "НАШИ ПОБЕДЫ: ТОП КЛИЕНТОВ"
+    blocks:
+      - kpi_cards:
+          - label: "ОБЩИЙ ОБЪЕМ ПОБЕД"
+            value: "28.5"
+            unit: "МЛН ₽"
+            growth: "+12% к прошлому месяцу" # Пример инсайта
+          - label: "ЛИДЕР РЕЙТИНГА"
+            value: "5.2"
+            unit: "МЛН ₽"
+            growth: "Терийоки отель"
+
+      - chart:
+          kind: horizontalBar
+          from_csv: victories
+          limit: 16            # Оставим 8 самых крупных, чтобы не мельчить
+          show_labels: true
+
+  - title: "КЛИЕНТЫ В ЛК"
+    blocks:
+      - kpi_cards:
+          - label: "Клиентов в ЛК 2025"
+            value: "730"
+            unit: ""
+            growth: "+10% к 2024"
+
+          - label: "Доля заказов от оборота 2025"
+            value: "33"
+            unit: "%"
+            growth: "+18%"
+      - kpi_cards:
+          - label: "План клиентов 2026"
+            value: "770"
+            unit: ""
+            growth: "Цель 2026"
+
+          - label: "План доли заказов 2026"
+            value: "38"
+            unit: "%"
+            growth: "Цель 2026"
+
+
+  - title: "ДИНАМИКА ПРОДАЖ ПО ТОВАРНЫМ ГРУППАМ"
+    blocks:
+      - chart:
+          kind: horizontalBar
+          #series: ["2024", "2025"]
+          from_csv: tov_group_sale
+          limit: 4
+          show_others: true
+          show_labels: true
+      - table:
+          from_csv: tov_group_sale
+          parameter_label: "Товарная группа"
+
+  - title: "РАЗВИТИЕ ДЕЙСТВУЮЩИХ КОНТРАКТОВ"
+    character_img: "telephon"
+    character_pos: "bottom-left"
+    blocks:
+      - text: |
+          <div class="text-section">
+            <p>
+              В течение года была проведена <b>планомерная работа по развитию и расширению базы поставщиков</b>.
+              Это позволило повысить устойчивость цепочек поставок, снизить зависимость от отдельных контрагентов
+              и создать дополнительные возможности для переговоров по условиям сотрудничества.
+            </p>
+
+          </div>
+
+      - table:
+          from_csv: contracts
+          parameter_label: "Поставщик"
+
+  - title: "ПАРТНЕРЫ"
+    blocks: 
+      - table:
+          from_csv: partner
+
+  - title: "РЕГИСТРАЦИЯ ТМ"
+    blocks:
+      - text: |
+          <div class="text-grid">
+            <div class="text-row">
+              <div class="col-text">
+                <h3>Свидетельство получено</h3>
+                <p><b>15 января 2025 г.</b> — получено свидетельство на ТЗ «ХореПрофика».</p>
+              </div>
+              <div class="col-img">
+                <!-- Ограничим высоту свидетельства, оно слишком длинное -->
+                <img src="/content/assets/svidet.png" style="max-height: 350px;" />
+              </div>
+            </div>
+
+            <div class="text-row" style="margin-top: 20px;">
+              <div class="col-text">
+                <h3>Изменение логотипа</h3>
+                <p>Обновлен фирменный стиль СТМ для повышения узнаваемости.</p>
+              </div>
+              <div class="col-img">
+                <!-- Логотип широкий, ему можно высоту поменьше -->
+                <img src="/content/assets/hp_logo.png" style="max-height: 180px;" />
+              </div>
+            </div>
+          </div>
+
+  - title: "ТОП 15 в ассортименте СТМ"
+    blocks:
+      - chart:
+          kind: horizontalBar
+          from_csv: top_stm
+          limit: 6
+          show_others: false
+          show_labels: true
+      - table:
+          from_csv: top_stm
+          parameter_label: "Номенклатура"
+
+  - title: "НОВЫЕ КОНТРАКТЫ СТМ"
+    character_img: "cloud"
+    character_pos: "bottom-left"
+    blocks:
+      - text: |
+          <div class="text-section">
+            <p>
+              В течение 2025 года велась активная работа с новыми производителями
+              и расширением ассортимента за счёт тестирования продукции.
+            </p>
+          </div>
+
+      - kpi_cards:
+          - label: "Проработано производителей"
+            value: "15"
+            unit: ""
+            growth: "9 введены в ассортимент"
+
+          - label: "Отправлено образцов клиентам"
+            value: "300+"
+            unit: ""
+
+  - title: "АКТИВНОСТИ"
+    blocks:
+      - text: |
+          <div style="display: flex; gap: 40px; align-items: stretch;">
+            
+            <!-- Левая колонка: Весь текст (40% ширины) -->
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 10px;">
+              
+              <div class="text-section">
+                <h3>Выставки и мероприятия</h3>
+                <p style="font-size: 24px; line-height: 1.4;">
+                  Участие в <b>4 ключевых выставках</b>: Peterfood, MEGUSTRO, World Food и ПРОДЭКСПО. Площадка для поиска поставщиков и развития партнерства.
+                </p>
+              </div>
+
+              <div class="text-section">
+                <h3>Презентации и МК</h3>
+                <p style="font-size: 24px; line-height: 1.4;">
+                  Проведено <b>7 презентаций</b> (Kotanyi, Green Milk, Dr. Bakers и др.) и <b>5 мастер-классов</b> совместно с партнерами (Unilever, Академия Шоколада).
+                </p>
+              </div>
+
+              <div class="text-section" style="border-bottom: none;">
+                <h3>Экскурсии и опыт</h3>
+                <p style="font-size: 24px; line-height: 1.4;">
+                  <b>2 экскурсии</b> на производства (ТМ Куркод, Юнифуд) и программа внутреннего обмена опытом между подразделениями.
+                </p>
+              </div>
+              
+            </div>
+
+            <!-- Правая колонка: Галерея фото (60% ширины) -->
+            <div style="flex: 1.5; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 350px 280px; gap: 20px;">
+              
+              <!-- Главное фото сверху (Выставки) -->
+              <div style="grid-column: span 2;">
+                <img src="/content/assets/megustro2.png" 
+                     style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px; border: 1px solid var(--cp-border);">
+              </div>
+
+              <!-- Два фото снизу (Презентации и Обмен) -->
+              <img src="/content/assets/megustro.jpeg" 
+                   style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px; border: 1px solid var(--cp-border);">
+              
+              <img src="/content/assets/obmen_1.png" 
+                   style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px; border: 1px solid var(--cp-border);">
+              
+            </div>
+
+          </div>
+
+  - title: "РАЗВИТИЕ И ОБУЧЕНИЕ КОМАНДЫ"
+    blocks:
+      - text: |
+          <div class="text-grid">
+            <div style="display: flex; gap: 40px; align-items: stretch;">
+              
+              <!-- Левая колонка: текст (45% ширины) -->
+              <div style="flex: 1;">
+                <div class="text-section">
+                  <h3>Обучение и развитие</h3>
+                  <ul>
+                    <li>Пройдено обучение — <b>200 ч.</b></li>
+                    <li>Практический результат: Даниил временно исполнял обязанности заместителя Дмитрия</li>
+                  </ul>
+                </div>
+
+                <div class="text-section">
+                  <h3>Обмен опытом</h3>
+                  <ul>
+                    <li>Проведено обменов опытом — <b>36 раз</b></li>
+                    <li>Самые активные участники: <b>Даниил Дущенко</b>, <b>Ирина Зайцева</b></li>
+                    <li>Самые популярные отделы: <b>ОЗ — 14</b>, <b>ОД — 12</b></li>
+                  </ul>
+                </div>
+
+                <div class="text-section" style="margin-bottom: 0;">
+                  <h3>Ключевые форматы</h3>
+                  <ul>
+                    <li>Лидерство и управление персоналом</li>
+                    <li>Коммуникации и конфликтология</li>
+                    <li>Стратегическое мышление</li>
+                  </ul>
+                </div>
+              </div>
+
+              <!-- Правая колонка: Сетка фото 2х2 (55% ширины) -->
+              <div style="flex: 1.2; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 15px;">
+                <img src="/content/assets/obmen2.jpeg" 
+                     style="width: 100%; height: 320px; object-fit: cover; border-radius: 12px; border: 1px solid var(--cp-border);">
+                <img src="/content/assets/obmen3.jpeg" 
+                     style="width: 100%; height: 320px; object-fit: cover; border-radius: 12px; border: 1px solid var(--cp-border);">
+                <img src="/content/assets/obmen4.jpeg" 
+                     style="width: 100%; height: 320px; object-fit: cover; border-radius: 12px; border: 1px solid var(--cp-border);">
+                <img src="/content/assets/obmen5.jpeg" 
+                     style="width: 100%; height: 320px; object-fit: cover; border-radius: 12px; border: 1px solid var(--cp-border);">
+              </div>
+
+            </div>
+          </div>
+
+  - title: "СОВМЕСТНЫЕ МЕРОПРИЯТИЯ"
+    blocks:
+      - text: |
+          <div class="text-section">
+            <div style="display: flex; gap: 40px; align-items: flex-start;">
+              
+              <!-- Левая колонка с текстом -->
+              <div style="flex: 1;">
+                <h3>Совместная работа и вовлечённость</h3>
+                <ul style="font-size: 28px; line-height: 1.5; color: var(--cp-text-main);">
+                  <li style="margin-bottom: 15px;">Экскурсия на производство масла</li>
+                  <li style="margin-bottom: 15px;">Совместные мероприятия с «Эйч энд Трейд»</li>
+                  <li style="margin-bottom: 15px;">Корпоративные мероприятия</li>
+                </ul>
+              </div>
+
+              <!-- Правая колонка с тремя фото -->
+              <div style="flex: 1.5; display: flex; flex-direction: column; gap: 20px;">
+                <!-- Основное крупное фото -->
+                <img src="/content/assets/shapki.jpeg" 
+                     style="width: 100%; height: 380px; object-fit: cover; border-radius: 12px; border: 1px solid var(--cp-border);">
+                
+                <!-- Два фото в ряд ниже -->
+                <div style="display: flex; gap: 20px;">
+                  <img src="/content/assets/corp1.jpg" 
+                       style="width: 50%; height: 240px; object-fit: cover; border-radius: 12px; border: 1px solid var(--cp-border);">
+                  <img src="/content/assets/corp2.jpg" 
+                       style="width: 50%; height: 240px; object-fit: cover; border-radius: 12px; border: 1px solid var(--cp-border);">
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+  - title: "ЧТО ЕЩЁ БЫЛО?"
+    character_img: "fax"
+    character_pos: "bottom-left"
+    blocks:
+      - text: |
+          <div class="text-section">
+            <h3>1. Удержали рыночные позиции</h3>
+            <ul>
+              <li>Сохранены общие объёмы продаж</li>
+              <li>Удержана клиентская база, несмотря на спад рынка (~20%) и закрытие партнёров</li>
+            </ul>
+          </div>
+
+      - kpi_cards:
+          - label: "Стратегические клиенты"
+            value: "35,5"
+            unit: "млн ₽"
+            growth: "Привлечено за период"
+
+          - label: "Средняя цена"
+            value: "+7"
+            unit: "₽ / кг"
+            growth: "К прошлому году"
+
+  - title: "ЧТО ЕЩЁ БЫЛО?"
+    blocks:
+      - text: |
+          <div class="text-section">
+            <h3>2. Жёсткий подход к оценке рентабельности</h3>
+            <p>Внедрена система глубокой оценки каждого клиента. По результатам анализа принято решение о <b>прекращении сотрудничества</b> с объектами с отрицательной маржинальностью. Это позволило остановить убытки и перераспределить ресурсы в эффективные точки роста.</p>
+          </div>
+          <div class="text-section">
+            <h3>3. Оптимизация географии: фокус на прибыль</h3>
+            <p>Регионы Петрозаводск и Кириши показали низкую рентабельность из-за высокой стоимости логистики. Принято решение <b>сконцентрировать силы</b> на Санкт-Петербурге, Ленобласти и активно растущих туристических центрах: Великий Новгород и Псков.</p>
+          </div>
+
+  - title: "ПЛАН КВАРТАЛ"
+    blocks:
+      - kpi_cards:
+          - label: "План продаж"
+            value: "338 000 000"
+            unit: "руб."
+
+
+  - title: "ПЛАНЫ РАЗВИТИЯ: 2026 ГОД"
+    character_img: "cloud"
+    character_pos: "bottom-right"
+    blocks:
+      - text: |
+          <div class="plans-grid">
+            <div class="plan-item">
+              <h4>1. Развитие HoReCa</h4>
+              <ul>
+                <li><b>Отели:</b> закрепление в сегменте внутреннего туризма.</li>
+                <li><b>Гастробани:</b> внедрение в новый тренд.</li>
+                <li><b>Готовая еда:</b> рост в этом направлении.</li>
+              </ul>
+            </div>
+            <div class="plan-item">
+              <h4>2. Ключевые регионы</h4>
+              <p>Развитие АКБ в Великом Новгороде и Пскове. Видим высокий потенциал в растущем туристическом потоке.</p>
+            </div>
+            <div class="plan-item">
+              <h4>3. Технологичность и ИИ</h4>
+              <p>Внедрение инструментов Искусственного Интеллекта для автоматизации рутинных задач отдела продаж.</p>
+            </div>
+            <div class="plan-item">
+              <h4>4. Экспертиза команды</h4>
+              <p>Система регулярного обучения и планомерного развития компетенций сотрудников.</p>
+            </div>
+            <div class="plan-item">
+              <h4>5. Рост доходности</h4>
+              <ul>
+                <li>Активное продвижение <b>Собственной Марки (СТМ)</b>.</li>
+                <li>Повышение среднего чека у текущих клиентов.</li>
+              </ul>
+            </div>
+          </div>
+
+  - title: "НОВЫЕ НАЗВАНИЯ ОТДЕЛОВ"
+    blocks:
+      - text: |
+          <div class="text-section">
+            <h3>ЭНЕРГИЯ</h3>
+            <p>
+              Двигатель роста, расширяем наше присутствие на рынке.<br>
+              Активные продажи и привлечение новых клиентов.
+            </p>
+          </div>
+
+          <div class="text-section">
+            <h3>АЛЬФА</h3>
+            <p>
+              Отвечает за долгосрочные и надёжные отношения.<br>
+              Наша компания №1 для клиентов.
+            </p>
+          </div>
+
+          <div class="text-section">
+            <h3>МАКСИМУМ</h3>
+            <p>
+              Рост прибыли от клиентов.<br>
+              Получаем от каждого клиента максимум.
+            </p>
+          </div>
+
+          <div class="text-section">
+            <h3>ИСКРА</h3>
+            <p>
+              «Из искры возгорится пламя».<br>
+              Новые идеи, ниши и нестандартные подходы,<br>
+              новые точки роста.
+            </p>
+          </div>
+
+
+  - type: title
+    title: СПАСИБО ЗА ПРОДЕЛАННУЮ РАБОТУ
+    subtitle: ЦЕНИМ ВКЛАД КАЖДОГО. ДВИЖЕМСЯ ДАЛЬШЕ!
+
