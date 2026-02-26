@@ -1,0 +1,107 @@
+.editor-page {
+  min-height: 100vh;
+  background: var(--app-bg);
+  color: var(--text-main);
+}
+
+.editor-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-bg);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.editor-grid {
+  display: grid;
+  grid-template-columns: 300px 1fr 360px;
+  gap: 12px;
+  padding: 12px;
+}
+
+.panel {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  min-height: 80vh;
+}
+
+.panel.center {
+  min-width: 0;
+}
+
+.panel-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.drag-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--field-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 8px;
+  margin: 8px 0;
+  cursor: pointer;
+}
+
+.drag-item.active {
+  outline: 2px solid var(--accent);
+}
+
+.drag-handle {
+  width: 28px;
+  min-width: 28px;
+  cursor: grab;
+  background: var(--app-bg);
+}
+
+.preview-frame {
+  width: 100%;
+  min-height: 78vh;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.properties {
+  display: grid;
+  gap: 10px;
+}
+
+.mt {
+  margin-top: 16px;
+}
+
+.hint {
+  margin: 8px 0 10px;
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+.inline-checkbox {
+  display: flex;
+  grid-template-columns: none;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (max-width: 1200px) {
+  .editor-grid {
+    grid-template-columns: 1fr;
+  }
+}
