@@ -70,6 +70,14 @@ Implemented in sixth slice:
 2. `render_jobs` persistence and background queue.
 3. PDF artifacts served from `/dist/export/...`.
 
+Implemented in seventh slice:
+
+1. Unified render pipeline module:
+   - `backend/render/model-builder.js`
+   - block adapters in `backend/render/adapters/*`
+2. Preview/PDF now rely on the shared pipeline (`DB -> RenderModel -> HTML/PDF`).
+3. Legacy YAML parser is no longer part of backend preview/pdf path.
+
 Run:
 
 ```bash
