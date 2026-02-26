@@ -93,6 +93,39 @@ Implemented in ninth slice:
    - `npm run api:verify`
    - covers validation errors + sanitizer behavior + preview/pdf path.
 
+Implemented in tenth slice:
+
+1. Dataset edit/delete endpoints:
+   - `PATCH /api/v1/datasets/:datasetId`
+   - `DELETE /api/v1/datasets/:datasetId`
+2. Presentation image upload endpoint:
+   - `POST /api/v1/presentations/:presentationId/assets/upload-image`
+   - accepts `multipart/form-data` (`file`)
+   - stores files in `data/presentations/:presentationId/assets`
+   - returns URL under `/content/presentations/:presentationId/assets/...`
+3. Static content serving:
+   - `/content/*` now serves files from project `data/` directory.
+
+Implemented in layout stabilization update:
+
+1. Deterministic render limits in adapters:
+   - charts capped by points/series;
+   - tables capped by rows/columns;
+   - KPI cards capped by item count.
+2. Stronger block-config validation limits for:
+   - `chart.limit`, `table.limit`, `table.columns`, `kpi.limit`, `kpi.items`, `text.html`.
+3. Preview/PDF HTML rendering path simplified:
+   - removed runtime auto-fit loops/timers from active `engine/slide-builder.js`;
+   - moved to predictable compact-mode CSS + fixed chart options.
+4. Dataset row filtering support for visual blocks:
+   - chart adapter supports optional `filterField` + `filterValues`.
+   - KPI adapter (dataset mode) supports optional `filterField` + `filterValues`.
+   - validation updated to enforce schema for these fields.
+5. Table rendering improvements:
+   - table headers resolve from dataset column labels (with safe dedup fallback).
+   - table config validation includes `transpose` boolean and optional `parameterLabel`.
+   - transpose path now uses resolved display headers consistently (fixes mixed key/label transpose output).
+
 Run:
 
 ```bash
