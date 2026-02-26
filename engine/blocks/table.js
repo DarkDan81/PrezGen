@@ -1,40 +1,44 @@
+﻿function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 module.exports = (block) => {
     const t = block.table || {};
+    const compactClass = t.compact ? 'table-compact' : '';
     const style = `style="flex: ${block.flexWidth || 1}"`;
-    const headers = block.headers;
+    const headers = Array.isArray(block.headers) ? block.headers : [];
 
     const formatVal = (v, isFirstColumn) => {
         if (v === null || v === undefined) return '';
-        
-        // Если это название строки (первый столбец) — возвращаем как есть, без изменений
         if (isFirstColumn) return v;
 
         const s = v.toString().trim();
         const n = parseFloat(s.replace(/\s/g, '').replace(',', '.'));
-        
-        // Если это не число — не трогаем
-        if (isNaN(n) || !/^-?\d+([.,]\d+)?$/.test(s.replace(/\s/g, ''))) return v;
+        if (Number.isNaN(n) || !/^-?\d+([.,]\d+)?$/.test(s.replace(/\s/g, ''))) return v;
 
-        // ТВОЯ ЛОГИКА: сокращение до миллионов
         if (t.shorten && Math.abs(n) >= 1000000) {
-            return (n / 1000000).toFixed(1) + ' млн';
+            return `${(n / 1000000).toFixed(1)} mln`;
         }
-        // ТВОЯ ЛОГИКА: пробелы-разделители (1 000 000)
-        return n.toLocaleString('ru-RU');
+        return n.toLocaleString('en-US');
     };
 
-    // Генерируем строки
-    const rowsHtml = block.data.map(r => {
-        return `<tr>${headers.map((h, index) => {
-            // index === 0 означает, что это первая колонка (названия параметров)
-            return `<td>${formatVal(r[h], index === 0)}</td>`;
-        }).join('')}</tr>`;
+    const rowsHtml = (block.data || []).map((row) => {
+        const cells = headers.map((header, index) => {
+            const value = formatVal(row[header], index === 0);
+            return `<td>${escapeHtml(value)}</td>`;
+        }).join('');
+        return `<tr>${cells}</tr>`;
     }).join('');
 
     return `
-        <div class="block-wrapper table-block" ${style}>
+        <div class="block-wrapper table-block ${compactClass}" ${style}>
             <table class="ef-table">
-                <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+                <thead><tr>${headers.map((h) => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead>
                 <tbody>${rowsHtml}</tbody>
             </table>
         </div>`;

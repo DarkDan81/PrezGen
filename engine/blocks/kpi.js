@@ -1,72 +1,54 @@
+﻿function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function formatMetricValue(raw) {
+    const asText = String(raw ?? '').trim();
+    if (!asText) return '';
+
+    const normalized = asText.replace(/\s/g, '').replace(',', '.');
+    if (!/^-?\d+(\.\d+)?$/.test(normalized)) return asText;
+
+    const num = Number(normalized);
+    if (!Number.isFinite(num)) return asText;
+    return num.toLocaleString('en-US');
+}
+
 module.exports = (block) => {
     const style = `style="flex: ${block.flexWidth || 1}"`;
-    const rows = block.data || [];
-    const headers = block.headers || [];
-    
-    let cards = [];
-    let isManual = false;
+    const cards = Array.isArray(block.kpi_cards) ? block.kpi_cards : [];
+    const isCompact = block.kpi_compact === true || cards.length > 3;
+    const gridClass = cards.length > 2 ? 'kpi-grid-horizontal compact' : 'kpi-grid-horizontal';
 
-    // 1. ОПРЕДЕЛЯЕМ ИСТОЧНИК ДАННЫХ
-    if (block.kpi_cards && block.kpi_cards.from_csv) {
-        const config = block.kpi_cards;
-        const categoryCols = headers.filter(h => 
-            h !== 'Group' && h !== 'Показатель' && isNaN(parseInt(h)) && h.length > 2
-        );
-        const latestRow = rows[rows.length - 1] || {};
-        cards = categoryCols.map(cat => ({
-            label: cat,
-            value: latestRow[cat],
-            unit: config.unit || ''
-        })).filter(c => c.value !== undefined);
-        if (config.limit) cards = cards.slice(0, config.limit);
-    } else {
-        // РУЧНОЙ РЕЖИМ (из YAML)
-        cards = Array.isArray(block.kpi_cards) ? block.kpi_cards : [];
-        isManual = true; 
-    }
-
-    const isVertical = block.isVertical;
-    const count = cards.length;
-    let gridClasses = isVertical ? 'kpi-grid-vertical' : 'kpi-grid-horizontal';
-    if (count > 2) gridClasses += ' compact';
-
-    const cardsHtml = cards.map(k => {
-        let displayVal = k.value;
-
-        // УМНОЕ ФОРМАТИРОВАНИЕ
-        if (isManual) {
-            // В ручном режиме форматируем ТОЛЬКО если это просто число без лишних знаков
-            // (чтобы время 00:40:05 не превращалось в 0)
-            const raw = k.value?.toString().replace(/\s/g, '');
-            const isPureNumber = /^-?\d+([.,]\d+)?$/.test(raw);
-            
-            if (isPureNumber) {
-                const num = parseFloat(raw.replace(',', '.'));
-                displayVal = num.toLocaleString('ru-RU');
-            } else {
-                displayVal = k.value; // Выводим "как есть" (для времени, текста и т.д.)
-            }
-        } else {
-            // В режиме CSV (авто) форматируем всё что похоже на числа
-            const num = parseFloat(k.value?.toString().replace(/\s/g, '').replace(',', '.'));
-            if (!isNaN(num)) displayVal = num.toLocaleString('ru-RU');
-        }
-
-        const isNegative = k.growth && k.growth.includes('-');
+    const cardsHtml = cards.map((kpi) => {
+        const label = escapeHtml(kpi?.label || '');
+        const value = escapeHtml(formatMetricValue(kpi?.value));
+        const unit = escapeHtml(kpi?.unit || '');
+        const growthRaw = String(kpi?.growth || '').trim();
+        const isNegative = growthRaw.startsWith('-');
         const growthColor = isNegative ? 'var(--ef-red)' : 'var(--ef-green)';
-        const arrow = isNegative ? '▼' : '▲';
+        const arrow = isNegative ? 'v' : '^';
 
         return `
             <div class="kpi-card">
-                <div class="label">${k.label}</div>
+                <div class="label">${label}</div>
                 <div class="kpi-value-row">
-                    <span class="value">${displayVal}</span>
-                    <span class="unit">${k.unit || ''}</span>
+                    <span class="value">${value}</span>
+                    <span class="unit">${unit}</span>
                 </div>
-                ${k.growth ? `<div class="growth" style="color: ${growthColor}">${arrow} ${k.growth}</div>` : ''}
+                ${growthRaw ? `<div class="growth" style="color: ${growthColor}">${arrow} ${escapeHtml(growthRaw)}</div>` : ''}
             </div>
         `;
     }).join('');
 
-    return `<div class="block-wrapper kpi-wrapper" ${style}><div class="${gridClasses}">${cardsHtml}</div></div>`;
+    return `
+        <div class="block-wrapper kpi-wrapper ${isCompact ? 'kpi-compact' : ''}" ${style}>
+            <div class="${gridClass}">${cardsHtml}</div>
+        </div>
+    `;
 };

@@ -1,5 +1,7 @@
 const express = require('express');
 const multer = require('multer');
+const fs = require('fs');
+const path = require('path');
 const { randomUUID } = require('crypto');
 const {
     createPresentation,
@@ -18,8 +20,10 @@ const {
 } = require('../repositories/slide-repository');
 const {
     createDataset,
+    deleteDatasetById,
     getDatasetById,
     listDatasetsByPresentation,
+    updateDatasetById,
 } = require('../repositories/dataset-repository');
 const {
     createBlock,
@@ -76,6 +80,13 @@ function sanitizeBlockConfig(type, config) {
         ...config,
         html: sanitizeRichHtml(config.html),
     };
+}
+
+function sanitizeFileName(name) {
+    return String(name || 'file')
+        .replace(/[^a-zA-Z0-9._-]/g, '_')
+        .replace(/_+/g, '_')
+        .slice(0, 120);
 }
 
 router.post('/presentations', (req, res, next) => {
@@ -407,6 +418,87 @@ router.get('/datasets/:datasetId', (req, res, next) => {
         const dataset = getDatasetById(datasetId);
         if (!dataset) throw notFound('Dataset not found');
         return sendData(req, res, dataset);
+    } catch (error) {
+        return next(error);
+    }
+});
+
+router.patch('/datasets/:datasetId', (req, res, next) => {
+    try {
+        const { datasetId } = req.params;
+        const current = getDatasetById(datasetId);
+        if (!current) throw notFound('Dataset not found');
+
+        const { name, columns, rows, meta } = req.body || {};
+        const details = [];
+        if (name !== undefined && typeof name !== 'string') {
+            details.push({ path: 'name', rule: 'string', message: 'name must be a string' });
+        }
+        if (columns !== undefined && !validateDatasetColumns(columns)) {
+            details.push({ path: 'columns', rule: 'schema', message: 'columns must match dataset column schema' });
+        }
+        if (rows !== undefined && !Array.isArray(rows)) {
+            details.push({ path: 'rows', rule: 'array', message: 'rows must be an array' });
+        }
+        if (meta !== undefined && (typeof meta !== 'object' || meta === null || Array.isArray(meta))) {
+            details.push({ path: 'meta', rule: 'object', message: 'meta must be an object if provided' });
+        }
+        if (details.length) throw validationError(details);
+
+        const updated = updateDatasetById(datasetId, {
+            name: name !== undefined ? name.trim() : undefined,
+            columns,
+            rows,
+            meta,
+            updatedAt: new Date().toISOString(),
+        });
+
+        return sendData(req, res, updated);
+    } catch (error) {
+        return next(error);
+    }
+});
+
+router.delete('/datasets/:datasetId', (req, res, next) => {
+    try {
+        const { datasetId } = req.params;
+        const ok = deleteDatasetById(datasetId);
+        if (!ok) throw notFound('Dataset not found');
+        return res.status(204).send();
+    } catch (error) {
+        return next(error);
+    }
+});
+
+router.post('/presentations/:presentationId/assets/upload-image', upload.single('file'), (req, res, next) => {
+    try {
+        const { presentationId } = req.params;
+        const presentation = getPresentationById(presentationId);
+        if (!presentation) throw notFound('Presentation not found');
+
+        const file = req.file;
+        const details = [];
+        if (!file || !file.buffer) {
+            details.push({ path: 'file', rule: 'required', message: 'Image file is required' });
+        } else if (!String(file.mimetype || '').startsWith('image/')) {
+            details.push({ path: 'file', rule: 'mimetype', message: 'Only image files are allowed' });
+        }
+        if (details.length) throw validationError(details);
+
+        const ext = path.extname(file.originalname || '').toLowerCase() || '.png';
+        const base = path.basename(file.originalname || `image${ext}`, ext);
+        const safeName = sanitizeFileName(base);
+        const fileName = `${Date.now()}_${safeName}${ext}`;
+        const assetsDir = path.join(__dirname, '../../data/presentations', presentationId, 'assets');
+        fs.mkdirSync(assetsDir, { recursive: true });
+
+        const fullPath = path.join(assetsDir, fileName);
+        fs.writeFileSync(fullPath, file.buffer);
+
+        return sendData(req, res, {
+            fileName,
+            url: `/content/presentations/${presentationId}/assets/${fileName}`,
+        }, 201);
     } catch (error) {
         return next(error);
     }

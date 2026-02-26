@@ -50,9 +50,44 @@ function getDatasetById(datasetId) {
     return row ? mapDataset(row) : null;
 }
 
+function updateDatasetById(datasetId, patch) {
+    const db = getDb();
+    const clauses = [];
+    const params = { id: datasetId };
+
+    if (patch.name !== undefined) {
+        clauses.push('name = @name');
+        params.name = patch.name;
+    }
+    if (patch.columns !== undefined) {
+        clauses.push('columns_json = @columns_json');
+        params.columns_json = JSON.stringify(patch.columns || []);
+    }
+    if (patch.rows !== undefined) {
+        clauses.push('rows_json = @rows_json');
+        params.rows_json = JSON.stringify(patch.rows || []);
+    }
+    if (patch.meta !== undefined) {
+        clauses.push('meta_json = @meta_json');
+        params.meta_json = patch.meta ? JSON.stringify(patch.meta) : null;
+    }
+
+    clauses.push('updated_at = @updated_at');
+    params.updated_at = patch.updatedAt;
+
+    db.prepare(`UPDATE datasets SET ${clauses.join(', ')} WHERE id = @id`).run(params);
+    return getDatasetById(datasetId);
+}
+
+function deleteDatasetById(datasetId) {
+    const db = getDb();
+    return db.prepare('DELETE FROM datasets WHERE id = ?').run(datasetId).changes > 0;
+}
+
 module.exports = {
     createDataset,
+    deleteDatasetById,
     getDatasetById,
     listDatasetsByPresentation,
+    updateDatasetById,
 };
-

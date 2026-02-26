@@ -11,6 +11,7 @@ function createApp() {
     app.use(requestMeta);
     app.use('/themes', express.static(path.join(__dirname, '../themes')));
     app.use('/dist', express.static(path.join(__dirname, '../dist')));
+    app.use('/content', express.static(path.join(__dirname, '../data')));
 
     app.get('/api/v1/health', (req, res) => sendData(req, res, { ok: true }));
     app.use('/api/v1', presentationsRouter);

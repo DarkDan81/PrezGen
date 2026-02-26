@@ -1,3 +1,12 @@
+﻿const LIMITS = {
+    chartLimit: 12,
+    tableLimit: 14,
+    tableColumns: 8,
+    kpiLimit: 6,
+    kpiManualItems: 6,
+    textHtmlLength: 6000,
+};
+
 function isObject(value) {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -19,23 +28,43 @@ function ensurePositiveNumber(details, path, value) {
     }
 }
 
+function ensureMaxNumber(details, path, value, max) {
+    if (value === undefined || value === null) return;
+    if (typeof value !== 'number' || value > max) {
+        details.push({ path, rule: 'max', message: `${path} must be <= ${max}` });
+    }
+}
+
 function validateChartConfig(config, details) {
     ensureString(details, 'config.datasetId', config.datasetId);
     ensureString(details, 'config.kind', config.kind);
     ensureString(details, 'config.xField', config.xField);
     ensureString(details, 'config.valueField', config.valueField);
     if (config.seriesField !== undefined) ensureString(details, 'config.seriesField', config.seriesField, false);
+    if (config.filterField !== undefined) ensureString(details, 'config.filterField', config.filterField, false);
+    if (config.filterValues !== undefined) {
+        if (!Array.isArray(config.filterValues) || config.filterValues.some((v) => typeof v !== 'string')) {
+            details.push({ path: 'config.filterValues', rule: 'array', message: 'config.filterValues must be a string array' });
+        }
+    }
     if (config.kind && !new Set(['line', 'bar', 'horizontalBar']).has(config.kind)) {
         details.push({ path: 'config.kind', rule: 'enum', message: 'config.kind must be line, bar, or horizontalBar' });
     }
     ensurePositiveNumber(details, 'config.limit', config.limit);
+    ensureMaxNumber(details, 'config.limit', config.limit, LIMITS.chartLimit);
 }
 
 function validateTableConfig(config, details) {
     ensureString(details, 'config.datasetId', config.datasetId);
-    if (config.columns !== undefined && (!Array.isArray(config.columns) || config.columns.some((c) => typeof c !== 'string'))) {
-        details.push({ path: 'config.columns', rule: 'array', message: 'config.columns must be a string array' });
+
+    if (config.columns !== undefined) {
+        if (!Array.isArray(config.columns) || config.columns.some((c) => typeof c !== 'string')) {
+            details.push({ path: 'config.columns', rule: 'array', message: 'config.columns must be a string array' });
+        } else if (config.columns.length > LIMITS.tableColumns) {
+            details.push({ path: 'config.columns', rule: 'max', message: `config.columns supports up to ${LIMITS.tableColumns} columns` });
+        }
     }
+
     if (config.sort !== undefined) {
         if (!isObject(config.sort)) {
             details.push({ path: 'config.sort', rule: 'object', message: 'config.sort must be an object' });
@@ -46,7 +75,15 @@ function validateTableConfig(config, details) {
             }
         }
     }
+    if (config.transpose !== undefined && typeof config.transpose !== 'boolean') {
+        details.push({ path: 'config.transpose', rule: 'boolean', message: 'config.transpose must be boolean' });
+    }
+    if (config.parameterLabel !== undefined) {
+        ensureString(details, 'config.parameterLabel', config.parameterLabel, false);
+    }
+
     ensurePositiveNumber(details, 'config.limit', config.limit);
+    ensureMaxNumber(details, 'config.limit', config.limit, LIMITS.tableLimit);
 }
 
 function validateKpiConfig(config, details) {
@@ -55,20 +92,38 @@ function validateKpiConfig(config, details) {
         details.push({ path: 'config.mode', rule: 'enum', message: 'config.mode must be manual or dataset' });
         return;
     }
+
     if (mode === 'manual') {
         if (!Array.isArray(config.items)) {
             details.push({ path: 'config.items', rule: 'array', message: 'config.items must be an array in manual mode' });
+        } else if (config.items.length > LIMITS.kpiManualItems) {
+            details.push({ path: 'config.items', rule: 'max', message: `config.items supports up to ${LIMITS.kpiManualItems} cards` });
         }
         return;
     }
+
     ensureString(details, 'config.datasetId', config.datasetId);
     ensureString(details, 'config.labelField', config.labelField);
     ensureString(details, 'config.valueField', config.valueField);
+    if (config.filterField !== undefined) ensureString(details, 'config.filterField', config.filterField, false);
+    if (config.filterValues !== undefined) {
+        if (!Array.isArray(config.filterValues) || config.filterValues.some((v) => typeof v !== 'string')) {
+            details.push({ path: 'config.filterValues', rule: 'array', message: 'config.filterValues must be a string array' });
+        }
+    }
     ensurePositiveNumber(details, 'config.limit', config.limit);
+    ensureMaxNumber(details, 'config.limit', config.limit, LIMITS.kpiLimit);
 }
 
 function validateTextConfig(config, details) {
     ensureString(details, 'config.html', config.html);
+    if (typeof config.html === 'string' && config.html.length > LIMITS.textHtmlLength) {
+        details.push({
+            path: 'config.html',
+            rule: 'max',
+            message: `config.html supports up to ${LIMITS.textHtmlLength} characters`,
+        });
+    }
 }
 
 function validateImageConfig(config, details) {
@@ -93,4 +148,3 @@ function validateBlockConfig(type, config) {
 }
 
 module.exports = { validateBlockConfig };
-
