@@ -100,6 +100,75 @@
   gap: 8px;
 }
 
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 15, 25, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  padding: 20px;
+}
+
+.modal-content {
+  width: min(1400px, 95vw);
+  height: min(85vh, 900px);
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  display: grid;
+  grid-template-rows: auto auto auto 1fr auto auto;
+  gap: 10px;
+}
+
+.table-modal-wrap {
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--field-bg);
+}
+
+.dataset-editor-table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+}
+
+.dataset-editor-table th,
+.dataset-editor-table td {
+  border: 1px solid var(--border);
+  padding: 6px;
+  min-width: 180px;
+  vertical-align: top;
+}
+
+.dataset-editor-table th:first-child,
+.dataset-editor-table td:first-child {
+  min-width: 44px;
+  width: 44px;
+  text-align: center;
+}
+
+.dataset-editor-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--panel-bg);
+  z-index: 1;
+}
+
+.dataset-head-cell {
+  display: grid;
+  gap: 6px;
+}
+
+.soft-danger {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+
 @media (max-width: 1200px) {
   .editor-grid {
     grid-template-columns: 1fr;

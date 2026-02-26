@@ -43,6 +43,14 @@ export const client = {
   ) => apiPost<Dataset, typeof payload>(`/api/v1/presentations/${presentationId}/datasets`, payload),
   uploadCsvDataset: (presentationId: string, formData: FormData) =>
     apiPostForm<Dataset>(`/api/v1/presentations/${presentationId}/datasets/upload-csv`, formData),
+  patchDataset: (
+    datasetId: string,
+    payload: Partial<Pick<Dataset, 'name' | 'columns' | 'rows' | 'meta'>>,
+  ) => apiPatch<Dataset, typeof payload>(`/api/v1/datasets/${datasetId}`, payload),
+  deleteDataset: (datasetId: string) => apiDelete(`/api/v1/datasets/${datasetId}`),
+
+  uploadPresentationImage: (presentationId: string, formData: FormData) =>
+    apiPostForm<{ fileName: string; url: string }>(`/api/v1/presentations/${presentationId}/assets/upload-image`, formData),
 
   buildPreview: (presentationId: string) =>
     apiPost<{ previewUrl: string }, { mode: string }>(`/api/v1/presentations/${presentationId}/render/preview`, {
@@ -52,4 +60,3 @@ export const client = {
     apiPost<RenderJob, Record<string, never>>(`/api/v1/presentations/${presentationId}/render/pdf`, {}),
   getRenderJob: (jobId: string) => apiGet<RenderJob>(`/api/v1/render-jobs/${jobId}`),
 };
-

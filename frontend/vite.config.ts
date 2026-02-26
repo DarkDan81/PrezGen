@@ -10,6 +10,7 @@ export default defineConfig({
       '/api': 'http://localhost:3100',
       '/themes': 'http://localhost:3100',
       '/dist': 'http://localhost:3100',
+      '/content': 'http://localhost:3100',
     },
   },
 })

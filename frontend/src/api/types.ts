@@ -59,6 +59,7 @@ export type Dataset = {
   sourceType: 'manual_table' | 'upload_csv' | 'api_future';
   columns: Array<{ key: string; label: string; type: string; nullable?: boolean }>;
   rows: Array<Record<string, unknown>>;
+  meta?: Record<string, unknown> | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -71,4 +72,3 @@ export type RenderJob = {
   result: { fileName: string; path: string } | null;
   error: { message: string } | null;
 };
-

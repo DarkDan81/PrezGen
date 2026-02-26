@@ -1,11 +1,11 @@
-import { DndContext, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
+﻿import { DndContext, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { client } from '../api/client';
-import type { Block, Slide } from '../api/types';
+import type { Block, Dataset, Slide } from '../api/types';
 import { BlockConfigForm, getDefaultConfig } from '../components/BlockConfigForm';
 import { useDebouncedEffect } from '../hooks/useDebouncedEffect';
 import './editor.css';
@@ -52,6 +52,49 @@ function validateConfig(type: Block['type'], config: Record<string, unknown>): s
   return '';
 }
 
+function emptyDatasetDraft() {
+  return {
+    name: 'manual_dataset',
+    columns: [
+      { key: 'col_1', label: 'Column 1', type: 'string' as const, nullable: true },
+      { key: 'col_2', label: 'Column 2', type: 'string' as const, nullable: true },
+    ],
+    rows: [{ col_1: '', col_2: '' }] as Array<Record<string, unknown>>,
+  };
+}
+
+function alignRowsToColumns(
+  rows: Array<Record<string, unknown>>,
+  columns: Array<{ key: string; label: string; type: string; nullable?: boolean }>,
+) {
+  return rows.map((row) => {
+    const next: Record<string, unknown> = {};
+    columns.forEach((column) => {
+      next[column.key] = row[column.key] ?? '';
+    });
+    return next;
+  });
+}
+
+function buildDatasetDraftSignature(
+  name: string,
+  columns: Array<{ key: string; label: string; type: string; nullable?: boolean }>,
+  rows: Array<Record<string, unknown>>,
+) {
+  return JSON.stringify({
+    name: name.trim(),
+    columns: columns.map((c) => ({ key: c.key, label: c.label || '', type: c.type || 'string' })),
+    rows,
+  });
+}
+
+function getNextColumnKey(columns: Array<{ key: string }>) {
+  const used = new Set(columns.map((c) => c.key));
+  let index = 1;
+  while (used.has(`col_${index}`)) index += 1;
+  return `col_${index}`;
+}
+
 export function EditorPage() {
   const { id: presentationId = '' } = useParams();
   const queryClient = useQueryClient();
@@ -66,9 +109,17 @@ export function EditorPage() {
   const [newBlockType, setNewBlockType] = useState<Block['type']>('text');
   const [blockError, setBlockError] = useState('');
   const [previewUrl, setPreviewUrl] = useState('');
+  const [previewNonce, setPreviewNonce] = useState(0);
   const [renderJobId, setRenderJobId] = useState('');
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>('light');
-  const [datasetName, setDatasetName] = useState('manual_dataset');
+
+  const [selectedDatasetId, setSelectedDatasetId] = useState('');
+  const [datasetDraftName, setDatasetDraftName] = useState('manual_dataset');
+  const [datasetDraftColumns, setDatasetDraftColumns] = useState<Dataset['columns']>([]);
+  const [datasetDraftRows, setDatasetDraftRows] = useState<Array<Record<string, unknown>>>([]);
+  const [datasetError, setDatasetError] = useState('');
+  const [datasetModalOpen, setDatasetModalOpen] = useState(false);
+  const [datasetModalSnapshot, setDatasetModalSnapshot] = useState('');
   const [csvFile, setCsvFile] = useState<File | null>(null);
 
   const presentationQuery = useQuery({
@@ -118,11 +169,37 @@ export function EditorPage() {
     document.documentElement.dataset.mode = themeMode;
   }, [themeMode]);
 
+  useEffect(() => {
+    const datasets = datasetsQuery.data || [];
+    if (!datasets.length) {
+      const empty = emptyDatasetDraft();
+      setSelectedDatasetId('');
+      setDatasetDraftName(empty.name);
+      setDatasetDraftColumns(empty.columns);
+      setDatasetDraftRows(empty.rows);
+      return;
+    }
+
+    if (!selectedDatasetId || !datasets.some((d) => d.id === selectedDatasetId)) {
+      setSelectedDatasetId(datasets[0].id);
+    }
+  }, [datasetsQuery.data, selectedDatasetId]);
+
+  useEffect(() => {
+    const selectedDataset = (datasetsQuery.data || []).find((d) => d.id === selectedDatasetId);
+    if (!selectedDataset) return;
+    setDatasetDraftName(selectedDataset.name);
+    setDatasetDraftColumns(selectedDataset.columns);
+    setDatasetDraftRows(alignRowsToColumns(selectedDataset.rows, selectedDataset.columns));
+    setDatasetError('');
+  }, [selectedDatasetId, datasetsQuery.data]);
+
   const patchSlideMutation = useMutation({
     mutationFn: (payload: { slideId: string; title: string; subtitle: string }) =>
       client.patchSlide(payload.slideId, { title: payload.title, subtitle: payload.subtitle }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['slides', presentationId] }),
   });
+
   useDebouncedEffect(
     () => {
       if (!selectedSlideId) return;
@@ -135,8 +212,12 @@ export function EditorPage() {
   const patchBlockMutation = useMutation({
     mutationFn: (payload: { blockId: string; type: Block['type']; config: Record<string, unknown> }) =>
       client.patchBlock(payload.blockId, { type: payload.type, config: payload.config }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['blocks', selectedSlideId] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['blocks', selectedSlideId] });
+      buildPreviewMutation.mutate();
+    },
   });
+
   useDebouncedEffect(
     () => {
       if (!selectedBlockId) return;
@@ -160,10 +241,9 @@ export function EditorPage() {
       setSelectedSlideId(created.id);
     },
   });
+
   const createBlockMutation = useMutation({
-    mutationFn: (type: Block['type']) => {
-      return client.createBlock(selectedSlideId, { type, config: getDefaultConfig(type) });
-    },
+    mutationFn: (type: Block['type']) => client.createBlock(selectedSlideId, { type, config: getDefaultConfig(type) }),
     onSuccess: (created) => {
       queryClient.invalidateQueries({ queryKey: ['blocks', selectedSlideId] });
       setSelectedBlockId(created.id);
@@ -182,12 +262,16 @@ export function EditorPage() {
 
   const buildPreviewMutation = useMutation({
     mutationFn: () => client.buildPreview(presentationId),
-    onSuccess: (data) => setPreviewUrl(data.previewUrl),
+    onSuccess: (data) => {
+      setPreviewUrl(data.previewUrl);
+      setPreviewNonce((v) => v + 1);
+    },
   });
   const startPdfMutation = useMutation({
     mutationFn: () => client.startPdf(presentationId),
     onSuccess: (job) => setRenderJobId(job.id),
   });
+
   const renderJobQuery = useQuery({
     queryKey: ['render-job', renderJobId],
     queryFn: () => client.getRenderJob(renderJobId),
@@ -200,7 +284,176 @@ export function EditorPage() {
   const slideIds = useMemo(() => slides.map((s) => s.id), [slides]);
   const blockIds = useMemo(() => blocks.map((b) => b.id), [blocks]);
 
-  const previewSrc = previewUrl || `/api/v1/preview/${presentationId}`;
+  const previewBase = previewUrl || `/api/v1/preview/${presentationId}`;
+  const previewSrc = `${previewBase}${previewBase.includes('?') ? '&' : '?'}_t=${previewNonce}`;
+  const datasetModalDirty = useMemo(
+    () => buildDatasetDraftSignature(datasetDraftName, datasetDraftColumns, datasetDraftRows) !== datasetModalSnapshot,
+    [datasetDraftColumns, datasetDraftName, datasetDraftRows, datasetModalSnapshot],
+  );
+
+  const createManualDatasetDraft = () => {
+    const next = emptyDatasetDraft();
+    setSelectedDatasetId('');
+    setDatasetDraftName(next.name);
+    setDatasetDraftColumns(next.columns);
+    setDatasetDraftRows(next.rows);
+    setDatasetError('');
+    setDatasetModalSnapshot(buildDatasetDraftSignature(next.name, next.columns, next.rows));
+    setDatasetModalOpen(true);
+  };
+
+  const openDatasetEditor = () => {
+    if (!selectedDatasetId) {
+      createManualDatasetDraft();
+      return;
+    }
+    const selectedDataset = (datasetsQuery.data || []).find((d) => d.id === selectedDatasetId);
+    if (!selectedDataset) return;
+    setDatasetDraftName(selectedDataset.name);
+    setDatasetDraftColumns(selectedDataset.columns);
+    const alignedRows = alignRowsToColumns(selectedDataset.rows, selectedDataset.columns);
+    setDatasetDraftRows(alignedRows);
+    setDatasetError('');
+    setDatasetModalSnapshot(buildDatasetDraftSignature(selectedDataset.name, selectedDataset.columns, alignedRows));
+    setDatasetModalOpen(true);
+  };
+
+  const updateColumn = (index: number, patch: Partial<Dataset['columns'][number]>) => {
+    setDatasetDraftColumns((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], ...patch };
+      return next;
+    });
+  };
+
+  const addColumn = () => {
+    const nextKey = getNextColumnKey(datasetDraftColumns);
+    const nextColumns = [
+      ...datasetDraftColumns,
+      { key: nextKey, label: `Column ${datasetDraftColumns.length + 1}`, type: 'string', nullable: true },
+    ];
+    setDatasetDraftColumns(nextColumns);
+    setDatasetDraftRows((prev) => prev.map((row) => ({ ...row, [nextKey]: '' })));
+  };
+
+  const removeColumn = (index: number) => {
+    const removedKey = datasetDraftColumns[index]?.key;
+    const nextColumns = datasetDraftColumns.filter((_c, idx) => idx !== index);
+    setDatasetDraftColumns(nextColumns);
+    setDatasetDraftRows((prev) =>
+      prev.map((row) => {
+        const next = { ...row };
+        if (removedKey) delete next[removedKey];
+        return next;
+      }),
+    );
+  };
+
+  const addRow = () => {
+    const row: Record<string, unknown> = {};
+    datasetDraftColumns.forEach((column) => {
+      row[column.key] = '';
+    });
+    setDatasetDraftRows((prev) => [...prev, row]);
+  };
+
+  const removeRow = (index: number) => {
+    setDatasetDraftRows((prev) => prev.filter((_r, idx) => idx !== index));
+  };
+
+  const updateCell = (rowIndex: number, colKey: string, value: string) => {
+    setDatasetDraftRows((prev) => {
+      const next = [...prev];
+      next[rowIndex] = { ...next[rowIndex], [colKey]: value };
+      return next;
+    });
+  };
+
+  const saveDataset = async () => {
+    setDatasetError('');
+
+    const trimmedName = datasetDraftName.trim();
+    if (!trimmedName) {
+      setDatasetError('Dataset name is required');
+      return;
+    }
+    if (!datasetDraftColumns.length) {
+      setDatasetError('At least one column is required');
+      return;
+    }
+
+    const keys = datasetDraftColumns.map((column) => column.key.trim()).filter(Boolean);
+    if (keys.length !== datasetDraftColumns.length || new Set(keys).size !== keys.length) {
+      setDatasetError('Column keys must be non-empty and unique');
+      return;
+    }
+
+    const columns = datasetDraftColumns.map((column, idx) => ({
+      key: keys[idx],
+      label: column.label || keys[idx],
+      type: column.type || 'string',
+      nullable: column.nullable !== false,
+    }));
+
+    const rows = alignRowsToColumns(datasetDraftRows, columns);
+
+    if (selectedDatasetId) {
+      await client.patchDataset(selectedDatasetId, {
+        name: trimmedName,
+        columns,
+        rows,
+        meta: { rowCount: rows.length },
+      });
+    } else {
+      const created = await client.createDataset(presentationId, {
+        name: trimmedName,
+        sourceType: 'manual_table',
+        columns,
+        rows,
+      });
+      setSelectedDatasetId(created.id);
+    }
+
+    await queryClient.invalidateQueries({ queryKey: ['datasets', presentationId] });
+    setDatasetModalSnapshot(buildDatasetDraftSignature(trimmedName, columns, rows));
+    setDatasetModalOpen(false);
+  };
+
+  const requestCloseDatasetModal = () => {
+    if (!datasetModalOpen) return;
+    if (!datasetModalDirty) {
+      setDatasetModalOpen(false);
+      return;
+    }
+    const discard = window.confirm('Discard unsaved dataset changes?');
+    if (discard) setDatasetModalOpen(false);
+  };
+
+  useEffect(() => {
+    if (!datasetModalOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        requestCloseDatasetModal();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [datasetModalOpen, datasetModalDirty]);
+
+  const deleteSelectedDataset = async () => {
+    if (!selectedDatasetId) return;
+    await client.deleteDataset(selectedDatasetId);
+    setSelectedDatasetId('');
+    await queryClient.invalidateQueries({ queryKey: ['datasets', presentationId] });
+  };
+
+  const uploadImageAndGetUrl = async (file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    const uploaded = await client.uploadPresentationImage(presentationId, form);
+    return uploaded.url;
+  };
 
   return (
     <div className="editor-page">
@@ -224,7 +477,14 @@ export function EditorPage() {
         <button onClick={() => setThemeMode(themeMode === 'light' ? 'dark' : 'light')}>
           {themeMode === 'light' ? 'Dark UI' : 'Light UI'}
         </button>
-        <button onClick={() => buildPreviewMutation.mutate()}>Refresh Preview</button>
+        <button
+          onClick={() => {
+            setPreviewNonce((v) => v + 1);
+            buildPreviewMutation.mutate();
+          }}
+        >
+          Refresh Preview
+        </button>
         <button onClick={() => startPdfMutation.mutate()}>Export PDF</button>
         <span>{renderJobQuery.data ? `PDF: ${renderJobQuery.data.status}` : ''}</span>
       </header>
@@ -330,11 +590,13 @@ export function EditorPage() {
           {selectedBlock && (
             <div className="properties mt">
               <BlockConfigForm
+                presentationId={presentationId}
                 type={blockType}
                 config={blockConfig}
                 datasets={datasetsQuery.data || []}
                 onTypeChange={setBlockType}
                 onConfigChange={setBlockConfig}
+                onImageUpload={uploadImageAndGetUrl}
               />
               {blockError && <p className="error">{blockError}</p>}
               <button
@@ -354,30 +616,27 @@ export function EditorPage() {
           <div className="properties mt">
             <h4>Datasets</h4>
             <p>Existing: {(datasetsQuery.data || []).length}</p>
-            <label>
-              Manual dataset name
-              <input value={datasetName} onChange={(e) => setDatasetName(e.target.value)} />
-            </label>
-            <button
-              onClick={() =>
-                client
-                  .createDataset(presentationId, {
-                    name: datasetName,
-                    sourceType: 'manual_table',
-                    columns: [
-                      { key: 'name', label: 'name', type: 'string', nullable: false },
-                      { key: 'value', label: 'value', type: 'number', nullable: true },
-                    ],
-                    rows: [
-                      { name: 'A', value: 10 },
-                      { name: 'B', value: 12 },
-                    ],
-                  })
-                  .then(() => queryClient.invalidateQueries({ queryKey: ['datasets', presentationId] }))
-              }
-            >
-              Create sample dataset
-            </button>
+            <div className="panel-row">
+              <select value={selectedDatasetId} onChange={(e) => setSelectedDatasetId(e.target.value)}>
+                <option value="">New manual dataset</option>
+                {(datasetsQuery.data || []).map((dataset) => (
+                  <option key={dataset.id} value={dataset.id}>
+                    {dataset.name}
+                  </option>
+                ))}
+              </select>
+              <button onClick={createManualDatasetDraft}>New</button>
+            </div>
+            <div className="panel-row">
+              <button onClick={openDatasetEditor}>{selectedDatasetId ? 'Edit dataset' : 'Create & edit'}</button>
+              {selectedDatasetId && (
+                <button className="danger" onClick={() => void deleteSelectedDataset()}>
+                  Delete
+                </button>
+              )}
+            </div>
+            {datasetError && <p className="error">{datasetError}</p>}
+
             <label>
               Upload CSV
               <input type="file" accept=".csv,text/csv" onChange={(e) => setCsvFile(e.target.files?.[0] || null)} />
@@ -399,6 +658,76 @@ export function EditorPage() {
           </div>
         </aside>
       </div>
+      {datasetModalOpen && (
+        <div className="modal-backdrop">
+          <div className="modal-content">
+            <div className="panel-row">
+              <h3>{selectedDatasetId ? 'Edit dataset' : 'Create dataset'}</h3>
+              <button onClick={requestCloseDatasetModal}>Close</button>
+            </div>
+            <label>
+              Dataset name
+              <input value={datasetDraftName} onChange={(e) => setDatasetDraftName(e.target.value)} />
+            </label>
+            <div className="panel-row mt">
+              <strong>Columns</strong>
+              <div className="panel-row">
+                <button onClick={addColumn}>+ Column</button>
+                <button onClick={addRow}>+ Row</button>
+              </div>
+            </div>
+            <div className="table-modal-wrap">
+              <table className="dataset-editor-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    {datasetDraftColumns.map((column, idx) => (
+                      <th key={`head-${idx}`}>
+                        <div className="dataset-head-cell">
+                          <input
+                            placeholder={`Column ${idx + 1}`}
+                            value={column.label}
+                            onChange={(e) => updateColumn(idx, { label: e.target.value })}
+                          />
+                          <button className="soft-danger" onClick={() => removeColumn(idx)}>
+                            Remove column
+                          </button>
+                        </div>
+                      </th>
+                    ))}
+                    <th>Row actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {datasetDraftRows.map((row, rowIndex) => (
+                    <tr key={`row-${rowIndex}`}>
+                      <td>{rowIndex + 1}</td>
+                      {datasetDraftColumns.map((column) => (
+                        <td key={`cell-${rowIndex}-${column.key}`}>
+                          <input
+                            value={String(row[column.key] ?? '')}
+                            onChange={(e) => updateCell(rowIndex, column.key, e.target.value)}
+                          />
+                        </td>
+                      ))}
+                      <td>
+                        <button className="soft-danger" onClick={() => removeRow(rowIndex)}>
+                          Remove row
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="panel-row mt">
+              <button onClick={() => void saveDataset()}>{selectedDatasetId ? 'Save dataset' : 'Create dataset'}</button>
+              <button onClick={requestCloseDatasetModal}>Cancel</button>
+            </div>
+            {datasetError && <p className="error">{datasetError}</p>}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
