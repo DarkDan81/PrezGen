@@ -7,6 +7,7 @@
 .editor-header {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
   padding: 10px 14px;
   border-bottom: 1px solid var(--border);
@@ -39,6 +40,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 8px;
 }
 
 .drag-item {
@@ -57,11 +59,15 @@
   outline: 2px solid var(--accent);
 }
 
+.drag-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
 .drag-handle {
-  width: 28px;
-  min-width: 28px;
+  width: 30px;
+  min-width: 30px;
   cursor: grab;
-  background: var(--app-bg);
 }
 
 .preview-frame {
@@ -77,6 +83,13 @@
   gap: 10px;
 }
 
+.properties label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .mt {
   margin-top: 16px;
 }
@@ -85,12 +98,6 @@
   margin: 8px 0 10px;
   font-size: 12px;
   opacity: 0.75;
-}
-
-.danger {
-  background: var(--danger);
-  border-color: var(--danger);
-  color: #fff;
 }
 
 .inline-checkbox {
@@ -167,6 +174,64 @@
   background: transparent;
   color: var(--danger);
   border: 1px solid var(--danger);
+}
+
+.editor-page input:not([type='checkbox']),
+.editor-page select,
+.editor-page textarea {
+  width: 100%;
+  background: var(--field-bg);
+  color: var(--text-main);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: inherit;
+}
+
+.editor-page input:not([type='checkbox']):focus,
+.editor-page select:focus,
+.editor-page textarea:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 65%, var(--border));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.compact-select {
+  min-width: 170px;
+}
+
+.compact-lang-field {
+  min-width: 140px;
+}
+
+.dataset-meta {
+  margin: 0;
+}
+
+.save-state {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--text-main) 68%, transparent);
+}
+
+.save-state.saved {
+  color: color-mix(in srgb, #2f9b57 72%, var(--text-main));
+}
+
+.save-state.error {
+  color: var(--danger);
+}
+
+.pdf-status {
+  font-size: 12px;
+  color: color-mix(in srgb, var(--text-main) 70%, transparent);
+}
+
+.error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 13px;
 }
 
 @media (max-width: 1200px) {

@@ -1,0 +1,120 @@
+.ui-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 12px;
+  background: var(--field-bg);
+  color: var(--text-main);
+  font: inherit;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+}
+
+.ui-button:hover {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+
+.ui-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 26%, transparent);
+}
+
+.ui-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.ui-button-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.ui-button-secondary {
+  background: var(--field-bg);
+  color: var(--text-main);
+}
+
+.ui-button-danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+.ui-button-ghost {
+  background: transparent;
+}
+
+.ui-button-small {
+  min-height: 30px;
+  padding: 5px 10px;
+  font-size: 13px;
+}
+
+.ui-field {
+  display: grid;
+  gap: 6px;
+}
+
+.ui-field-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ui-field input,
+.ui-field select,
+.ui-field textarea,
+input.ui-input,
+select.ui-select,
+textarea.ui-textarea {
+  width: 100%;
+  background: var(--field-bg);
+  color: var(--text-main);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: inherit;
+}
+
+.ui-field input:focus,
+.ui-field select:focus,
+.ui-field textarea:focus,
+input.ui-input:focus,
+select.ui-select:focus,
+textarea.ui-textarea:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 65%, var(--border));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.ui-section-card {
+  display: grid;
+  gap: 10px;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.ui-section-card-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.ui-muted {
+  color: color-mix(in srgb, var(--text-main) 65%, transparent);
+  font-size: 12px;
+}
+
+.ui-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 13px;
+}

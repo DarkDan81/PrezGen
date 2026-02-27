@@ -3,11 +3,16 @@ import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } 
 import { CSS } from '@dnd-kit/utilities';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { client } from '../api/client';
 import type { Block, Dataset, Slide } from '../api/types';
 import { BlockConfigForm, getDefaultConfig } from '../components/BlockConfigForm';
 import { useDebouncedEffect } from '../hooks/useDebouncedEffect';
+import { useI18n } from '../shared/i18n/I18nProvider';
+import type { TranslationKey } from '../shared/i18n/dictionaries';
+import { Button } from '../shared/ui/Button';
+import { Field } from '../shared/ui/Field';
+import { SectionCard } from '../shared/ui/SectionCard';
 import './editor.css';
 
 function DragItem({
@@ -15,11 +20,13 @@ function DragItem({
   label,
   active,
   onClick,
+  dragHandleLabel,
 }: {
   id: string;
   label: string;
   active: boolean;
   onClick: () => void;
+  dragHandleLabel: string;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
   return (
@@ -28,27 +35,43 @@ function DragItem({
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={`drag-item ${active ? 'active' : ''}`}
       onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      }}
     >
-      <button className="drag-handle" {...attributes} {...listeners} title="Drag">
+      <Button
+        variant="ghost"
+        size="small"
+        className="drag-handle"
+        {...attributes}
+        {...listeners}
+        title={dragHandleLabel}
+        aria-label={dragHandleLabel}
+      >
         ::
-      </button>
+      </Button>
       <span>{label}</span>
     </div>
   );
 }
 
 function validateConfig(type: Block['type'], config: Record<string, unknown>): string {
-  if (type === 'text' && typeof config.html !== 'string') return 'text requires {"html": "..."}';
+  if (type === 'text' && typeof config.html !== 'string') return 'error.textConfig';
   if (type === 'image' && typeof config.url !== 'string' && typeof config.src !== 'string') {
-    return 'image requires {"url": "..."} or {"src": "..."}';
+    return 'error.imageConfig';
   }
   if (type === 'chart') {
     if (typeof config.datasetId !== 'string' || typeof config.kind !== 'string') {
-      return 'chart requires datasetId and kind';
+      return 'error.chartConfig';
     }
   }
-  if (type === 'table' && typeof config.datasetId !== 'string') return 'table requires datasetId';
-  if (type === 'kpi' && config.mode !== 'manual' && typeof config.datasetId !== 'string') return 'kpi dataset mode requires datasetId';
+  if (type === 'table' && typeof config.datasetId !== 'string') return 'error.tableConfig';
+  if (type === 'kpi' && config.mode !== 'manual' && typeof config.datasetId !== 'string') return 'error.kpiConfig';
   return '';
 }
 
@@ -95,13 +118,13 @@ function getNextColumnKey(columns: Array<{ key: string }>) {
   return `col_${index}`;
 }
 
-function getCreateBlockConfig(type: Block['type'], datasets: Dataset[]) {
+function getCreateBlockConfig(type: Block['type'], datasets: Dataset[], t: (key: 'error.createTableNeedsDataset' | 'error.createChartNeedsDataset' | 'error.chartNeedsTwoColumns') => string) {
   const base = getDefaultConfig(type);
   const primaryDataset = datasets[0];
 
   if (type === 'table') {
     if (!primaryDataset) {
-      throw new Error('Create or upload a dataset before adding a table block');
+      throw new Error(t('error.createTableNeedsDataset'));
     }
     return {
       ...base,
@@ -111,11 +134,11 @@ function getCreateBlockConfig(type: Block['type'], datasets: Dataset[]) {
 
   if (type === 'chart') {
     if (!primaryDataset) {
-      throw new Error('Create or upload a dataset before adding a chart block');
+      throw new Error(t('error.createChartNeedsDataset'));
     }
     const keys = (primaryDataset.columns || []).map((c) => c.key).filter(Boolean);
     if (keys.length < 2) {
-      throw new Error('Chart requires dataset with at least 2 columns');
+      throw new Error(t('error.chartNeedsTwoColumns'));
     }
     return {
       ...base,
@@ -129,8 +152,18 @@ function getCreateBlockConfig(type: Block['type'], datasets: Dataset[]) {
   return base;
 }
 
+function blockTypeLabel(type: Block['type'], t: (key: 'block.text' | 'block.image' | 'block.chart' | 'block.table' | 'block.kpi') => string): string {
+  if (type === 'text') return t('block.text');
+  if (type === 'image') return t('block.image');
+  if (type === 'chart') return t('block.chart');
+  if (type === 'table') return t('block.table');
+  return t('block.kpi');
+}
+
 export function EditorPage() {
+  const { locale, setLocale, t } = useI18n();
   const { id: presentationId = '' } = useParams();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -146,6 +179,7 @@ export function EditorPage() {
   const [previewNonce, setPreviewNonce] = useState(0);
   const [renderJobId, setRenderJobId] = useState('');
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>('light');
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   const [selectedDatasetId, setSelectedDatasetId] = useState('');
   const [datasetDraftName, setDatasetDraftName] = useState('manual_dataset');
@@ -233,7 +267,12 @@ export function EditorPage() {
   const patchSlideMutation = useMutation({
     mutationFn: (payload: { slideId: string; title: string; subtitle: string }) =>
       client.patchSlide(payload.slideId, { title: payload.title, subtitle: payload.subtitle }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['slides', presentationId] }),
+    onMutate: () => setSaveState('saving'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['slides', presentationId] });
+      setSaveState('saved');
+    },
+    onError: () => setSaveState('error'),
   });
 
   useDebouncedEffect(
@@ -248,18 +287,22 @@ export function EditorPage() {
   const patchBlockMutation = useMutation({
     mutationFn: (payload: { blockId: string; type: Block['type']; config: Record<string, unknown> }) =>
       client.patchBlock(payload.blockId, { type: payload.type, config: payload.config }),
+    onMutate: () => setSaveState('saving'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['blocks', selectedSlideId] });
       buildPreviewMutation.mutate();
+      setSaveState('saved');
     },
+    onError: () => setSaveState('error'),
   });
 
   useDebouncedEffect(
     () => {
       if (!selectedBlockId) return;
-      const error = validateConfig(blockType, blockConfig);
-      setBlockError(error);
-      if (error) return;
+      const errorKey = validateConfig(blockType, blockConfig);
+      const errorMessage = errorKey ? t(errorKey as TranslationKey) : '';
+      setBlockError(errorMessage);
+      if (errorKey) return;
       patchBlockMutation.mutate({
         blockId: selectedBlockId,
         type: blockType,
@@ -278,9 +321,19 @@ export function EditorPage() {
     },
   });
 
+  const patchPresentationMutation = useMutation({
+    mutationFn: (themeId: string) => client.patchPresentation(presentationId, { themeId }),
+    onMutate: () => setSaveState('saving'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['presentation', presentationId] });
+      setSaveState('saved');
+    },
+    onError: () => setSaveState('error'),
+  });
+
   const createBlockMutation = useMutation({
     mutationFn: (type: Block['type']) =>
-      client.createBlock(selectedSlideId, { type, config: getCreateBlockConfig(type, datasetsQuery.data || []) }),
+      client.createBlock(selectedSlideId, { type, config: getCreateBlockConfig(type, datasetsQuery.data || [], t) }),
     onSuccess: (created) => {
       queryClient.invalidateQueries({ queryKey: ['blocks', selectedSlideId] });
       setSelectedBlockId(created.id);
@@ -333,6 +386,15 @@ export function EditorPage() {
 
   const previewBase = previewUrl || `/api/v1/preview/${presentationId}`;
   const previewSrc = `${previewBase}${previewBase.includes('?') ? '&' : '?'}_t=${previewNonce}`;
+  const saveStatusText =
+    saveState === 'saving'
+      ? t('common.saving')
+      : saveState === 'saved'
+        ? t('common.saved')
+        : saveState === 'error'
+          ? t('common.error')
+          : '';
+  const saveStatusClass = saveState === 'error' ? 'error' : saveState === 'saved' ? 'saved' : '';
   const datasetModalDirty = useMemo(
     () => buildDatasetDraftSignature(datasetDraftName, datasetDraftColumns, datasetDraftRows) !== datasetModalSnapshot,
     [datasetDraftColumns, datasetDraftName, datasetDraftRows, datasetModalSnapshot],
@@ -421,17 +483,17 @@ export function EditorPage() {
 
     const trimmedName = datasetDraftName.trim();
     if (!trimmedName) {
-      setDatasetError('Dataset name is required');
+      setDatasetError(t('error.datasetNameRequired'));
       return;
     }
     if (!datasetDraftColumns.length) {
-      setDatasetError('At least one column is required');
+      setDatasetError(t('error.datasetColumnsRequired'));
       return;
     }
 
     const keys = datasetDraftColumns.map((column) => column.key.trim()).filter(Boolean);
     if (keys.length !== datasetDraftColumns.length || new Set(keys).size !== keys.length) {
-      setDatasetError('Column keys must be non-empty and unique');
+      setDatasetError(t('error.datasetColumnKeysUnique'));
       return;
     }
 
@@ -472,7 +534,7 @@ export function EditorPage() {
       setDatasetModalOpen(false);
       return;
     }
-    const discard = window.confirm('Discard unsaved dataset changes?');
+    const discard = window.confirm(t('editor.discardDatasetChanges'));
     if (discard) setDatasetModalOpen(false);
   };
 
@@ -505,15 +567,20 @@ export function EditorPage() {
   return (
     <div className="editor-page">
       <header className="editor-header">
-        <Link to="/">Back</Link>
-        <strong>{presentationQuery.data?.name || 'Editor'}</strong>
+        <Button variant="ghost" onClick={() => navigate('/')}>
+          {t('editor.backToList')}
+        </Button>
+        <strong>{presentationQuery.data?.name || t('editor.titleFallback')}</strong>
+        <Field label={t('lang.label')} className="lang-field compact-lang-field">
+          <select className="ui-select compact-select" value={locale} onChange={(e) => setLocale(e.target.value as 'ru' | 'en')}>
+            <option value="ru">{t('lang.ru')}</option>
+            <option value="en">{t('lang.en')}</option>
+          </select>
+        </Field>
         <select
+          className="ui-select compact-select"
           value={presentationQuery.data?.themeId || 'theme-eurofoods'}
-          onChange={(e) => {
-            client.patchPresentation(presentationId, { themeId: e.target.value }).then(() => {
-              queryClient.invalidateQueries({ queryKey: ['presentation', presentationId] });
-            });
-          }}
+          onChange={(e) => patchPresentationMutation.mutate(e.target.value)}
         >
           {(themesQuery.data || []).map((theme) => (
             <option key={theme.id} value={theme.id}>
@@ -521,23 +588,30 @@ export function EditorPage() {
             </option>
           ))}
         </select>
-        <button onClick={() => setThemeMode(themeMode === 'light' ? 'dark' : 'light')}>
-          {themeMode === 'light' ? 'Dark UI' : 'Light UI'}
-        </button>
-        <button
-          onClick={() => buildPreviewMutation.mutate()}
-        >
-          Refresh Preview
-        </button>
-        <button onClick={() => startPdfMutation.mutate()}>Export PDF</button>
-        <span>{renderJobQuery.data ? `PDF: ${renderJobQuery.data.status}` : ''}</span>
+        <Button variant="secondary" onClick={() => setThemeMode(themeMode === 'light' ? 'dark' : 'light')}>
+          {themeMode === 'light' ? t('editor.darkUi') : t('editor.lightUi')}
+        </Button>
+        <Button variant="secondary" onClick={() => buildPreviewMutation.mutate()}>
+          {t('editor.refreshPreview')}
+        </Button>
+        <Button variant="primary" onClick={() => startPdfMutation.mutate()}>
+          {t('editor.exportPdf')}
+        </Button>
+        <span className={`save-state ${saveStatusClass}`} aria-live="polite">
+          {saveStatusText}
+        </span>
+        <span className="pdf-status" aria-live="polite">
+          {renderJobQuery.data ? t('editor.pdfStatus', { status: renderJobQuery.data.status }) : ''}
+        </span>
       </header>
 
       <div className="editor-grid">
         <aside className="panel left">
           <div className="panel-row">
-            <h3>Slides</h3>
-            <button onClick={() => createSlideMutation.mutate()}>+ Slide</button>
+            <h3>{t('editor.slides')}</h3>
+            <Button size="small" onClick={() => createSlideMutation.mutate()}>
+              {t('editor.addSlide')}
+            </Button>
           </div>
           <DndContext
             sensors={sensors}
@@ -556,8 +630,9 @@ export function EditorPage() {
                 <DragItem
                   key={slide.id}
                   id={slide.id}
-                  label={slide.title || 'Untitled'}
+                  label={slide.title || t('editor.untitled')}
                   active={selectedSlideId === slide.id}
+                  dragHandleLabel={t('editor.dragSlide', { name: slide.title || t('editor.untitled') })}
                   onClick={() => {
                     setSelectedSlideId(slide.id);
                     setSelectedBlockId('');
@@ -570,26 +645,27 @@ export function EditorPage() {
           {selectedSlideId && (
             <>
               <div className="panel-row mt">
-                <h3>Blocks</h3>
+                <h3>{t('editor.blocks')}</h3>
               </div>
               <div className="panel-row">
-                <select value={newBlockType} onChange={(e) => setNewBlockType(e.target.value as Block['type'])}>
-                  <option value="text">text</option>
-                  <option value="image">image</option>
-                  <option value="chart">chart</option>
-                  <option value="table">table</option>
-                  <option value="kpi">kpi</option>
+                <select className="ui-select compact-select" value={newBlockType} onChange={(e) => setNewBlockType(e.target.value as Block['type'])}>
+                  <option value="text">{t('block.text')}</option>
+                  <option value="image">{t('block.image')}</option>
+                  <option value="chart">{t('block.chart')}</option>
+                  <option value="table">{t('block.table')}</option>
+                  <option value="kpi">{t('block.kpi')}</option>
                 </select>
-                <button
+                <Button
+                  size="small"
                   onClick={() => {
                     setBlockError('');
                     createBlockMutation.mutate(newBlockType);
                   }}
                 >
-                  Add block
-                </button>
+                  {t('editor.addBlock')}
+                </Button>
               </div>
-              <p className="hint">Select type and click Add block</p>
+              <p className="hint">{t('editor.addBlockHint')}</p>
               <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}
@@ -607,8 +683,9 @@ export function EditorPage() {
                     <DragItem
                       key={block.id}
                       id={block.id}
-                      label={block.type}
+                      label={blockTypeLabel(block.type, t)}
                       active={selectedBlockId === block.id}
+                      dragHandleLabel={t('editor.dragBlock', { name: blockTypeLabel(block.type, t) })}
                       onClick={() => setSelectedBlockId(block.id)}
                     />
                   ))}
@@ -619,7 +696,7 @@ export function EditorPage() {
         </aside>
 
         <main className="panel center">
-          <h3>Preview</h3>
+          <h3>{t('editor.preview')}</h3>
           <iframe
             ref={previewFrameRef}
             title="preview"
@@ -639,22 +716,22 @@ export function EditorPage() {
         </main>
 
         <aside className="panel right">
-          <h3>Properties</h3>
+          <h3>{t('editor.properties')}</h3>
           {selectedSlide && (
-            <div className="properties">
-              <label>
-                Slide title
-                <input value={slideTitle} onChange={(e) => setSlideTitle(e.target.value)} />
-              </label>
-              <label>
-                Slide subtitle
-                <input value={slideSubtitle} onChange={(e) => setSlideSubtitle(e.target.value)} />
-              </label>
-            </div>
+            <SectionCard title={t('editor.slideSettings')}>
+              <div className="properties">
+                <Field label={t('editor.slideTitle')}>
+                  <input className="ui-input" value={slideTitle} onChange={(e) => setSlideTitle(e.target.value)} />
+                </Field>
+                <Field label={t('editor.slideSubtitle')}>
+                  <input className="ui-input" value={slideSubtitle} onChange={(e) => setSlideSubtitle(e.target.value)} />
+                </Field>
+              </div>
+            </SectionCard>
           )}
 
           {selectedBlock && (
-            <div className="properties mt">
+            <SectionCard title={t('editor.blockSettings')} className="mt">
               <BlockConfigForm
                 presentationId={presentationId}
                 type={blockType}
@@ -664,9 +741,9 @@ export function EditorPage() {
                 onConfigChange={setBlockConfig}
                 onImageUpload={uploadImageAndGetUrl}
               />
-              {blockError && <p className="error">{blockError}</p>}
-              <button
-                className="danger"
+              {blockError && <p className="ui-error">{blockError}</p>}
+              <Button
+                variant="danger"
                 onClick={() => {
                   client.deleteBlock(selectedBlock.id).then(() => {
                     setSelectedBlockId('');
@@ -674,40 +751,42 @@ export function EditorPage() {
                   });
                 }}
               >
-                Delete block
-              </button>
-            </div>
+                {t('editor.deleteBlock')}
+              </Button>
+            </SectionCard>
           )}
 
-          <div className="properties mt">
-            <h4>Datasets</h4>
-            <p>Existing: {(datasetsQuery.data || []).length}</p>
+          <SectionCard title={t('editor.datasets')} className="mt">
+            <p className="dataset-meta">{t('editor.datasetsExisting', { count: (datasetsQuery.data || []).length })}</p>
             <div className="panel-row">
-              <select value={selectedDatasetId} onChange={(e) => setSelectedDatasetId(e.target.value)}>
-                <option value="">New manual dataset</option>
+              <select className="ui-select compact-select" value={selectedDatasetId} onChange={(e) => setSelectedDatasetId(e.target.value)}>
+                <option value="">{t('editor.newManualDataset')}</option>
                 {(datasetsQuery.data || []).map((dataset) => (
                   <option key={dataset.id} value={dataset.id}>
                     {dataset.name}
                   </option>
                 ))}
               </select>
-              <button onClick={createManualDatasetDraft}>New</button>
+              <Button size="small" onClick={createManualDatasetDraft}>
+                {t('common.new')}
+              </Button>
             </div>
             <div className="panel-row">
-              <button onClick={openDatasetEditor}>{selectedDatasetId ? 'Edit dataset' : 'Create & edit'}</button>
+              <Button size="small" onClick={openDatasetEditor}>
+                {selectedDatasetId ? t('editor.editDataset') : t('editor.createAndEditDataset')}
+              </Button>
               {selectedDatasetId && (
-                <button className="danger" onClick={() => void deleteSelectedDataset()}>
-                  Delete
-                </button>
+                <Button variant="danger" size="small" onClick={() => void deleteSelectedDataset()}>
+                  {t('common.delete')}
+                </Button>
               )}
             </div>
-            {datasetError && <p className="error">{datasetError}</p>}
+            {datasetError && <p className="ui-error">{datasetError}</p>}
 
-            <label>
-              Upload CSV
-              <input type="file" accept=".csv,text/csv" onChange={(e) => setCsvFile(e.target.files?.[0] || null)} />
-            </label>
-            <button
+            <Field label={t('editor.uploadCsv')}>
+              <input className="ui-input" type="file" accept=".csv,text/csv" onChange={(e) => setCsvFile(e.target.files?.[0] || null)} />
+            </Field>
+            <Button
               onClick={() => {
                 if (!csvFile) return;
                 const form = new FormData();
@@ -719,27 +798,32 @@ export function EditorPage() {
                 });
               }}
             >
-              Upload
-            </button>
-          </div>
+              {t('common.upload')}
+            </Button>
+          </SectionCard>
         </aside>
       </div>
       {datasetModalOpen && (
         <div className="modal-backdrop">
           <div className="modal-content">
             <div className="panel-row">
-              <h3>{selectedDatasetId ? 'Edit dataset' : 'Create dataset'}</h3>
-              <button onClick={requestCloseDatasetModal}>Close</button>
+              <h3>{selectedDatasetId ? t('editor.editDataset') : t('editor.createDataset')}</h3>
+              <Button variant="ghost" size="small" onClick={requestCloseDatasetModal}>
+                {t('common.close')}
+              </Button>
             </div>
-            <label>
-              Dataset name
-              <input value={datasetDraftName} onChange={(e) => setDatasetDraftName(e.target.value)} />
-            </label>
+            <Field label={t('editor.datasetName')}>
+              <input className="ui-input" value={datasetDraftName} onChange={(e) => setDatasetDraftName(e.target.value)} />
+            </Field>
             <div className="panel-row mt">
-              <strong>Columns</strong>
+              <strong>{t('editor.columns')}</strong>
               <div className="panel-row">
-                <button onClick={addColumn}>+ Column</button>
-                <button onClick={addRow}>+ Row</button>
+                <Button size="small" onClick={addColumn}>
+                  {t('editor.addColumn')}
+                </Button>
+                <Button size="small" onClick={addRow}>
+                  {t('editor.addRow')}
+                </Button>
               </div>
             </div>
             <div className="table-modal-wrap">
@@ -751,17 +835,18 @@ export function EditorPage() {
                       <th key={`head-${idx}`}>
                         <div className="dataset-head-cell">
                           <input
+                            className="ui-input"
                             placeholder={`Column ${idx + 1}`}
                             value={column.label}
                             onChange={(e) => updateColumn(idx, { label: e.target.value })}
                           />
-                          <button className="soft-danger" onClick={() => removeColumn(idx)}>
-                            Remove column
-                          </button>
+                          <Button variant="ghost" size="small" className="soft-danger" onClick={() => removeColumn(idx)}>
+                            {t('editor.removeColumn')}
+                          </Button>
                         </div>
                       </th>
                     ))}
-                    <th>Row actions</th>
+                    <th>{t('editor.rowActions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -771,15 +856,16 @@ export function EditorPage() {
                       {datasetDraftColumns.map((column) => (
                         <td key={`cell-${rowIndex}-${column.key}`}>
                           <input
+                            className="ui-input"
                             value={String(row[column.key] ?? '')}
                             onChange={(e) => updateCell(rowIndex, column.key, e.target.value)}
                           />
                         </td>
                       ))}
                       <td>
-                        <button className="soft-danger" onClick={() => removeRow(rowIndex)}>
-                          Remove row
-                        </button>
+                        <Button variant="ghost" size="small" className="soft-danger" onClick={() => removeRow(rowIndex)}>
+                          {t('editor.removeRow')}
+                        </Button>
                       </td>
                     </tr>
                   ))}
@@ -787,10 +873,14 @@ export function EditorPage() {
               </table>
             </div>
             <div className="panel-row mt">
-              <button onClick={() => void saveDataset()}>{selectedDatasetId ? 'Save dataset' : 'Create dataset'}</button>
-              <button onClick={requestCloseDatasetModal}>Cancel</button>
+              <Button variant="primary" onClick={() => void saveDataset()}>
+                {selectedDatasetId ? t('editor.saveDataset') : t('editor.createDataset')}
+              </Button>
+              <Button variant="secondary" onClick={requestCloseDatasetModal}>
+                {t('common.cancel')}
+              </Button>
             </div>
-            {datasetError && <p className="error">{datasetError}</p>}
+            {datasetError && <p className="ui-error">{datasetError}</p>}
           </div>
         </div>
       )}

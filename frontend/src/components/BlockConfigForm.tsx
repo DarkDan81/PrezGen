@@ -1,5 +1,6 @@
 ﻿import { useState } from 'react';
 import type { Dataset, Block } from '../api/types';
+import { useI18n } from '../shared/i18n/I18nProvider';
 
 const LIMITS = {
   chartLimit: 12,
@@ -67,6 +68,7 @@ export function BlockConfigForm({
   onConfigChange,
   onImageUpload,
 }: Props) {
+  const { t } = useI18n();
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
 
@@ -90,7 +92,7 @@ export function BlockConfigForm({
       const uploadedUrl = await onImageUpload(file);
       onConfigChange({ ...config, url: uploadedUrl });
     } catch (e) {
-      setUploadError((e as Error).message || 'Image upload failed');
+      setUploadError((e as Error).message || t('error.imageUploadFailed'));
     } finally {
       setUploading(false);
     }
@@ -100,7 +102,7 @@ export function BlockConfigForm({
     <label>
       {label}
       <select value={asString(config[key])} onChange={(e) => update(config, key, e.target.value, onConfigChange)}>
-        <option value="">Select field</option>
+        <option value="">{t('block.selectField')}</option>
         {fieldOptions.map((field) => (
           <option key={field.key} value={field.key}>
             {field.label}
@@ -113,7 +115,7 @@ export function BlockConfigForm({
   return (
     <div className="properties">
       <label>
-        Block type
+        {t('block.type')}
         <select
           value={type}
           onChange={(e) => {
@@ -122,17 +124,17 @@ export function BlockConfigForm({
             onConfigChange(getDefaultConfig(nextType));
           }}
         >
-          <option value="text">text</option>
-          <option value="image">image</option>
-          <option value="chart">chart</option>
-          <option value="table">table</option>
-          <option value="kpi">kpi</option>
+          <option value="text">{t('block.text')}</option>
+          <option value="image">{t('block.image')}</option>
+          <option value="chart">{t('block.chart')}</option>
+          <option value="table">{t('block.table')}</option>
+          <option value="kpi">{t('block.kpi')}</option>
         </select>
       </label>
 
       {type === 'text' && (
         <label>
-          HTML
+          {t('block.html')}
           <textarea
             rows={12}
             value={asString(config.html)}
@@ -145,7 +147,7 @@ export function BlockConfigForm({
       {type === 'image' && (
         <>
           <label>
-            Image URL
+            {t('block.imageUrl')}
             <input value={asString(config.url)} onChange={(e) => update(config, 'url', e.target.value, onConfigChange)} />
           </label>
           <label
@@ -157,7 +159,7 @@ export function BlockConfigForm({
             }}
             style={{ border: '1px dashed var(--border)', padding: 10, borderRadius: 8 }}
           >
-            Upload image file (drag & drop)
+            {t('block.uploadImage')}
             <input
               type="file"
               accept="image/*"
@@ -168,7 +170,7 @@ export function BlockConfigForm({
               }}
             />
           </label>
-          {uploading && <p>Uploading...</p>}
+          {uploading && <p>{t('block.uploadingImage')}</p>}
           {uploadError && <p className="error">{uploadError}</p>}
         </>
       )}
@@ -176,9 +178,9 @@ export function BlockConfigForm({
       {type === 'chart' && (
         <>
           <label>
-            Dataset
+            {t('block.dataset')}
             <select value={datasetId} onChange={(e) => update(config, 'datasetId', e.target.value, onConfigChange)}>
-              <option value="">Select dataset</option>
+              <option value="">{t('block.selectDataset')}</option>
               {datasets.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.name}
@@ -187,20 +189,20 @@ export function BlockConfigForm({
             </select>
           </label>
           <label>
-            Kind
+            {t('block.kind')}
             <select value={asString(config.kind)} onChange={(e) => update(config, 'kind', e.target.value, onConfigChange)}>
-              <option value="line">line</option>
-              <option value="bar">bar</option>
-              <option value="horizontalBar">horizontalBar</option>
+              <option value="line">{t('block.line')}</option>
+              <option value="bar">{t('block.bar')}</option>
+              <option value="horizontalBar">{t('block.horizontalBar')}</option>
             </select>
           </label>
-          {renderFieldSelect('X field', 'xField')}
-          {renderFieldSelect('Value field', 'valueField')}
-          {renderFieldSelect('Series field (optional)', 'seriesField')}
-          {renderFieldSelect('Row filter field (optional)', 'filterField')}
+          {renderFieldSelect(t('block.xField'), 'xField')}
+          {renderFieldSelect(t('block.valueField'), 'valueField')}
+          {renderFieldSelect(t('block.seriesField'), 'seriesField')}
+          {renderFieldSelect(t('block.rowFilterField'), 'filterField')}
           {filterField && (
             <label>
-              Row filter values
+              {t('block.rowFilterValues')}
               <select
                 multiple
                 value={filterValues}
@@ -222,7 +224,7 @@ export function BlockConfigForm({
             </label>
           )}
           <label>
-            Limit
+            {t('block.limit')}
             <input
               type="number"
               value={asNumber(config.limit)}
@@ -237,7 +239,7 @@ export function BlockConfigForm({
               checked={asBoolean(config.showLabels, true)}
               onChange={(e) => update(config, 'showLabels', e.target.checked, onConfigChange)}
             />
-            Show labels
+            {t('block.showLabels')}
           </label>
         </>
       )}
@@ -245,9 +247,9 @@ export function BlockConfigForm({
       {type === 'table' && (
         <>
           <label>
-            Dataset
+            {t('block.dataset')}
             <select value={datasetId} onChange={(e) => update(config, 'datasetId', e.target.value, onConfigChange)}>
-              <option value="">Select dataset</option>
+              <option value="">{t('block.selectDataset')}</option>
               {datasets.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.name}
@@ -256,10 +258,10 @@ export function BlockConfigForm({
             </select>
           </label>
           {selectedTableColumns.length > 0 && (
-            <p className="hint">Column filtering is disabled for stable render. All dataset columns are shown.</p>
+            <p className="hint">{t('block.columnFilteringDisabled')}</p>
           )}
           <label>
-            Limit
+            {t('block.limit')}
             <input
               type="number"
               value={asNumber(config.limit)}
@@ -274,7 +276,7 @@ export function BlockConfigForm({
               checked={asBoolean(config.transpose, false)}
               onChange={(e) => update(config, 'transpose', e.target.checked, onConfigChange)}
             />
-            Transpose table
+            {t('block.transposeTable')}
           </label>
         </>
       )}
@@ -282,16 +284,16 @@ export function BlockConfigForm({
       {type === 'kpi' && (
         <>
           <label>
-            Mode
+            {t('block.mode')}
             <select value={asString(config.mode) || 'manual'} onChange={(e) => update(config, 'mode', e.target.value, onConfigChange)}>
-              <option value="manual">manual</option>
-              <option value="dataset">dataset</option>
+              <option value="manual">{t('block.manual')}</option>
+              <option value="dataset">{t('block.datasetMode')}</option>
             </select>
           </label>
           {asString(config.mode) !== 'dataset' && (
             <>
               <label>
-                KPI label
+                {t('block.kpiLabel')}
                 <input
                   value={asString((Array.isArray(config.items) ? (config.items[0] as Record<string, unknown> | undefined)?.label : '') || '')}
                   onChange={(e) =>
@@ -312,7 +314,7 @@ export function BlockConfigForm({
                 />
               </label>
               <label>
-                KPI value
+                {t('block.kpiValue')}
                 <input
                   value={asString((Array.isArray(config.items) ? (config.items[0] as Record<string, unknown> | undefined)?.value : '') || '')}
                   onChange={(e) =>
@@ -337,9 +339,9 @@ export function BlockConfigForm({
           {asString(config.mode) === 'dataset' && (
             <>
               <label>
-                Dataset
+                {t('block.dataset')}
                 <select value={datasetId} onChange={(e) => update(config, 'datasetId', e.target.value, onConfigChange)}>
-                  <option value="">Select dataset</option>
+                  <option value="">{t('block.selectDataset')}</option>
                   {datasets.map((d) => (
                     <option key={d.id} value={d.id}>
                       {d.name}
@@ -347,14 +349,14 @@ export function BlockConfigForm({
                   ))}
                 </select>
               </label>
-              {renderFieldSelect('Label field', 'labelField')}
-              {renderFieldSelect('Value field', 'valueField')}
-              {renderFieldSelect('Unit field (optional)', 'unitField')}
-              {renderFieldSelect('Growth field (optional)', 'growthField')}
-              {renderFieldSelect('Row filter field (optional)', 'filterField')}
+              {renderFieldSelect(t('block.labelField'), 'labelField')}
+              {renderFieldSelect(t('block.valueField'), 'valueField')}
+              {renderFieldSelect(t('block.unitField'), 'unitField')}
+              {renderFieldSelect(t('block.growthField'), 'growthField')}
+              {renderFieldSelect(t('block.rowFilterField'), 'filterField')}
               {filterField && (
                 <label>
-                  Row filter values
+                  {t('block.rowFilterValues')}
                   <select
                     multiple
                     value={filterValues}
@@ -376,7 +378,7 @@ export function BlockConfigForm({
                 </label>
               )}
               <label>
-                Limit
+                {t('block.limit')}
                 <input
                   type="number"
                   value={asNumber(config.limit)}

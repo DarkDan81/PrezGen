@@ -1,7 +1,13 @@
 # Stage 4 - UX Polish and UI Consistency
 
 Date: 2026-02-27
-Status: planned (no implementation in this stage doc yet)
+Status: in progress
+
+Related:
+
+- `decisions.md` - approved implementation decisions for Stage 4.
+- `ui-inventory.md` - baseline inconsistencies and normalization targets.
+- `implementation-status.md` - implemented slices and verification status.
 
 ## Goal
 
@@ -78,3 +84,13 @@ Improve constructor usability and visual consistency without changing core backe
 1. Functional MVP flows are already implemented and verified.
 2. Stage 4 is UX-focused; avoid backend/render churn unless bug is discovered.
 3. Prioritize consistency and clarity over adding new features.
+
+## Agreed Start Point
+
+1. Start from UI foundation and consistency pass:
+   - introduce/review shared primitives (`Button`, `Field`, `SectionCard`);
+   - normalize main action controls and remove mixed link/button patterns;
+   - apply unified style to editor and non-editor screens.
+2. Keep logic/hooks and API flows unchanged during first pass.
+3. Add global save status indicator in header area.
+4. After UI consistency and behavior checks are stable, proceed to i18n extraction and RU-default switch as final Stage 4 step.

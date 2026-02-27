@@ -22,3 +22,6 @@ Structure:
 - `stage-3-frontend-mvp/open-questions.md` - implementation decisions to approve before coding.
 - `stage-3-frontend-mvp/implementation-status.md` - implemented frontend slices and current gaps.
 - `stage-4-ux-polish/README.md` - next-stage UX polish roadmap and acceptance criteria.
+- `stage-4-ux-polish/decisions.md` - approved UX polish decisions and stage constraints.
+- `stage-4-ux-polish/ui-inventory.md` - frontend UI inconsistency inventory for polish pass.
+- `stage-4-ux-polish/implementation-status.md` - implemented UX polish slices and current state.
