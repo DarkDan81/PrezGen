@@ -126,6 +126,8 @@ body.viewer-mode {
     font-size: 28px;
     line-height: 1.5;
     color: var(--cp-text-main);
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .text-section {
@@ -392,7 +394,101 @@ body.viewer-mode {
     width: 100%;
 }
 
+.slide-body.layout-grid .image-block {
+    justify-content: stretch;
+    align-items: stretch;
+}
+
+.slide-body.layout-grid .image-block .image-container {
+    flex: 1;
+    min-height: 0;
+}
+
 .slot-empty {
     border: 1px dashed rgba(0, 255, 255, 0.25);
     border-radius: 10px;
+}
+
+/* KPI grid sizing for dense presets (2x2 and similar) */
+.kpi-grid-horizontal {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 18px;
+    align-content: start;
+    height: 100%;
+}
+
+.slide-body.layout-grid .kpi-grid-horizontal {
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 14px;
+}
+
+.kpi-grid-horizontal.kpi-dense-4,
+.kpi-grid-horizontal.kpi-dense-6 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.kpi-grid-horizontal.kpi-dense-6 .kpi-card {
+    padding: 10px 12px;
+}
+
+.kpi-grid-horizontal.kpi-dense-6 .kpi-card .label {
+    font-size: 14px;
+}
+
+.kpi-grid-horizontal.kpi-dense-6 .kpi-card .value {
+    font-size: 34px;
+}
+
+.kpi-grid-horizontal.kpi-dense-6 .kpi-card .growth {
+    font-size: 14px;
+}
+
+/* Image cluster slot defaults: fill cell and anchor by slot role */
+.slide-body.layout-grid .layout-slot[class*="slot-slot_img"] .image-container img {
+    object-fit: cover !important;
+}
+
+.layout-preset-layout-hero-left-stack-right-3 .slot-slot_img_big .image-container img {
+    object-position: right top !important;
+}
+
+.layout-preset-layout-hero-left-stack-right-3 .slot-slot_img_sm1 .image-container img {
+    object-position: left bottom !important;
+}
+
+.layout-preset-layout-hero-left-stack-right-3 .slot-slot_img_sm2 .image-container img {
+    object-position: right bottom !important;
+}
+
+.layout-preset-layout-stack-left-3-hero-right .slot-slot_img_big .image-container img {
+    object-position: left top !important;
+}
+
+.layout-preset-layout-stack-left-3-hero-right .slot-slot_img_sm1 .image-container img {
+    object-position: left bottom !important;
+}
+
+.layout-preset-layout-stack-left-3-hero-right .slot-slot_img_sm2 .image-container img {
+    object-position: right bottom !important;
+}
+
+.layout-preset-layout-hero-left-stack-right-4 .slot-slot_img_1 .image-container img,
+.layout-preset-layout-image-full-caption .slot-slot_img_1 .image-container img {
+    object-position: left top !important;
+}
+
+.layout-preset-layout-hero-left-stack-right-4 .slot-slot_img_2 .image-container img,
+.layout-preset-layout-image-full-caption .slot-slot_img_2 .image-container img {
+    object-position: right top !important;
+}
+
+.layout-preset-layout-hero-left-stack-right-4 .slot-slot_img_3 .image-container img,
+.layout-preset-layout-image-full-caption .slot-slot_img_3 .image-container img {
+    object-position: left bottom !important;
+}
+
+.layout-preset-layout-hero-left-stack-right-4 .slot-slot_img_4 .image-container img,
+.layout-preset-layout-image-full-caption .slot-slot_img_4 .image-container img {
+    object-position: right bottom !important;
 }

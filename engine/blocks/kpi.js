@@ -23,7 +23,8 @@ module.exports = (block) => {
     const style = `style="flex: ${block.flexWidth || 1}"`;
     const cards = Array.isArray(block.kpi_cards) ? block.kpi_cards : [];
     const isCompact = block.kpi_compact === true || cards.length > 3;
-    const gridClass = cards.length > 2 ? 'kpi-grid-horizontal compact' : 'kpi-grid-horizontal';
+    const densityClass = cards.length >= 6 ? 'kpi-dense-6' : cards.length >= 4 ? 'kpi-dense-4' : '';
+    const gridClass = cards.length > 2 ? `kpi-grid-horizontal compact ${densityClass}`.trim() : `kpi-grid-horizontal ${densityClass}`.trim();
 
     const cardsHtml = cards.map((kpi) => {
         const label = escapeHtml(kpi?.label || '');
@@ -48,7 +49,7 @@ module.exports = (block) => {
 
     return `
         <div class="block-wrapper kpi-wrapper ${isCompact ? 'kpi-compact' : ''}" ${style}>
-            <div class="${gridClass}">${cardsHtml}</div>
+            <div class="${gridClass}" data-kpi-count="${cards.length}">${cardsHtml}</div>
         </div>
     `;
 };

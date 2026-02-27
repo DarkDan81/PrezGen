@@ -76,11 +76,14 @@ function seedLayoutPresets(db) {
             schema: {
                 grid: {
                     columns: '1fr',
-                    rows: 'auto',
-                    areas: ['main'],
+                    rows: '2.2fr 1fr',
+                    areas: ['main', 'secondary'],
                     gap: 20,
                 },
-                slots: [{ id: 'slot_main', area: 'main', allowedBlockTypes: anyBlock }],
+                slots: [
+                    { id: 'slot_main', area: 'main', allowedBlockTypes: anyBlock },
+                    { id: 'slot_secondary', area: 'secondary', allowedBlockTypes: anyBlock },
+                ],
             },
         },
         {

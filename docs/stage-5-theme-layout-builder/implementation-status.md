@@ -84,6 +84,22 @@ Branch: `feat/frontend-mvp-editor`
 16. Stability fixes:
     - `Themes` page token normalization prevents blank screen when theme has partial token payload.
     - editor UI mode (`light|dark`) persists via localStorage and restores on page reload.
+17. Render and demo polish (post-MVP additions implemented):
+    - image blocks now support fit/position payload (`fitMode`, `focalPoint`) in render model.
+    - layout slots now expose deterministic CSS classes (`layout-preset-*`, `slot-*`) for slot-specific visual tuning.
+    - image cluster presets apply slot-specific anchor defaults for better crop/alignment with mixed aspect ratios.
+    - KPI blocks now use adaptive internal grid sizing in dense layouts (`2x2` and similar), reducing card overflow.
+    - `layout-single-column` seed now supports stacked `text + kpi` via two vertical slots.
+    - QA demo seed content expanded with long/medium/short text stress cases and full slot bindings.
+18. Phase 8 implementation progress:
+    - fixed manual KPI render path (`mode=manual`) to avoid dataset-missing fallback.
+    - added long-token wrapping safeguards in theme text blocks (`overflow-wrap/word-break`).
+    - improved grid-image slot fill behavior for cluster layouts (layout-grid image blocks stretch to slot).
+    - editor header now supports collapse/expand with persisted state.
+    - editor workspace now uses independent scrolling zones:
+      - left panel (`Slides` + `Blocks`);
+      - center preview frame;
+      - right properties panel.
 
 ## Verification after changes
 
@@ -95,6 +111,9 @@ Branch: `feat/frontend-mvp-editor`
    - `layout-presets` returns expanded catalog and `nameKey`.
    - creating block on `title` slide returns `400`.
    - binding layout to `title` slide returns `400`.
+4. Render smoke (isolated app instance on port `3101`) passed:
+   - no `Dataset not found: n/a` in QA demo preview for manual KPI slide.
+   - preview contains expected layout/slot/KPI marker classes for new cluster/compact behaviors.
 
 ## Notes
 
@@ -109,10 +128,7 @@ Branch: `feat/frontend-mvp-editor`
 
 ## Planned Additions (Next Pass)
 
-1. Improve image cluster rendering for non-standard aspect ratios:
-   - add fit/anchor behavior so images align to intended edges in cluster slots.
-2. Improve KPI rendering inside dense presets (`2x2` and similar):
-   - internal adaptive KPI grid with compact typography/padding rules.
-3. Fix QA demo seed consistency:
-   - ensure slides labeled as multi-block (for example `text + kpi`) bind all expected blocks;
-   - expand seeded text content to include long/medium/short stress cases for overlap checks.
+1. Add user-facing controls in block editor for `fitMode` / `focalPoint` (currently renderer supports these fields, UI editing is not exposed yet).
+2. Add dedicated visual regression checklist for cluster anchors and dense KPI grids (manual + scripted snapshots).
+3. Add user-facing controls in block editor for `fitMode` / `focalPoint` (renderer supports these fields, UI editing is not exposed yet).
+4. Add dedicated visual regression checklist for collapsed-header workspace and multi-zone scroll behavior.

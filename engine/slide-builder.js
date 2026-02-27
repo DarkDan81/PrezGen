@@ -70,6 +70,13 @@ function normalizeSlotAssignments(assignments) {
         .map((item) => ({ slotId: item.slotId, blockId: item.blockId }));
 }
 
+function sanitizeClassToken(value) {
+    return String(value || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+}
+
 function renderBlocksWithLayout(slide) {
     const preset = resolveLayoutPreset(slide);
     if (!preset) {
@@ -109,15 +116,19 @@ function renderBlocksWithLayout(slide) {
         : '';
     const bodyStyle = `display:grid;grid-template-columns:${escapeAttr(columns)};grid-template-rows:${escapeAttr(rows)};${areasCss}gap:${gap}px;`;
 
+    const layoutClassToken = sanitizeClassToken(slide.layoutPreset?.id || '');
     const slotsHtml = preset.slots.map((slot) => {
         const block = slotToBlock.get(slot.id);
         const blockHtml = block ? renderBlockHtml(block) : '<div class="block-wrapper slot-empty"></div>';
         const areaStyle = slot.area ? `style="grid-area:${escapeAttr(slot.area)};"` : '';
-        return `<div class="layout-slot" ${areaStyle}>${blockHtml}</div>`;
+        const slotClassToken = sanitizeClassToken(slot.id);
+        const slotClass = slotClassToken ? `layout-slot slot-${slotClassToken}` : 'layout-slot';
+        return `<div class="${slotClass}" ${areaStyle}>${blockHtml}</div>`;
     }).join('');
+    const layoutClass = layoutClassToken ? `layout-preset-${layoutClassToken}` : '';
 
     return {
-        bodyClass: 'slide-body layout-grid',
+        bodyClass: `slide-body layout-grid ${layoutClass}`.trim(),
         bodyStyle: `style="${bodyStyle}"`,
         html: slotsHtml,
     };

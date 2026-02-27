@@ -173,9 +173,18 @@ function run() {
     const s10 = createSlideRow(presentationId, 9, 'content', 'Final Notes', 'Long text and table readability');
 
     const s2Text = createBlockRow(presentationId, s2.id, 0, 'text', {
-        html: '<h3>Scope</h3><p>This slide validates typography, spacing, and card rhythm.</p><ul><li>Theme colors</li><li>Text density</li><li>Card border/radius</li></ul>',
+        html: [
+            '<h3>Scope</h3>',
+            '<p>This slide validates typography, spacing, and card rhythm across medium-length paragraphs.</p>',
+            '<p>We intentionally mix short and long sentences to confirm stable wrapping and line-height behavior in constrained containers.</p>',
+            '<ul>',
+            '<li>Theme colors and contrast</li>',
+            '<li>Text density and paragraph rhythm</li>',
+            '<li>Card border/radius consistency</li>',
+            '</ul>',
+        ].join(''),
     });
-    createBlockRow(presentationId, s2.id, 1, 'kpi', {
+    const s2Kpi = createBlockRow(presentationId, s2.id, 1, 'kpi', {
         mode: 'manual',
         items: [
             { label: 'Revenue', value: '450,000', unit: '$', growth: '+12%' },
@@ -183,10 +192,17 @@ function run() {
             { label: 'NPS', value: '68', unit: '', growth: '+4' },
         ],
     });
-    bindLayout(s2.id, 'layout-single-column', [{ slotId: 'slot_main', blockId: s2Text.id }]);
+    bindLayout(s2.id, 'layout-single-column', [
+        { slotId: 'slot_main', blockId: s2Text.id },
+        { slotId: 'slot_secondary', blockId: s2Kpi.id },
+    ]);
 
     const s3Text = createBlockRow(presentationId, s3.id, 0, 'text', {
-        html: '<h3>Marketing Story</h3><p>Left side is narrative. Right side is hero visual for impact.</p>',
+        html: [
+            '<h3>Marketing Story</h3>',
+            '<p>Left side is narrative. Right side is hero visual for impact.</p>',
+            '<p>Long token stress test: <b>ULTRA_LONG_KEYWORD_FOR_LAYOUT_OVERFLOW_VALIDATION_2026_Q1_MARKETING_CHANNEL_BREAKDOWN</b></p>',
+        ].join(''),
     });
     const s3Image = createBlockRow(presentationId, s3.id, 1, 'image', { url: images.hero });
     bindLayout(s3.id, 'layout-two-columns', [
@@ -194,7 +210,13 @@ function run() {
         { slotId: 'slot_right', blockId: s3Image.id },
     ]);
 
-    const s4Text = createBlockRow(presentationId, s4.id, 0, 'text', { html: '<h3>Highlights</h3><p>Multi-block density test.</p>' });
+    const s4Text = createBlockRow(presentationId, s4.id, 0, 'text', {
+        html: [
+            '<h3>Highlights</h3>',
+            '<p>Multi-block density test with mixed content ratios.</p>',
+            '<p>Checklist: labels legibility, chart padding, table column clipping, KPI compact mode.</p>',
+        ].join(''),
+    });
     const s4Chart = createBlockRow(presentationId, s4.id, 1, 'chart', {
         datasetId: salesDataset.id,
         kind: 'bar',
@@ -225,7 +247,11 @@ function run() {
     ]);
 
     const s5Content = createBlockRow(presentationId, s5.id, 0, 'text', {
-        html: '<h3>Content First</h3><p>Large text area plus image cluster on the right.</p>',
+        html: [
+            '<h3>Content First</h3>',
+            '<p>Large text area plus image cluster on the right.</p>',
+            '<p>This block is intentionally verbose to verify that text does not overlap with cluster images and keeps margin discipline.</p>',
+        ].join(''),
     });
     const s5Big = createBlockRow(presentationId, s5.id, 1, 'image', { url: images.hero });
     const s5Sm1 = createBlockRow(presentationId, s5.id, 2, 'image', { url: images.side1 });
@@ -241,7 +267,11 @@ function run() {
     const s6Sm1 = createBlockRow(presentationId, s6.id, 1, 'image', { url: images.alt2 });
     const s6Sm2 = createBlockRow(presentationId, s6.id, 2, 'image', { url: images.alt3 });
     const s6Content = createBlockRow(presentationId, s6.id, 3, 'text', {
-        html: '<h3>Mirrored Variant</h3><p>Image-heavy left side, descriptive block on right.</p>',
+        html: [
+            '<h3>Mirrored Variant</h3>',
+            '<p>Image-heavy left side, descriptive block on right.</p>',
+            '<p>Expected behavior: right text remains readable even if left assets have narrow portrait aspect ratios.</p>',
+        ].join(''),
     });
     bindLayout(s6.id, 'layout-stack-left-3-hero-right', [
         { slotId: 'slot_img_big', blockId: s6Big.id },
@@ -251,7 +281,11 @@ function run() {
     ]);
 
     const s7Content = createBlockRow(presentationId, s7.id, 0, 'text', {
-        html: '<h3>2x2 Media Cluster</h3><p>Useful for product gallery or campaign snapshots.</p>',
+        html: [
+            '<h3>2x2 Media Cluster</h3>',
+            '<p>Useful for product gallery or campaign snapshots.</p>',
+            '<p>Use this slide to validate slot cropping and anchor defaults for each image cell.</p>',
+        ].join(''),
     });
     const s7I1 = createBlockRow(presentationId, s7.id, 1, 'image', { url: images.grid1 });
     const s7I2 = createBlockRow(presentationId, s7.id, 2, 'image', { url: images.grid2 });
@@ -270,7 +304,11 @@ function run() {
     const s8I3 = createBlockRow(presentationId, s8.id, 2, 'image', { url: images.side3 });
     const s8I4 = createBlockRow(presentationId, s8.id, 3, 'image', { url: images.alt4 });
     const s8Content = createBlockRow(presentationId, s8.id, 4, 'text', {
-        html: '<h3>Mirrored 2x2</h3><p>Same geometry family with opposite direction.</p>',
+        html: [
+            '<h3>Mirrored 2x2</h3>',
+            '<p>Same geometry family with opposite direction.</p>',
+            '<p>Check visual balance between image mass and content block in mirrored layout.</p>',
+        ].join(''),
     });
     bindLayout(s8.id, 'layout-image-full-caption', [
         { slotId: 'slot_img_1', blockId: s8I1.id },
@@ -281,7 +319,17 @@ function run() {
     ]);
 
     const s10Text = createBlockRow(presentationId, s10.id, 0, 'text', {
-        html: '<h3>Readability Check</h3><p>Use this slide to validate long paragraph wrapping, bullet spacing, and general rhythm in both light and dark UI modes.</p><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>',
+        html: [
+            '<h3>Readability Check</h3>',
+            '<p>Use this slide to validate long paragraph wrapping, bullet spacing, and general rhythm in both light and dark UI modes.</p>',
+            '<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>',
+            '<p>Very long URL-like token: https://example.com/very/long/path/for/layout/regression/testing/that/should/not/break/the/grid/or-overlap-elements</p>',
+            '<ul>',
+            '<li>Short point</li>',
+            '<li>Medium point with additional wording for realistic content cadence</li>',
+            '<li>Long point that intentionally stretches the available line width to test wrapping and prevent clipping in narrow columns</li>',
+            '</ul>',
+        ].join(''),
     });
     const s10Table = createBlockRow(presentationId, s10.id, 1, 'table', {
         datasetId: salesDataset.id,

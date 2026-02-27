@@ -19,9 +19,11 @@ module.exports = (block) => {
     }
 
     if (block.image) {
+        const fit = escapeAttr(block.imageFit || 'contain');
+        const position = escapeAttr(block.imagePosition || 'center center');
         return `
             <div class="block-wrapper image-block" ${style}>
-                <div class="image-container"><img src="${escapeAttr(block.image)}" alt=""></div>
+                <div class="image-container"><img src="${escapeAttr(block.image)}" alt="" style="object-fit:${fit};object-position:${position};"></div>
             </div>`;
     }
 

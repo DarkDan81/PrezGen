@@ -111,3 +111,29 @@ Exit criteria:
 4. Manual QA expansion:
    - add dedicated checks for image anchoring behavior in left/right mirrored image presets;
    - add KPI compact-grid checks in dense layout slots.
+
+## Phase 8 - Editor Shell Usability Refactor + Regression Fixes (Approved)
+
+1. Fix content/render regressions discovered in QA demo:
+   - manual KPI must not fallback to dataset-missing message;
+   - text overflow in `two-columns` should wrap/clip safely inside slot;
+   - cluster image placement must be deterministic for mixed aspect-ratio assets.
+2. Introduce collapsible top editor header:
+   - collapse/expand toggle button;
+   - preserve current controls state while collapsed.
+3. Make all three work zones independently scrollable:
+   - left panel (`Slides` + `Blocks`) independent scroll;
+   - center preview independent scroll;
+   - right `Properties` panel independent scroll.
+4. Layout height behavior:
+   - with collapsed header, preview should maximize visible viewport height;
+   - avoid global page scroll for routine editing interactions.
+5. QA checklist update:
+   - add explicit test cases for collapsed-header workflow;
+   - add scroll-behavior checks for left/center/right zones.
+
+Exit criteria:
+
+1. Editor can be used without continuous page-level scrolling.
+2. Header collapse materially increases usable preview area.
+3. QA demo deck renders without current overflow/fallback defects.

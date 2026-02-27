@@ -43,6 +43,9 @@ function renderBlock(block, datasetsById) {
         if (block.type === 'image') {
             return withLayout(block, imageAdapter(block));
         }
+        if (block.type === 'kpi' && block.config?.mode === 'manual') {
+            return withLayout(block, kpiAdapter(block, { rows: [] }));
+        }
 
         const dataset = datasetId ? datasetsById.get(datasetId) : null;
         if (!dataset) {

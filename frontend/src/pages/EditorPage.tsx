@@ -229,6 +229,10 @@ export function EditorPage() {
     if (typeof window === 'undefined') return 'light';
     return window.localStorage.getItem('prezgen-ui-mode') === 'dark' ? 'dark' : 'light';
   });
+  const [headerCollapsed, setHeaderCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem('prezgen-editor-header-collapsed') === '1';
+  });
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   const [selectedDatasetId, setSelectedDatasetId] = useState('');
@@ -292,6 +296,10 @@ export function EditorPage() {
     document.documentElement.dataset.mode = themeMode;
     window.localStorage.setItem('prezgen-ui-mode', themeMode);
   }, [themeMode]);
+
+  useEffect(() => {
+    window.localStorage.setItem('prezgen-editor-header-collapsed', headerCollapsed ? '1' : '0');
+  }, [headerCollapsed]);
 
   useEffect(() => {
     const datasets = datasetsQuery.data || [];
@@ -694,44 +702,59 @@ export function EditorPage() {
   };
 
   return (
-    <div className="editor-page">
-      <header className="editor-header">
-        <Button variant="ghost" onClick={() => navigate('/')}>
-          {t('editor.backToList')}
-        </Button>
-        <strong>{presentationQuery.data?.name || t('editor.titleFallback')}</strong>
-        <Field label={t('lang.label')} className="lang-field compact-lang-field">
-          <select className="ui-select compact-select" value={locale} onChange={(e) => setLocale(e.target.value as 'ru' | 'en')}>
-            <option value="ru">{t('lang.ru')}</option>
-            <option value="en">{t('lang.en')}</option>
-          </select>
-        </Field>
-        <select
-          className="ui-select compact-select"
-          value={presentationQuery.data?.themeId || 'theme-eurofoods'}
-          onChange={(e) => patchPresentationMutation.mutate(e.target.value)}
-        >
-          {(themesQuery.data || []).map((theme) => (
-            <option key={theme.id} value={theme.id}>
-              {theme.name}
-            </option>
-          ))}
-        </select>
-        <Button variant="secondary" onClick={() => setThemeMode(themeMode === 'light' ? 'dark' : 'light')}>
-          {themeMode === 'light' ? t('editor.darkUi') : t('editor.lightUi')}
-        </Button>
-        <Button variant="secondary" onClick={() => buildPreviewMutation.mutate()}>
-          {t('editor.refreshPreview')}
-        </Button>
-        <Button variant="primary" onClick={() => startPdfMutation.mutate()}>
-          {t('editor.exportPdf')}
-        </Button>
-        <span className={`save-state ${saveStatusClass}`} aria-live="polite">
-          {saveStatusText}
-        </span>
-        <span className="pdf-status" aria-live="polite">
-          {renderJobQuery.data ? t('editor.pdfStatus', { status: renderJobQuery.data.status }) : ''}
-        </span>
+    <div className={`editor-page ${headerCollapsed ? 'header-collapsed' : ''}`}>
+      <header className={`editor-header ${headerCollapsed ? 'collapsed' : ''}`}>
+        <div className="editor-header-main">
+          <Button
+            variant="ghost"
+            size="small"
+            onClick={() => setHeaderCollapsed((prev) => !prev)}
+            title={headerCollapsed ? t('editor.expandHeader') : t('editor.collapseHeader')}
+            aria-label={headerCollapsed ? t('editor.expandHeader') : t('editor.collapseHeader')}
+          >
+            {headerCollapsed ? '▼' : '▲'}
+          </Button>
+          <Button variant="ghost" onClick={() => navigate('/')}>
+            {t('editor.backToList')}
+          </Button>
+          <strong>{presentationQuery.data?.name || t('editor.titleFallback')}</strong>
+        </div>
+        {!headerCollapsed && (
+          <div className="editor-header-controls">
+            <Field label={t('lang.label')} className="lang-field compact-lang-field">
+              <select className="ui-select compact-select" value={locale} onChange={(e) => setLocale(e.target.value as 'ru' | 'en')}>
+                <option value="ru">{t('lang.ru')}</option>
+                <option value="en">{t('lang.en')}</option>
+              </select>
+            </Field>
+            <select
+              className="ui-select compact-select"
+              value={presentationQuery.data?.themeId || 'theme-eurofoods'}
+              onChange={(e) => patchPresentationMutation.mutate(e.target.value)}
+            >
+              {(themesQuery.data || []).map((theme) => (
+                <option key={theme.id} value={theme.id}>
+                  {theme.name}
+                </option>
+              ))}
+            </select>
+            <Button variant="secondary" onClick={() => setThemeMode(themeMode === 'light' ? 'dark' : 'light')}>
+              {themeMode === 'light' ? t('editor.darkUi') : t('editor.lightUi')}
+            </Button>
+            <Button variant="secondary" onClick={() => buildPreviewMutation.mutate()}>
+              {t('editor.refreshPreview')}
+            </Button>
+            <Button variant="primary" onClick={() => startPdfMutation.mutate()}>
+              {t('editor.exportPdf')}
+            </Button>
+            <span className={`save-state ${saveStatusClass}`} aria-live="polite">
+              {saveStatusText}
+            </span>
+            <span className="pdf-status" aria-live="polite">
+              {renderJobQuery.data ? t('editor.pdfStatus', { status: renderJobQuery.data.status }) : ''}
+            </span>
+          </div>
+        )}
       </header>
 
       <div className="editor-grid">
