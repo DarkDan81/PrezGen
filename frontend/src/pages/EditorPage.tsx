@@ -2,7 +2,7 @@
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { client } from '../api/client';
 import type { Block, Dataset, Slide } from '../api/types';
@@ -95,6 +95,40 @@ function getNextColumnKey(columns: Array<{ key: string }>) {
   return `col_${index}`;
 }
 
+function getCreateBlockConfig(type: Block['type'], datasets: Dataset[]) {
+  const base = getDefaultConfig(type);
+  const primaryDataset = datasets[0];
+
+  if (type === 'table') {
+    if (!primaryDataset) {
+      throw new Error('Create or upload a dataset before adding a table block');
+    }
+    return {
+      ...base,
+      datasetId: primaryDataset.id,
+    };
+  }
+
+  if (type === 'chart') {
+    if (!primaryDataset) {
+      throw new Error('Create or upload a dataset before adding a chart block');
+    }
+    const keys = (primaryDataset.columns || []).map((c) => c.key).filter(Boolean);
+    if (keys.length < 2) {
+      throw new Error('Chart requires dataset with at least 2 columns');
+    }
+    return {
+      ...base,
+      datasetId: primaryDataset.id,
+      xField: keys[0],
+      valueField: keys[1],
+      seriesField: '',
+    };
+  }
+
+  return base;
+}
+
 export function EditorPage() {
   const { id: presentationId = '' } = useParams();
   const queryClient = useQueryClient();
@@ -121,6 +155,8 @@ export function EditorPage() {
   const [datasetModalOpen, setDatasetModalOpen] = useState(false);
   const [datasetModalSnapshot, setDatasetModalSnapshot] = useState('');
   const [csvFile, setCsvFile] = useState<File | null>(null);
+  const previewFrameRef = useRef<HTMLIFrameElement | null>(null);
+  const previewScrollTopRef = useRef(0);
 
   const presentationQuery = useQuery({
     queryKey: ['presentation', presentationId],
@@ -243,12 +279,15 @@ export function EditorPage() {
   });
 
   const createBlockMutation = useMutation({
-    mutationFn: (type: Block['type']) => client.createBlock(selectedSlideId, { type, config: getDefaultConfig(type) }),
+    mutationFn: (type: Block['type']) =>
+      client.createBlock(selectedSlideId, { type, config: getCreateBlockConfig(type, datasetsQuery.data || []) }),
     onSuccess: (created) => {
       queryClient.invalidateQueries({ queryKey: ['blocks', selectedSlideId] });
       setSelectedBlockId(created.id);
       buildPreviewMutation.mutate();
+      setBlockError('');
     },
+    onError: (error) => setBlockError((error as Error).message),
   });
 
   const reorderSlidesMutation = useMutation({
@@ -261,6 +300,14 @@ export function EditorPage() {
   });
 
   const buildPreviewMutation = useMutation({
+    onMutate: () => {
+      try {
+        const y = previewFrameRef.current?.contentWindow?.scrollY ?? 0;
+        previewScrollTopRef.current = Number.isFinite(y) ? y : 0;
+      } catch (_e) {
+        previewScrollTopRef.current = 0;
+      }
+    },
     mutationFn: () => client.buildPreview(presentationId),
     onSuccess: (data) => {
       setPreviewUrl(data.previewUrl);
@@ -478,10 +525,7 @@ export function EditorPage() {
           {themeMode === 'light' ? 'Dark UI' : 'Light UI'}
         </button>
         <button
-          onClick={() => {
-            setPreviewNonce((v) => v + 1);
-            buildPreviewMutation.mutate();
-          }}
+          onClick={() => buildPreviewMutation.mutate()}
         >
           Refresh Preview
         </button>
@@ -536,7 +580,14 @@ export function EditorPage() {
                   <option value="table">table</option>
                   <option value="kpi">kpi</option>
                 </select>
-                <button onClick={() => createBlockMutation.mutate(newBlockType)}>Add block</button>
+                <button
+                  onClick={() => {
+                    setBlockError('');
+                    createBlockMutation.mutate(newBlockType);
+                  }}
+                >
+                  Add block
+                </button>
               </div>
               <p className="hint">Select type and click Add block</p>
               <DndContext
@@ -569,7 +620,22 @@ export function EditorPage() {
 
         <main className="panel center">
           <h3>Preview</h3>
-          <iframe title="preview" src={previewSrc} className="preview-frame" />
+          <iframe
+            ref={previewFrameRef}
+            title="preview"
+            src={previewSrc}
+            className="preview-frame"
+            onLoad={() => {
+              try {
+                const frameWindow = previewFrameRef.current?.contentWindow;
+                if (!frameWindow) return;
+                const top = previewScrollTopRef.current || 0;
+                frameWindow.scrollTo(0, top);
+              } catch (_e) {
+                // no-op: iframe content may be temporarily unavailable
+              }
+            }}
+          />
         </main>
 
         <aside className="panel right">

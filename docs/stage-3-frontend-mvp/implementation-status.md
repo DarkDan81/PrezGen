@@ -46,11 +46,15 @@ Branch: `feat/frontend-mvp-editor`
    - `chart` and dataset-mode `kpi` now support row filtering by selected field + multi-select values from dataset rows.
 12. Field selector UX:
    - chart/table/kpi field selectors render dataset column labels (human-readable names) while storing stable keys.
-   - table block column selection changed to multi-select (instead of comma-separated key input).
 13. Table block tuning:
    - table headers in rendered slide now use dataset column labels (not raw internal keys like `col_1`).
    - table block properties include `Transpose table` checkbox that toggles transposed output in preview/pdf.
    - table block UI no longer exposes `columns-to-render` and `sort` controls; full dataset columns order is used for stable behavior.
+14. Block creation and chart readability fixes:
+   - creating `chart`/`table` blocks now auto-fills required config from first available dataset.
+   - chart axis/data labels were increased for better readability in preview/pdf.
+15. PDF theme consistency fix:
+   - active presentation theme CSS is injected inline into render HTML to keep styling in export path.
 
 ## Verified
 

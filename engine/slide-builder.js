@@ -1,4 +1,6 @@
-﻿const chartRenderer = require('./blocks/chart');
+﻿const fs = require('fs');
+const path = require('path');
+const chartRenderer = require('./blocks/chart');
 const tableRenderer = require('./blocks/table');
 const kpiRenderer = require('./blocks/kpi');
 const textImageRenderer = require('./blocks/text-image');
@@ -34,10 +36,20 @@ function renderBlocks(slide) {
     }).join('');
 }
 
+function loadThemeCss(themeName) {
+    try {
+        const themePath = path.join(__dirname, '..', 'themes', themeName, 'styles.css');
+        return fs.readFileSync(themePath, 'utf8');
+    } catch (_e) {
+        return '';
+    }
+}
+
 function buildSlides(data) {
     const themeName = data.meta.theme;
     const logoPath = data.meta.logoPath || '';
     const charactersMap = data.meta.characters || {};
+    const themeCss = loadThemeCss(themeName);
 
     const slidesHtml = data.slides.map((slide, index) => {
         const isTitle = slide.type === 'title';
@@ -79,6 +91,7 @@ function buildSlides(data) {
     <head>
         <meta charset="UTF-8">
         <link rel="stylesheet" href="/themes/${themeName}/styles.css">
+        ${themeCss ? `<style>${themeCss}</style>` : ''}
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     </head>
@@ -114,14 +127,14 @@ function buildSlides(data) {
                         x: {
                             grid: { display: false },
                             ticks: {
-                                font: { size: denseLabels ? 12 : 14, weight: 'bold' },
+                                font: { size: denseLabels ? 18 : 22, weight: 'bold' },
                                 maxRotation: isHorizontal ? 0 : 35,
                                 minRotation: isHorizontal ? 0 : 35,
                             },
                         },
                         y: {
                             ticks: {
-                                font: { size: denseLabels ? 11 : 13, weight: 'bold' },
+                                font: { size: denseLabels ? 16 : 20, weight: 'bold' },
                             },
                         },
                     },
@@ -129,7 +142,7 @@ function buildSlides(data) {
                         legend: {
                             display: (config.data?.datasets || []).length > 1,
                             position: 'bottom',
-                            labels: { font: { size: 14, weight: 'bold' } },
+                            labels: { font: { size: 18, weight: 'bold' } },
                         },
                         datalabels: {
                             display: config.showLabels !== false,
@@ -140,7 +153,7 @@ function buildSlides(data) {
                             },
                             offset: 8,
                             color: '#333',
-                            font: { size: denseLabels ? 11 : 13, weight: '700' },
+                            font: { size: denseLabels ? 16 : 20, weight: '700' },
                             formatter: (v) => {
                                 if (v === null || v === undefined) return '';
                                 if (config.shorten && Math.abs(v) >= 1000000) {

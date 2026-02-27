@@ -1,0 +1,7 @@
+month,revenue,orders,region,manager,growth
+January,100000,420,North,Alex,12
+February,200000,690,North,Alex,18
+March,150000,560,South,Nina,9
+April,175000,610,South,Nina,14
+May,210000,740,East,Ivan,11
+June,230000,780,East,Ivan,16

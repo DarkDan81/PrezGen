@@ -125,6 +125,8 @@ Implemented in layout stabilization update:
    - table headers resolve from dataset column labels (with safe dedup fallback).
    - table config validation includes `transpose` boolean and optional `parameterLabel`.
    - transpose path now uses resolved display headers consistently (fixes mixed key/label transpose output).
+6. Export styling consistency:
+   - theme CSS is inlined in render HTML to keep PDF output styled even without route-based CSS loading context.
 
 Run:
 
