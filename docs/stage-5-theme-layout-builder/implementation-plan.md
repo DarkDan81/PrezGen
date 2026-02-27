@@ -95,3 +95,19 @@ Exit criteria:
 
 1. No critical regressions in existing constructor workflows.
 2. Theme + layout builder usable end-to-end for MVP scenarios.
+
+## Phase 7 - Post-MVP Layout Polish Additions (Approved)
+
+1. Image cluster focal behavior:
+   - add image fit policy (`cover|contain`) and focal/anchor control per image block;
+   - define sane defaults for cluster slots so narrow/tall assets align predictably.
+2. KPI compact layout in constrained slots:
+   - add internal responsive KPI grid;
+   - reduce typography/padding in compact mode;
+   - prevent card overflow in `2x2` and similar dense presets.
+3. Demo seed completeness:
+   - ensure seeded test slides actually bind all claimed blocks (example: `single-column` text + KPI mismatch);
+   - populate long/medium/short text content for overlap/overflow QA cases.
+4. Manual QA expansion:
+   - add dedicated checks for image anchoring behavior in left/right mirrored image presets;
+   - add KPI compact-grid checks in dense layout slots.

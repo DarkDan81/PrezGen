@@ -106,3 +106,13 @@ Branch: `feat/frontend-mvp-editor`
 3. Theme CSS compatibility:
    - added neutral layout-grid/slot rules to system theme CSS files.
 4. Import/export UI flow is intentionally not implemented yet (backend foundation only).
+
+## Planned Additions (Next Pass)
+
+1. Improve image cluster rendering for non-standard aspect ratios:
+   - add fit/anchor behavior so images align to intended edges in cluster slots.
+2. Improve KPI rendering inside dense presets (`2x2` and similar):
+   - internal adaptive KPI grid with compact typography/padding rules.
+3. Fix QA demo seed consistency:
+   - ensure slides labeled as multi-block (for example `text + kpi`) bind all expected blocks;
+   - expand seeded text content to include long/medium/short stress cases for overlap checks.

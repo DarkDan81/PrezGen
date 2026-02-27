@@ -32,3 +32,4 @@ Structure:
 - `stage-5-theme-layout-builder/implementation-plan.md` - phased execution plan.
 - `stage-5-theme-layout-builder/execution-order.md` - detailed implementation runbook and commit order.
 - `stage-5-theme-layout-builder/implementation-status.md` - current implementation progress for stage 5.
+- `qa-demo-deck-assets.md` - source image naming and run instructions for QA demo deck seed script.
