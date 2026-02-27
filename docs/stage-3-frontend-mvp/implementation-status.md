@@ -34,6 +34,7 @@ Branch: `feat/frontend-mvp-editor`
 8. Preview and export:
    - embedded iframe preview;
    - refresh preview uses cache-busting token and rebuild call;
+   - preview iframe keeps scroll position on auto-refresh;
    - PDF export trigger + job polling status.
    - dev-server proxy includes `/content`, so uploaded images resolve in preview during local development.
 9. Constructor theming:

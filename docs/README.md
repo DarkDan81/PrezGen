@@ -7,6 +7,7 @@ Current scope:
 - Stage 1: backend contract and data model definition.
 - Stage 2: backend MVP implementation slices.
 - Stage 3: frontend MVP planning and implementation scope.
+- Stage 4: UX polish planning for constructor consistency and localization prep.
 
 Structure:
 
@@ -20,3 +21,4 @@ Structure:
 - `stage-3-frontend-mvp/decisions.md` - approved frontend implementation decisions.
 - `stage-3-frontend-mvp/open-questions.md` - implementation decisions to approve before coding.
 - `stage-3-frontend-mvp/implementation-status.md` - implemented frontend slices and current gaps.
+- `stage-4-ux-polish/README.md` - next-stage UX polish roadmap and acceptance criteria.
