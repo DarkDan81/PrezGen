@@ -651,3 +651,22 @@ body.viewer-mode {
 .image-container img {
     object-fit: contain;
 }
+
+.slide-body.layout-grid {
+    align-items: stretch;
+}
+
+.slide-body.layout-grid .layout-slot {
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+}
+
+.slide-body.layout-grid .layout-slot > .block-wrapper {
+    width: 100%;
+}
+
+.slot-empty {
+    border: 1px dashed rgba(84, 83, 89, 0.25);
+    border-radius: 8px;
+}

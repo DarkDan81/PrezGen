@@ -9,6 +9,8 @@ function mapSlide(row) {
         title: row.title,
         subtitle: row.subtitle,
         notes: row.notes,
+        layoutPresetId: row.layout_preset_id || null,
+        slotAssignments: row.slot_assignments_json ? JSON.parse(row.slot_assignments_json) : [],
         createdAt: row.created_at,
         updatedAt: row.updated_at,
     };
@@ -18,9 +20,9 @@ function createSlide(slide) {
     const db = getDb();
     db.prepare(`
         INSERT INTO slides (
-            id, presentation_id, "order", type, title, subtitle, notes, created_at, updated_at
+            id, presentation_id, "order", type, title, subtitle, notes, layout_preset_id, slot_assignments_json, created_at, updated_at
         ) VALUES (
-            @id, @presentation_id, @order, @type, @title, @subtitle, @notes, @created_at, @updated_at
+            @id, @presentation_id, @order, @type, @title, @subtitle, @notes, @layout_preset_id, @slot_assignments_json, @created_at, @updated_at
         );
     `).run({
         id: slide.id,
@@ -30,6 +32,8 @@ function createSlide(slide) {
         title: slide.title || null,
         subtitle: slide.subtitle || null,
         notes: slide.notes || null,
+        layout_preset_id: slide.layoutPresetId || null,
+        slot_assignments_json: Array.isArray(slide.slotAssignments) ? JSON.stringify(slide.slotAssignments) : null,
         created_at: slide.createdAt,
         updated_at: slide.updatedAt,
     });
@@ -71,6 +75,14 @@ function updateSlideById(slideId, patch) {
     if (patch.notes !== undefined) {
         clauses.push('notes = @notes');
         params.notes = patch.notes;
+    }
+    if (patch.layoutPresetId !== undefined) {
+        clauses.push('layout_preset_id = @layout_preset_id');
+        params.layout_preset_id = patch.layoutPresetId || null;
+    }
+    if (patch.slotAssignments !== undefined) {
+        clauses.push('slot_assignments_json = @slot_assignments_json');
+        params.slot_assignments_json = Array.isArray(patch.slotAssignments) ? JSON.stringify(patch.slotAssignments) : null;
     }
     clauses.push('updated_at = @updated_at');
     params.updated_at = patch.updatedAt;

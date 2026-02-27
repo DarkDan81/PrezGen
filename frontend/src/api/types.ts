@@ -29,6 +29,8 @@ export type Slide = {
   title: string | null;
   subtitle: string | null;
   notes: string | null;
+  layoutPresetId?: string | null;
+  slotAssignments?: Array<{ slotId: string; blockId: string }>;
   createdAt: string;
   updatedAt: string;
 };
@@ -48,8 +50,73 @@ export type Block = {
 export type Theme = {
   id: string;
   name: string;
-  baseCssPath: string;
+  kind?: 'system' | 'custom';
+  baseCssPath: string | null;
+  baseThemeId?: string | null;
+  tokens?: ThemeTokens;
   isSystem: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type ThemeTokens = {
+  color: {
+    bgCanvas: string;
+    textPrimary: string;
+    accent: string;
+    [key: string]: string;
+  };
+  typography: {
+    titleSize: number;
+    subtitleSize: number;
+    bodySize: number;
+    lineHeight: number;
+    [key: string]: number | string;
+  };
+  spacing: {
+    slidePadding: number;
+    blockGap: number;
+    cardPadding: number;
+    radius: number;
+    borderWidth: number;
+    [key: string]: number;
+  };
+  chart?: {
+    palette?: string[];
+    [key: string]: unknown;
+  };
+  table?: {
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+};
+
+export type LayoutPreset = {
+  id: string;
+  name: string;
+  kind: 'system' | 'custom';
+  isSystem: boolean;
+  schema: {
+    grid?: {
+      columns?: string;
+      rows?: string;
+      areas?: string[];
+      gap?: number;
+    };
+    slots?: Array<{
+      id: string;
+      area: string;
+      allowedBlockTypes?: Array<Block['type']>;
+    }>;
+  };
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type ValidationWarning = {
+  path: string;
+  rule: string;
+  message: string;
 };
 
 export type Dataset = {

@@ -14,6 +14,14 @@ function escapeHtml(value) {
         .replace(/'/g, '&#39;');
 }
 
+function escapeAttr(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
 function renderCharacter(slide, charactersMap) {
     const charKey = slide.character_img || slide.character;
     if (!charKey || !charactersMap[charKey]) return '';
@@ -28,12 +36,89 @@ function renderCharacter(slide, charactersMap) {
 
 function renderBlocks(slide) {
     return (slide.blocks || []).map((block) => {
+        if (!block || typeof block !== 'object') return '';
         if (block.chart) return chartRenderer(block);
         if (block.table) return tableRenderer(block);
         if (block.kpi_cards) return kpiRenderer(block);
         if (block.text || block.image) return textImageRenderer(block);
         return '';
     }).join('');
+}
+
+function renderBlockHtml(block) {
+    if (!block || typeof block !== 'object') return '';
+    if (block.chart) return chartRenderer(block);
+    if (block.table) return tableRenderer(block);
+    if (block.kpi_cards) return kpiRenderer(block);
+    if (block.text || block.image) return textImageRenderer(block);
+    return '';
+}
+
+function resolveLayoutPreset(slide) {
+    const schema = slide.layoutPreset?.schema;
+    if (!schema || typeof schema !== 'object') return null;
+    const grid = schema.grid;
+    const slots = Array.isArray(schema.slots) ? schema.slots : [];
+    if (!grid || !Array.isArray(slots) || slots.length === 0) return null;
+    return { grid, slots };
+}
+
+function normalizeSlotAssignments(assignments) {
+    if (!Array.isArray(assignments)) return [];
+    return assignments
+        .filter((item) => item && typeof item.slotId === 'string' && typeof item.blockId === 'string')
+        .map((item) => ({ slotId: item.slotId, blockId: item.blockId }));
+}
+
+function renderBlocksWithLayout(slide) {
+    const preset = resolveLayoutPreset(slide);
+    if (!preset) {
+        return {
+            bodyClass: 'slide-body',
+            bodyStyle: '',
+            html: renderBlocks(slide),
+        };
+    }
+
+    const blocks = Array.isArray(slide.blocks) ? slide.blocks : [];
+    const blocksById = new Map(blocks.map((block) => [String(block._blockId || ''), block]));
+    const explicitAssignments = normalizeSlotAssignments(slide.slotAssignments);
+
+    const takenBlocks = new Set(explicitAssignments.map((item) => item.blockId));
+    const unassignedBlocks = blocks.filter((block) => !takenBlocks.has(String(block._blockId || '')));
+
+    const slotToBlock = new Map();
+    explicitAssignments.forEach((assignment) => {
+        if (slotToBlock.has(assignment.slotId)) return;
+        const found = blocksById.get(assignment.blockId);
+        if (found) slotToBlock.set(assignment.slotId, found);
+    });
+
+    preset.slots.forEach((slot) => {
+        if (slotToBlock.has(slot.id)) return;
+        const next = unassignedBlocks.shift();
+        if (next) slotToBlock.set(slot.id, next);
+    });
+
+    const columns = typeof preset.grid.columns === 'string' ? preset.grid.columns : '1fr';
+    const rows = typeof preset.grid.rows === 'string' ? preset.grid.rows : 'auto';
+    const areas = Array.isArray(preset.grid.areas) ? preset.grid.areas : [];
+    const gap = Number.isFinite(preset.grid.gap) ? Number(preset.grid.gap) : 20;
+    const areasCss = areas.length ? `grid-template-areas:${areas.map((row) => `"${row}"`).join(' ')};` : '';
+    const bodyStyle = `display:grid;grid-template-columns:${escapeAttr(columns)};grid-template-rows:${escapeAttr(rows)};${areasCss}gap:${gap}px;`;
+
+    const slotsHtml = preset.slots.map((slot) => {
+        const block = slotToBlock.get(slot.id);
+        const blockHtml = block ? renderBlockHtml(block) : '<div class="block-wrapper slot-empty"></div>';
+        const areaStyle = slot.area ? `style="grid-area:${escapeAttr(slot.area)};"` : '';
+        return `<div class="layout-slot" ${areaStyle}>${blockHtml}</div>`;
+    }).join('');
+
+    return {
+        bodyClass: 'slide-body layout-grid',
+        bodyStyle: `style="${bodyStyle}"`,
+        html: slotsHtml,
+    };
 }
 
 function loadThemeCss(themeName) {
@@ -54,7 +139,7 @@ function buildSlides(data) {
     const slidesHtml = data.slides.map((slide, index) => {
         const isTitle = slide.type === 'title';
         const characterHtml = renderCharacter(slide, charactersMap);
-        const blocksHtml = renderBlocks(slide);
+        const layoutRender = renderBlocksWithLayout(slide);
 
         const slideContent = isTitle
             ? `
@@ -75,7 +160,7 @@ function buildSlides(data) {
                     <h2>${escapeHtml(slide.title || '')}</h2>
                     ${slide.subtitle ? `<div class="slide-subtitle">${escapeHtml(slide.subtitle)}</div>` : ''}
                 </div>
-                <div class="slide-body">${blocksHtml}</div>
+                <div class="${layoutRender.bodyClass}" ${layoutRender.bodyStyle}>${layoutRender.html}</div>
                 ${characterHtml}`;
 
         return `<div class="slide-frame">

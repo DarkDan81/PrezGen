@@ -1,5 +1,5 @@
 import { apiDelete, apiGet, apiPatch, apiPost, apiPostForm } from './http';
-import type { Block, Dataset, Presentation, RenderJob, Slide, Theme } from './types';
+import type { Block, Dataset, LayoutPreset, Presentation, RenderJob, Slide, Theme, ThemeTokens, ValidationWarning } from './types';
 
 export const client = {
   listPresentations: () => apiGet<Presentation[]>('/api/v1/presentations'),
@@ -14,6 +14,10 @@ export const client = {
     apiPost<Slide, typeof payload>(`/api/v1/presentations/${presentationId}/slides`, payload),
   patchSlide: (slideId: string, payload: Partial<Pick<Slide, 'type' | 'title' | 'subtitle' | 'notes'>>) =>
     apiPatch<Slide, typeof payload>(`/api/v1/slides/${slideId}`, payload),
+  patchSlideLayout: (
+    slideId: string,
+    payload: { layoutPresetId: string; slotAssignments: Array<{ slotId: string; blockId: string }> },
+  ) => apiPatch<Slide, typeof payload>(`/api/v1/slides/${slideId}/layout`, payload),
   deleteSlide: (slideId: string) => apiDelete(`/api/v1/slides/${slideId}`),
   reorderSlides: (presentationId: string, slideIds: string[]) =>
     apiPost<Slide[], { slideIds: string[] }>(`/api/v1/presentations/${presentationId}/slides/reorder`, { slideIds }),
@@ -30,6 +34,21 @@ export const client = {
     apiPost<Block[], { blockIds: string[] }>(`/api/v1/slides/${slideId}/blocks/reorder`, { blockIds }),
 
   listThemes: () => apiGet<Theme[]>('/api/v1/themes'),
+  getTheme: (themeId: string) => apiGet<Theme>(`/api/v1/themes/${themeId}`),
+  createTheme: (payload: { name: string; baseThemeId?: string; tokens: ThemeTokens }) =>
+    apiPost<Theme & { warnings?: ValidationWarning[] }, typeof payload>('/api/v1/themes', payload),
+  patchTheme: (themeId: string, payload: { name?: string; tokens?: ThemeTokens }) =>
+    apiPatch<Theme & { warnings?: ValidationWarning[] }, typeof payload>(`/api/v1/themes/${themeId}`, payload),
+  deleteTheme: (themeId: string) => apiDelete(`/api/v1/themes/${themeId}`),
+  duplicateTheme: (themeId: string) =>
+    apiPost<Theme, Record<string, never>>(`/api/v1/themes/${themeId}/duplicate`, {}),
+  exportTheme: (themeId: string) =>
+    apiGet<{ schemaVersion: number; theme: Theme }>(`/api/v1/themes/${themeId}/export`),
+  importTheme: (payload: { schemaVersion: number; theme: { name: string; tokens: ThemeTokens; baseThemeId?: string } }) =>
+    apiPost<Theme & { warnings?: ValidationWarning[] }, typeof payload>('/api/v1/themes/import', payload),
+
+  listLayoutPresets: () => apiGet<LayoutPreset[]>('/api/v1/layout-presets'),
+  getLayoutPreset: (layoutPresetId: string) => apiGet<LayoutPreset>(`/api/v1/layout-presets/${layoutPresetId}`),
 
   listDatasets: (presentationId: string) => apiGet<Dataset[]>(`/api/v1/presentations/${presentationId}/datasets`),
   createDataset: (

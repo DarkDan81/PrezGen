@@ -32,12 +32,17 @@ export function PresentationsPage() {
     <div className="page">
       <header className="page-header">
         <h1>{t('app.title')}</h1>
-        <Field label={t('lang.label')} className="lang-field">
-          <select className="ui-select" value={locale} onChange={(e) => setLocale(e.target.value as 'ru' | 'en')}>
-            <option value="ru">{t('lang.ru')}</option>
-            <option value="en">{t('lang.en')}</option>
-          </select>
-        </Field>
+        <div className="page-header-actions">
+          <Button variant="secondary" onClick={() => navigate('/themes')}>
+            {t('nav.themes')}
+          </Button>
+          <Field label={t('lang.label')} className="lang-field">
+            <select className="ui-select" value={locale} onChange={(e) => setLocale(e.target.value as 'ru' | 'en')}>
+              <option value="ru">{t('lang.ru')}</option>
+              <option value="en">{t('lang.en')}</option>
+            </select>
+          </Field>
+        </div>
       </header>
 
       <SectionCard className="presentations-card" title={t('presentations.createTitle')}>

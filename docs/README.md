@@ -31,3 +31,4 @@ Structure:
 - `stage-5-theme-layout-builder/schema-contract.md` - draft schema and API contract for implementation.
 - `stage-5-theme-layout-builder/implementation-plan.md` - phased execution plan.
 - `stage-5-theme-layout-builder/execution-order.md` - detailed implementation runbook and commit order.
+- `stage-5-theme-layout-builder/implementation-status.md` - current implementation progress for stage 5.

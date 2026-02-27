@@ -117,6 +117,25 @@ Branch/Commit: __________
 - [ ] Open same presentation
 - [ ] Confirm slides, blocks, datasets, image URLs, and table transpose are persisted
 
+## 14. Theme Builder (Stage 5)
+
+- [ ] Open `/themes` page from presentations screen
+- [ ] Create custom theme from scratch and save
+- [ ] Duplicate system theme and save duplicate
+- [ ] Edit custom theme tokens (color/typography/spacing fields) and save
+- [ ] Confirm system theme cannot be edited/deleted directly
+- [ ] Delete custom theme and confirm it is removed from list
+- [ ] Apply selected theme to a presentation and verify presentation `themeId` changes
+- [ ] Trigger validation warning (for example low-contrast colors) and verify warning appears
+
+## 15. Slide Layout Presets (Stage 5)
+
+- [ ] In editor, select a slide and choose a layout preset
+- [ ] Assign blocks to layout slots and save layout
+- [ ] Reload page and confirm `layoutPresetId` + slot assignments are persisted
+- [ ] Ensure invalid slot mapping is rejected by API (manual API test)
+- [ ] Refresh preview and confirm no regressions in slide rendering
+
 ## Notes / Bugs Found
 
 - ________________________________________________

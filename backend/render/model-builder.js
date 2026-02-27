@@ -2,6 +2,7 @@ const { getPresentationById } = require('../repositories/presentation-repository
 const { listSlidesByPresentation } = require('../repositories/slide-repository');
 const { listBlocksBySlide } = require('../repositories/block-repository');
 const { listDatasetsByPresentation } = require('../repositories/dataset-repository');
+const { getLayoutPresetById } = require('../repositories/layout-preset-repository');
 const { normalizeThemeId } = require('../services/themes-service');
 const { chartAdapter } = require('./adapters/chart-adapter');
 const { tableAdapter } = require('./adapters/table-adapter');
@@ -17,13 +18,18 @@ function buildErrorText(message, base = {}) {
 }
 
 function withLayout(block, rendered) {
+    const base = {
+        ...rendered,
+        _blockId: block.id,
+        _blockType: block.type,
+    };
     if (block.layout && typeof block.layout.widthRatio === 'number') {
         return {
-            ...rendered,
+            ...base,
             flexWidth: block.layout.widthRatio,
         };
     }
-    return rendered;
+    return base;
 }
 
 function renderBlock(block, datasetsById) {
@@ -75,11 +81,21 @@ function buildRenderModelByPresentationId(presentationId) {
             };
         }
 
-        const blocks = listBlocksBySlide(slide.id).map((block) => renderBlock(block, datasetsById));
+        const sourceBlocks = listBlocksBySlide(slide.id);
+        const blocks = sourceBlocks.map((block) => renderBlock(block, datasetsById));
+        const layoutPreset = slide.layoutPresetId ? getLayoutPresetById(slide.layoutPresetId) : null;
         return {
             type: 'content',
             title: slide.title || '',
             subtitle: slide.subtitle || '',
+            layoutPreset: layoutPreset
+                ? {
+                    id: layoutPreset.id,
+                    name: layoutPreset.name,
+                    schema: layoutPreset.schema,
+                }
+                : null,
+            slotAssignments: Array.isArray(slide.slotAssignments) ? slide.slotAssignments : [],
             blocks,
         };
     });
@@ -96,4 +112,3 @@ function buildRenderModelByPresentationId(presentationId) {
 module.exports = {
     buildRenderModelByPresentationId,
 };
-

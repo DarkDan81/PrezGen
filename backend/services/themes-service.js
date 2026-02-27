@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const yaml = require('js-yaml');
+const { getThemeByIdFromDb, listThemesFromDb } = require('../repositories/theme-repository');
 
 const THEMES_DIR = path.join(__dirname, '../../themes');
 
@@ -10,6 +11,9 @@ function normalizeThemeId(themeId) {
 }
 
 function listThemes() {
+    const dbThemes = listThemesFromDb();
+    if (dbThemes.length) return dbThemes;
+
     if (!fs.existsSync(THEMES_DIR)) return [];
 
     return fs
@@ -40,6 +44,9 @@ function listThemes() {
 }
 
 function getThemeById(themeId) {
+    const dbTheme = getThemeByIdFromDb(themeId);
+    if (dbTheme) return dbTheme;
+
     const slug = normalizeThemeId(themeId);
     const all = listThemes();
     return all.find((theme) => theme.id === `theme-${slug}`) || null;
@@ -50,4 +57,3 @@ module.exports = {
     listThemes,
     normalizeThemeId,
 };
-

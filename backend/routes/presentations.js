@@ -34,6 +34,14 @@ const {
     reorderBlocks,
     updateBlockById,
 } = require('../repositories/block-repository');
+const {
+    createTheme,
+    deleteThemeById,
+    getThemeByIdFromDb,
+    listThemesFromDb,
+    updateThemeById,
+} = require('../repositories/theme-repository');
+const { getLayoutPresetById, listLayoutPresets } = require('../repositories/layout-preset-repository');
 const { getThemeById, listThemes } = require('../services/themes-service');
 const { buildPreviewHtml } = require('../services/preview-service');
 const { createRenderJob, getRenderJobById } = require('../repositories/render-job-repository');
@@ -41,6 +49,11 @@ const { queuePdfJob } = require('../services/render-service');
 const { parseCsvToDatasetShape } = require('../services/csv-service');
 const { sanitizeRichHtml } = require('../services/sanitize-service');
 const { validateBlockConfig } = require('../validation/block-config');
+const {
+    validateLayoutBindingPayload,
+    validateSlotAssignmentsAgainstLayout,
+    validateThemeTokens,
+} = require('../validation/theme-layout');
 const { validationError, notFound } = require('../utils/errors');
 const { SCHEMA_VERSION, sendData } = require('../utils/response');
 
@@ -301,6 +314,32 @@ router.patch('/slides/:slideId', (req, res, next) => {
     }
 });
 
+router.patch('/slides/:slideId/layout', (req, res, next) => {
+    try {
+        const { slideId } = req.params;
+        const slide = getSlideById(slideId);
+        if (!slide) throw notFound('Slide not found');
+
+        const { details } = validateLayoutBindingPayload(req.body || {});
+        if (details.length) throw validationError(details);
+
+        const { layoutPresetId, slotAssignments = [] } = req.body || {};
+        const layoutPreset = getLayoutPresetById(layoutPresetId);
+        const slideBlocks = listBlocksBySlide(slideId);
+        const membership = validateSlotAssignmentsAgainstLayout(layoutPreset, slotAssignments, slideBlocks);
+        if (membership.details.length) throw validationError(membership.details);
+
+        const updated = updateSlideById(slideId, {
+            layoutPresetId,
+            slotAssignments,
+            updatedAt: new Date().toISOString(),
+        });
+        return sendData(req, res, updated);
+    } catch (error) {
+        return next(error);
+    }
+});
+
 router.delete('/slides/:slideId', (req, res, next) => {
     try {
         const { slideId } = req.params;
@@ -506,7 +545,8 @@ router.post('/presentations/:presentationId/assets/upload-image', upload.single(
 
 router.get('/themes', (req, res, next) => {
     try {
-        return sendData(req, res, listThemes());
+        const data = listThemesFromDb();
+        return sendData(req, res, data.length ? data : listThemes());
     } catch (error) {
         return next(error);
     }
@@ -518,6 +558,192 @@ router.get('/themes/:themeId', (req, res, next) => {
         const theme = getThemeById(themeId);
         if (!theme) throw notFound('Theme not found');
         return sendData(req, res, theme);
+    } catch (error) {
+        return next(error);
+    }
+});
+
+router.post('/themes', (req, res, next) => {
+    try {
+        const { name, tokens, baseThemeId } = req.body || {};
+        const details = [];
+        if (!name || typeof name !== 'string') {
+            details.push({ path: 'name', rule: 'required', message: 'name is required' });
+        }
+
+        const tokenValidation = validateThemeTokens(tokens);
+        details.push(...tokenValidation.details);
+        if (details.length) throw validationError(details);
+
+        const now = new Date().toISOString();
+        const created = createTheme({
+            id: `theme-${randomUUID()}`,
+            name: name.trim(),
+            kind: 'custom',
+            isSystem: false,
+            baseThemeId: typeof baseThemeId === 'string' ? baseThemeId : null,
+            baseCssPath: null,
+            tokens,
+            createdAt: now,
+            updatedAt: now,
+        });
+
+        return sendData(req, res, { ...created, warnings: tokenValidation.warnings }, 201);
+    } catch (error) {
+        return next(error);
+    }
+});
+
+router.patch('/themes/:themeId', (req, res, next) => {
+    try {
+        const { themeId } = req.params;
+        const existing = getThemeByIdFromDb(themeId);
+        if (!existing) throw notFound('Theme not found');
+        if (existing.isSystem) {
+            throw validationError([{ path: 'themeId', rule: 'immutable', message: 'System themes cannot be updated directly' }]);
+        }
+
+        const { name, tokens } = req.body || {};
+        const details = [];
+        if (name !== undefined && typeof name !== 'string') {
+            details.push({ path: 'name', rule: 'string', message: 'name must be a string' });
+        }
+
+        let tokenValidation = { details: [], warnings: [] };
+        if (tokens !== undefined) {
+            tokenValidation = validateThemeTokens(tokens);
+            details.push(...tokenValidation.details);
+        }
+        if (details.length) throw validationError(details);
+
+        const updated = updateThemeById(themeId, {
+            name: name !== undefined ? name.trim() : undefined,
+            tokens,
+            updatedAt: new Date().toISOString(),
+        });
+
+        return sendData(req, res, { ...updated, warnings: tokenValidation.warnings });
+    } catch (error) {
+        return next(error);
+    }
+});
+
+router.delete('/themes/:themeId', (req, res, next) => {
+    try {
+        const { themeId } = req.params;
+        const existing = getThemeByIdFromDb(themeId);
+        if (!existing) throw notFound('Theme not found');
+        if (existing.isSystem) {
+            throw validationError([{ path: 'themeId', rule: 'immutable', message: 'System themes cannot be deleted directly' }]);
+        }
+        const ok = deleteThemeById(themeId);
+        if (!ok) throw notFound('Theme not found');
+        return res.status(204).send();
+    } catch (error) {
+        return next(error);
+    }
+});
+
+router.post('/themes/:themeId/duplicate', (req, res, next) => {
+    try {
+        const { themeId } = req.params;
+        const source = getThemeById(themeId);
+        if (!source) throw notFound('Theme not found');
+
+        const now = new Date().toISOString();
+        const duplicated = createTheme({
+            id: `theme-${randomUUID()}`,
+            name: `${source.name} copy`,
+            kind: 'custom',
+            isSystem: false,
+            baseThemeId: source.id,
+            baseCssPath: null,
+            tokens: source.tokens || {},
+            createdAt: now,
+            updatedAt: now,
+        });
+        return sendData(req, res, duplicated, 201);
+    } catch (error) {
+        return next(error);
+    }
+});
+
+router.get('/themes/:themeId/export', (req, res, next) => {
+    try {
+        const { themeId } = req.params;
+        const theme = getThemeById(themeId);
+        if (!theme) throw notFound('Theme not found');
+
+        const exported = {
+            schemaVersion: 1,
+            theme: {
+                id: theme.id,
+                name: theme.name,
+                kind: theme.kind,
+                isSystem: theme.isSystem,
+                baseThemeId: theme.baseThemeId || null,
+                tokens: theme.tokens || {},
+            },
+        };
+        return sendData(req, res, exported);
+    } catch (error) {
+        return next(error);
+    }
+});
+
+router.post('/themes/import', (req, res, next) => {
+    try {
+        const payload = req.body || {};
+        const details = [];
+        const schemaVersion = payload.schemaVersion;
+        const importedTheme = payload.theme;
+
+        if (schemaVersion !== 1) {
+            details.push({ path: 'schemaVersion', rule: 'version', message: 'schemaVersion must be 1' });
+        }
+        if (!importedTheme || typeof importedTheme !== 'object') {
+            details.push({ path: 'theme', rule: 'object', message: 'theme object is required' });
+        }
+        if (details.length) throw validationError(details);
+
+        const tokenValidation = validateThemeTokens(importedTheme.tokens);
+        if (tokenValidation.details.length) throw validationError(tokenValidation.details);
+
+        const now = new Date().toISOString();
+        const created = createTheme({
+            id: `theme-${randomUUID()}`,
+            name: typeof importedTheme.name === 'string' && importedTheme.name.trim()
+                ? importedTheme.name.trim()
+                : `Imported Theme ${now}`,
+            kind: 'custom',
+            isSystem: false,
+            baseThemeId: typeof importedTheme.baseThemeId === 'string' ? importedTheme.baseThemeId : null,
+            baseCssPath: null,
+            tokens: importedTheme.tokens || {},
+            createdAt: now,
+            updatedAt: now,
+        });
+
+        return sendData(req, res, { ...created, warnings: tokenValidation.warnings }, 201);
+    } catch (error) {
+        return next(error);
+    }
+});
+
+router.get('/layout-presets', (req, res, next) => {
+    try {
+        return sendData(req, res, listLayoutPresets());
+    } catch (error) {
+        return next(error);
+    }
+});
+
+router.get('/layout-presets/:layoutPresetId', (req, res, next) => {
+    try {
+        const { layoutPresetId } = req.params;
+        const preset = getLayoutPresetById(layoutPresetId);
+        if (!preset) throw notFound('Layout preset not found');
+        return sendData(req, res, preset);
     } catch (error) {
         return next(error);
     }

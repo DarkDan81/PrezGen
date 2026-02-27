@@ -171,6 +171,8 @@ export function EditorPage() {
   const [selectedBlockId, setSelectedBlockId] = useState('');
   const [slideTitle, setSlideTitle] = useState('');
   const [slideSubtitle, setSlideSubtitle] = useState('');
+  const [slideLayoutPresetId, setSlideLayoutPresetId] = useState('');
+  const [slideSlotAssignments, setSlideSlotAssignments] = useState<Array<{ slotId: string; blockId: string }>>([]);
   const [blockType, setBlockType] = useState<Block['type']>('text');
   const [blockConfig, setBlockConfig] = useState<Record<string, unknown>>({});
   const [newBlockType, setNewBlockType] = useState<Block['type']>('text');
@@ -201,6 +203,7 @@ export function EditorPage() {
     queryFn: () => client.listSlides(presentationId),
   });
   const themesQuery = useQuery({ queryKey: ['themes'], queryFn: client.listThemes });
+  const layoutPresetsQuery = useQuery({ queryKey: ['layout-presets'], queryFn: client.listLayoutPresets });
   const datasetsQuery = useQuery({
     queryKey: ['datasets', presentationId],
     queryFn: () => client.listDatasets(presentationId),
@@ -224,6 +227,8 @@ export function EditorPage() {
     if (selectedSlide) {
       setSlideTitle(selectedSlide.title || '');
       setSlideSubtitle(selectedSlide.subtitle || '');
+      setSlideLayoutPresetId(selectedSlide.layoutPresetId || '');
+      setSlideSlotAssignments(Array.isArray(selectedSlide.slotAssignments) ? selectedSlide.slotAssignments : []);
     }
   }, [selectedSlide?.id]);
 
@@ -270,6 +275,21 @@ export function EditorPage() {
     onMutate: () => setSaveState('saving'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['slides', presentationId] });
+      setSaveState('saved');
+    },
+    onError: () => setSaveState('error'),
+  });
+
+  const patchSlideLayoutMutation = useMutation({
+    mutationFn: (payload: { slideId: string; layoutPresetId: string; slotAssignments: Array<{ slotId: string; blockId: string }> }) =>
+      client.patchSlideLayout(payload.slideId, {
+        layoutPresetId: payload.layoutPresetId,
+        slotAssignments: payload.slotAssignments,
+      }),
+    onMutate: () => setSaveState('saving'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['slides', presentationId] });
+      buildPreviewMutation.mutate();
       setSaveState('saved');
     },
     onError: () => setSaveState('error'),
@@ -399,6 +419,7 @@ export function EditorPage() {
     () => buildDatasetDraftSignature(datasetDraftName, datasetDraftColumns, datasetDraftRows) !== datasetModalSnapshot,
     [datasetDraftColumns, datasetDraftName, datasetDraftRows, datasetModalSnapshot],
   );
+  const selectedLayoutPreset = (layoutPresetsQuery.data || []).find((preset) => preset.id === slideLayoutPresetId) || null;
 
   const createManualDatasetDraft = () => {
     const next = emptyDatasetDraft();
@@ -726,6 +747,70 @@ export function EditorPage() {
                 <Field label={t('editor.slideSubtitle')}>
                   <input className="ui-input" value={slideSubtitle} onChange={(e) => setSlideSubtitle(e.target.value)} />
                 </Field>
+                <Field label={t('editor.layoutPreset')}>
+                  <select
+                    className="ui-select"
+                    value={slideLayoutPresetId}
+                    onChange={(e) => {
+                      const nextPresetId = e.target.value;
+                      setSlideLayoutPresetId(nextPresetId);
+                      const preset = (layoutPresetsQuery.data || []).find((item) => item.id === nextPresetId);
+                      const slotIds = (preset?.schema?.slots || []).map((slot) => slot.id);
+                      setSlideSlotAssignments((prev) =>
+                        prev
+                          .filter((item) => slotIds.includes(item.slotId))
+                          .map((item) => ({ slotId: item.slotId, blockId: item.blockId })),
+                      );
+                    }}
+                  >
+                    <option value="">{t('editor.selectLayoutPreset')}</option>
+                    {(layoutPresetsQuery.data || []).map((preset) => (
+                      <option key={preset.id} value={preset.id}>
+                        {preset.name}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                {selectedLayoutPreset?.schema?.slots?.map((slot) => {
+                  const selectedBlockForSlot = slideSlotAssignments.find((item) => item.slotId === slot.id)?.blockId || '';
+                  return (
+                    <Field key={slot.id} label={`${t('editor.slot')}: ${slot.id}`}>
+                      <select
+                        className="ui-select"
+                        value={selectedBlockForSlot}
+                        onChange={(e) => {
+                          const nextBlockId = e.target.value;
+                          setSlideSlotAssignments((prev) => {
+                            const withoutCurrent = prev.filter((item) => item.slotId !== slot.id);
+                            if (!nextBlockId) return withoutCurrent;
+                            return [...withoutCurrent, { slotId: slot.id, blockId: nextBlockId }];
+                          });
+                        }}
+                      >
+                        <option value="">{t('editor.unassigned')}</option>
+                        {blocks.map((block) => (
+                          <option key={block.id} value={block.id}>
+                            {blockTypeLabel(block.type, t)} ({block.id.slice(0, 8)})
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
+                  );
+                })}
+                <Button
+                  variant="secondary"
+                  disabled={!selectedSlide?.id || !slideLayoutPresetId}
+                  onClick={() => {
+                    if (!selectedSlide?.id || !slideLayoutPresetId) return;
+                    patchSlideLayoutMutation.mutate({
+                      slideId: selectedSlide.id,
+                      layoutPresetId: slideLayoutPresetId,
+                      slotAssignments: slideSlotAssignments,
+                    });
+                  }}
+                >
+                  {t('editor.saveLayout')}
+                </Button>
               </div>
             </SectionCard>
           )}

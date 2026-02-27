@@ -9,6 +9,7 @@ Related:
 - `schema-contract.md` - draft contracts for theme tokens and layout presets.
 - `implementation-plan.md` - staged execution plan.
 - `execution-order.md` - detailed step-by-step runbook with exact implementation order.
+- `implementation-status.md` - implementation progress and verification status.
 
 ## Goal
 
