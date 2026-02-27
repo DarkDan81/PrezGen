@@ -8,6 +8,7 @@ Current scope:
 - Stage 2: backend MVP implementation slices.
 - Stage 3: frontend MVP planning and implementation scope.
 - Stage 4: UX polish planning for constructor consistency and localization prep.
+- Stage 5: theme and layout builder planning (tokens, presets, dedicated editor).
 
 Structure:
 
@@ -25,3 +26,8 @@ Structure:
 - `stage-4-ux-polish/decisions.md` - approved UX polish decisions and stage constraints.
 - `stage-4-ux-polish/ui-inventory.md` - frontend UI inconsistency inventory for polish pass.
 - `stage-4-ux-polish/implementation-status.md` - implemented UX polish slices and current state.
+- `stage-5-theme-layout-builder/README.md` - stage overview and acceptance criteria.
+- `stage-5-theme-layout-builder/decisions.md` - approved decisions for theme/layout direction.
+- `stage-5-theme-layout-builder/schema-contract.md` - draft schema and API contract for implementation.
+- `stage-5-theme-layout-builder/implementation-plan.md` - phased execution plan.
+- `stage-5-theme-layout-builder/execution-order.md` - detailed implementation runbook and commit order.
