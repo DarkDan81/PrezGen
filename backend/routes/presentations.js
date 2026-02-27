@@ -319,6 +319,11 @@ router.patch('/slides/:slideId/layout', (req, res, next) => {
         const { slideId } = req.params;
         const slide = getSlideById(slideId);
         if (!slide) throw notFound('Slide not found');
+        if (slide.type === 'title') {
+            throw validationError([
+                { path: 'slideId', rule: 'slideType', message: 'Title slides do not support layout presets' },
+            ]);
+        }
 
         const { details } = validateLayoutBindingPayload(req.body || {});
         if (details.length) throw validationError(details);
@@ -815,6 +820,11 @@ router.post('/slides/:slideId/blocks', (req, res, next) => {
         const { slideId } = req.params;
         const slide = getSlideById(slideId);
         if (!slide) throw notFound('Slide not found');
+        if (slide.type === 'title') {
+            throw validationError([
+                { path: 'slideId', rule: 'slideType', message: 'Cannot add blocks to title slides' },
+            ]);
+        }
 
         const { type, layout, config } = req.body || {};
         const details = [];

@@ -36,3 +36,16 @@ Date: 2026-02-27
 
 16. Preview and PDF must use the same final theme/layout model resolution path.
 17. Any adapter-specific fallback should be deterministic and documented.
+
+## Layout UX v2
+
+18. Layout preset labels must be localized according to selected constructor language.
+19. Layout selection must support visual cards (mini slide schematic), not only plain dropdown text.
+20. Preset catalog must include additional image-oriented layouts (hero + side stacks, left/right mirrored variants).
+21. Slot assignment UI should guide block-type compatibility and hide invalid block options per slot.
+
+## Section Title Slide
+
+22. Add user-facing slide option `Section Title` (title + subtitle centered, no content blocks).
+23. `Section Title` slide is intended for topic separators (start/end of sections).
+24. `Section Title` slide must reject block creation by API and UI constraints.

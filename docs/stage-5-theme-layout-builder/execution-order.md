@@ -209,21 +209,31 @@ Done when:
 
 Goal: select slide layout and map blocks to slots.
 
-1. In editor slide controls add:
-   - layout preset selector
-   - slot assignment UI per selected slide.
-2. For MVP mapping UI:
-   - dropdown per slot to choose block.
-3. Persist changes via `PATCH /slides/:id/layout`.
+1. In editor slide controls add visual layout picker:
+   - layout cards with mini-schema preview;
+   - localized names via `nameKey`.
+2. Use visual picker as primary selector (dropdown fallback is optional and may be omitted in current UI).
+3. Add slot assignment UI per selected slide.
+4. Filter block choices per slot by `allowedBlockTypes`.
+5. Persist changes via `PATCH /slides/:id/layout`.
+6. Add `Section Title` slide creation option:
+   - centered title/subtitle;
+   - no blocks area and no slot assignment controls.
+7. Enforce API-side guard: no block create for `type=title`.
 
 Files to touch:
 
 1. `frontend/src/pages/EditorPage.tsx`
-2. optional new component `SlideLayoutForm.tsx`.
+2. optional new components:
+   - `SlideLayoutPicker.tsx`
+   - `SlideLayoutForm.tsx`
+3. backend route guard in `POST /slides/:slideId/blocks`.
 
 Done when:
 
 1. Slide layout can be changed from UI and reflected in preview.
+2. User can choose layout visually.
+3. Section Title slide works as separator and cannot host blocks.
 
 ## 9. Import/Export Foundation (No Full UX)
 
@@ -254,6 +264,8 @@ Mandatory checks:
 3. Manual scenarios:
    - duplicate system theme -> edit -> apply to presentation;
    - switch slide to `2x2 grid` preset and assign blocks;
+   - verify visual layout cards + localized labels;
+   - create `Section Title` slide and confirm block actions are disabled/rejected;
    - preview/pdf parity check;
    - warning scenarios for tiny typography and low-contrast colors.
 

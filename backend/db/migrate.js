@@ -65,10 +65,14 @@ function seedSystemThemes(db) {
 
 function seedLayoutPresets(db) {
     const now = new Date().toISOString();
+    const anyBlock = ['text', 'image', 'chart', 'table', 'kpi'];
+    const imageOnly = ['image'];
+
     const presets = [
         {
             id: 'layout-single-column',
             name: 'Single Column',
+            nameKey: 'layout.singleColumn',
             schema: {
                 grid: {
                     columns: '1fr',
@@ -76,12 +80,13 @@ function seedLayoutPresets(db) {
                     areas: ['main'],
                     gap: 20,
                 },
-                slots: [{ id: 'slot_main', area: 'main', allowedBlockTypes: ['text', 'image', 'chart', 'table', 'kpi'] }],
+                slots: [{ id: 'slot_main', area: 'main', allowedBlockTypes: anyBlock }],
             },
         },
         {
             id: 'layout-two-columns',
             name: 'Two Columns',
+            nameKey: 'layout.twoColumns',
             schema: {
                 grid: {
                     columns: '1fr 1fr',
@@ -90,14 +95,15 @@ function seedLayoutPresets(db) {
                     gap: 20,
                 },
                 slots: [
-                    { id: 'slot_left', area: 'left', allowedBlockTypes: ['text', 'image', 'chart', 'table', 'kpi'] },
-                    { id: 'slot_right', area: 'right', allowedBlockTypes: ['text', 'image', 'chart', 'table', 'kpi'] },
+                    { id: 'slot_left', area: 'left', allowedBlockTypes: anyBlock },
+                    { id: 'slot_right', area: 'right', allowedBlockTypes: anyBlock },
                 ],
             },
         },
         {
             id: 'layout-2x2-grid',
             name: '2x2 Grid',
+            nameKey: 'layout.grid2x2',
             schema: {
                 grid: {
                     columns: '1fr 1fr',
@@ -106,20 +112,99 @@ function seedLayoutPresets(db) {
                     gap: 20,
                 },
                 slots: [
-                    { id: 'slot_a', area: 'a', allowedBlockTypes: ['text', 'image', 'chart', 'table', 'kpi'] },
-                    { id: 'slot_b', area: 'b', allowedBlockTypes: ['text', 'image', 'chart', 'table', 'kpi'] },
-                    { id: 'slot_c', area: 'c', allowedBlockTypes: ['text', 'image', 'chart', 'table', 'kpi'] },
-                    { id: 'slot_d', area: 'd', allowedBlockTypes: ['text', 'image', 'chart', 'table', 'kpi'] },
+                    { id: 'slot_a', area: 'a', allowedBlockTypes: anyBlock },
+                    { id: 'slot_b', area: 'b', allowedBlockTypes: anyBlock },
+                    { id: 'slot_c', area: 'c', allowedBlockTypes: anyBlock },
+                    { id: 'slot_d', area: 'd', allowedBlockTypes: anyBlock },
+                ],
+            },
+        },
+        {
+            id: 'layout-hero-left-stack-right-3',
+            name: 'Content Left + 3 Images Right',
+            nameKey: 'layout.contentLeftImagesRight3',
+            schema: {
+                grid: {
+                    columns: '1.4fr 1fr 1fr',
+                    rows: '1fr 1fr',
+                    areas: ['content r_big r_big', 'content r_sm1 r_sm2'],
+                    gap: 20,
+                },
+                slots: [
+                    { id: 'slot_content', area: 'content', allowedBlockTypes: anyBlock },
+                    { id: 'slot_img_big', area: 'r_big', allowedBlockTypes: imageOnly },
+                    { id: 'slot_img_sm1', area: 'r_sm1', allowedBlockTypes: imageOnly },
+                    { id: 'slot_img_sm2', area: 'r_sm2', allowedBlockTypes: imageOnly },
+                ],
+            },
+        },
+        {
+            id: 'layout-stack-left-3-hero-right',
+            name: '3 Images Left + Content Right',
+            nameKey: 'layout.imagesLeftContentRight3',
+            schema: {
+                grid: {
+                    columns: '1fr 1fr 1.4fr',
+                    rows: '1fr 1fr',
+                    areas: ['l_big l_big content', 'l_sm1 l_sm2 content'],
+                    gap: 20,
+                },
+                slots: [
+                    { id: 'slot_img_big', area: 'l_big', allowedBlockTypes: imageOnly },
+                    { id: 'slot_img_sm1', area: 'l_sm1', allowedBlockTypes: imageOnly },
+                    { id: 'slot_img_sm2', area: 'l_sm2', allowedBlockTypes: imageOnly },
+                    { id: 'slot_content', area: 'content', allowedBlockTypes: anyBlock },
+                ],
+            },
+        },
+        {
+            id: 'layout-hero-left-stack-right-4',
+            name: 'Content Left + 4 Images Right',
+            nameKey: 'layout.contentLeftImagesRight4',
+            schema: {
+                grid: {
+                    columns: '1.4fr 1fr 1fr',
+                    rows: '1fr 1fr',
+                    areas: ['content r1 r2', 'content r3 r4'],
+                    gap: 16,
+                },
+                slots: [
+                    { id: 'slot_content', area: 'content', allowedBlockTypes: anyBlock },
+                    { id: 'slot_img_1', area: 'r1', allowedBlockTypes: imageOnly },
+                    { id: 'slot_img_2', area: 'r2', allowedBlockTypes: imageOnly },
+                    { id: 'slot_img_3', area: 'r3', allowedBlockTypes: imageOnly },
+                    { id: 'slot_img_4', area: 'r4', allowedBlockTypes: imageOnly },
+                ],
+            },
+        },
+        {
+            id: 'layout-image-full-caption',
+            name: '4 Images Left + Content Right',
+            nameKey: 'layout.imagesLeftContentRight4',
+            schema: {
+                grid: {
+                    columns: '1fr 1fr 1.4fr',
+                    rows: '1fr 1fr',
+                    areas: ['l1 l2 content', 'l3 l4 content'],
+                    gap: 16,
+                },
+                slots: [
+                    { id: 'slot_img_1', area: 'l1', allowedBlockTypes: imageOnly },
+                    { id: 'slot_img_2', area: 'l2', allowedBlockTypes: imageOnly },
+                    { id: 'slot_img_3', area: 'l3', allowedBlockTypes: imageOnly },
+                    { id: 'slot_img_4', area: 'l4', allowedBlockTypes: imageOnly },
+                    { id: 'slot_content', area: 'content', allowedBlockTypes: anyBlock },
                 ],
             },
         },
     ];
 
     const upsertPreset = db.prepare(`
-        INSERT INTO layout_presets (id, name, kind, is_system, schema_json, created_at, updated_at)
-        VALUES (@id, @name, 'system', 1, @schema_json, @created_at, @updated_at)
+        INSERT INTO layout_presets (id, name, name_key, kind, is_system, schema_json, created_at, updated_at)
+        VALUES (@id, @name, @name_key, 'system', 1, @schema_json, @created_at, @updated_at)
         ON CONFLICT(id) DO UPDATE SET
             name = excluded.name,
+            name_key = excluded.name_key,
             kind = excluded.kind,
             is_system = excluded.is_system,
             schema_json = excluded.schema_json,
@@ -130,6 +215,7 @@ function seedLayoutPresets(db) {
         upsertPreset.run({
             id: preset.id,
             name: preset.name,
+            name_key: preset.nameKey,
             schema_json: JSON.stringify(preset.schema),
             created_at: now,
             updated_at: now,
@@ -237,6 +323,7 @@ function migrate() {
         CREATE TABLE IF NOT EXISTS layout_presets (
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
+            name_key TEXT,
             kind TEXT NOT NULL CHECK (kind IN ('system', 'custom')),
             is_system INTEGER NOT NULL DEFAULT 0 CHECK (is_system IN (0, 1)),
             schema_json TEXT NOT NULL,
@@ -250,6 +337,7 @@ function migrate() {
 
     ensureColumn(db, 'slides', 'layout_preset_id', 'TEXT');
     ensureColumn(db, 'slides', 'slot_assignments_json', 'TEXT');
+    ensureColumn(db, 'layout_presets', 'name_key', 'TEXT');
 
     seedSystemThemes(db);
     seedLayoutPresets(db);

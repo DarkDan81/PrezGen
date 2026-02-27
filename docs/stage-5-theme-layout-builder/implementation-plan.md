@@ -52,8 +52,14 @@ Exit criteria:
 ## Phase 4 - Layout Presets Integration
 
 1. Expose layout preset selection in slide creation/edit flow.
-2. Add slot assignment UX (map blocks into preset slots).
-3. Update renderer to resolve:
+2. Replace plain dropdown with visual layout cards (schema-based mini slide preview).
+3. Localize preset names via i18n keys (`nameKey` with fallback to `name`).
+4. Add slot assignment UX (map blocks into preset slots).
+5. Filter incompatible blocks per slot based on `allowedBlockTypes`.
+6. Expand preset catalog with image-oriented and mirrored variants.
+7. Add user-facing `Section Title` slide option (centered title/subtitle, no blocks).
+8. Enforce no-block behavior for `Section Title` in UI and API.
+9. Update renderer to resolve:
    - geometry from layout preset;
    - visuals from theme tokens;
    - content from block adapters.
@@ -62,6 +68,8 @@ Exit criteria:
 
 1. Slide geometry can change independently from theme visuals.
 2. Existing block types render correctly in multiple presets.
+3. Layout selection is understandable visually without reading preset names.
+4. Section separator slides are usable without block configuration.
 
 ## Phase 5 - Import/Export Foundation
 

@@ -104,7 +104,9 @@ function renderBlocksWithLayout(slide) {
     const rows = typeof preset.grid.rows === 'string' ? preset.grid.rows : 'auto';
     const areas = Array.isArray(preset.grid.areas) ? preset.grid.areas : [];
     const gap = Number.isFinite(preset.grid.gap) ? Number(preset.grid.gap) : 20;
-    const areasCss = areas.length ? `grid-template-areas:${areas.map((row) => `"${row}"`).join(' ')};` : '';
+    const areasCss = areas.length
+        ? `grid-template-areas:${areas.map((row) => `'${String(row).replace(/'/g, "\\'")}'`).join(' ')};`
+        : '';
     const bodyStyle = `display:grid;grid-template-columns:${escapeAttr(columns)};grid-template-rows:${escapeAttr(rows)};${areasCss}gap:${gap}px;`;
 
     const slotsHtml = preset.slots.map((slot) => {

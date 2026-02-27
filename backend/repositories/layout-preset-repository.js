@@ -14,6 +14,7 @@ function mapLayoutPreset(row) {
     return {
         id: row.id,
         name: row.name,
+        nameKey: row.name_key || null,
         kind: row.kind,
         isSystem: row.is_system === 1,
         schema,

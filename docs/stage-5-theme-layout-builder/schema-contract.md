@@ -82,8 +82,13 @@ Validation baseline:
 {
   "id": "layout_2x2_grid",
   "name": "2x2 Grid",
+  "nameKey": "layout.2x2Grid",
   "kind": "system",
   "isSystem": true,
+  "preview": {
+    "mode": "schema",
+    "aspectRatio": "16:9"
+  },
   "slots": [
     { "id": "slot_a", "area": "a", "allowedBlockTypes": ["text", "kpi", "chart", "table", "image"] },
     { "id": "slot_b", "area": "b", "allowedBlockTypes": ["text", "kpi", "chart", "table", "image"] },
@@ -102,6 +107,22 @@ Validation baseline:
 }
 ```
 
+Notes:
+
+1. `nameKey` is used by frontend i18n and has fallback to raw `name`.
+2. `preview.mode=schema` means UI should render thumbnail from layout schema (SVG/CSS mini-map), not static image file.
+3. Optional future `preview.imageUrl` can be added for curated art previews, but schema rendering remains default.
+
+## 3.1) Current Seeded System Layout Catalog (MVP)
+
+1. `layout-single-column`
+2. `layout-two-columns`
+3. `layout-2x2-grid`
+4. `layout-hero-left-stack-right-3` (`content + 3 images`)
+5. `layout-stack-left-3-hero-right` (`3 images + content`)
+6. `layout-hero-left-stack-right-4` (`content + 4 images`)
+7. `layout-image-full-caption` (`4 images + content`)
+
 ## 4) Slide Binding Extension
 
 `Slide` gets optional `layoutPresetId` and block-to-slot mapping:
@@ -115,6 +136,24 @@ Validation baseline:
   ]
 }
 ```
+
+Section title slide contract:
+
+```json
+{
+  "type": "title",
+  "title": "Q4 Results",
+  "subtitle": "Regional Breakdown",
+  "layoutPresetId": null,
+  "slotAssignments": []
+}
+```
+
+Rules:
+
+1. `type=title` is user-facing as `Section Title`.
+2. `title` slides have no blocks and ignore layout preset assignment.
+3. Block create/update endpoints must reject block operations for `title` slides.
 
 ## 5) API Draft
 

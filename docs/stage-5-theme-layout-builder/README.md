@@ -1,7 +1,7 @@
 # Stage 5 - Theme and Layout Builder
 
 Date: 2026-02-27
-Status: planned
+Status: in progress
 
 Related:
 
@@ -32,6 +32,8 @@ Build a scalable presentation theming system and layout preset system where visu
 5. Add validation/warnings for dangerous token values (too small/large/low contrast).
 6. Ensure preview and PDF use the same final theme/layout rendering path.
 7. Prepare import/export foundation without full MVP UI flow.
+8. Add visual layout picker with localized preset labels.
+9. Add `Section Title` slide mode (title/subtitle centered, no blocks).
 
 ## Out of Scope (Stage 5 MVP)
 
@@ -48,6 +50,8 @@ Build a scalable presentation theming system and layout preset system where visu
 4. Theme can be immediately applied to a presentation.
 5. Preview and PDF output remain visually consistent.
 6. At least one production theme (`Eurofoods`) and one alternative theme are valid in new model.
+7. Layout presets are selectable via visual cards and localized labels.
+8. Section separator slide is available and cannot contain blocks.
 
 ## Handoff Notes
 

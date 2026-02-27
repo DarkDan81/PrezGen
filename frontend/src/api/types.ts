@@ -94,6 +94,7 @@ export type ThemeTokens = {
 export type LayoutPreset = {
   id: string;
   name: string;
+  nameKey?: string | null;
   kind: 'system' | 'custom';
   isSystem: boolean;
   schema: {

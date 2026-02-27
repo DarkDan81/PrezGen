@@ -8,6 +8,10 @@ import './styles.css'
 import './shared/ui/ui.css'
 
 const queryClient = new QueryClient()
+const persistedUiMode = window.localStorage.getItem('prezgen-ui-mode')
+if (persistedUiMode === 'dark' || persistedUiMode === 'light') {
+  document.documentElement.dataset.mode = persistedUiMode
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

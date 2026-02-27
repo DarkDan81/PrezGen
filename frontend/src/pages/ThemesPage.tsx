@@ -39,6 +39,35 @@ function defaultTokens(): ThemeTokens {
   };
 }
 
+function normalizeTokens(input?: ThemeTokens): ThemeTokens {
+  const base = defaultTokens();
+  const next = input && typeof input === 'object' ? input : ({} as ThemeTokens);
+  return {
+    ...base,
+    ...next,
+    color: {
+      ...base.color,
+      ...(next.color || {}),
+    },
+    typography: {
+      ...base.typography,
+      ...(next.typography || {}),
+    },
+    spacing: {
+      ...base.spacing,
+      ...(next.spacing || {}),
+    },
+    chart: {
+      ...base.chart,
+      ...(next.chart || {}),
+    },
+    table: {
+      ...base.table,
+      ...(next.table || {}),
+    },
+  };
+}
+
 export function ThemesPage() {
   const { locale, setLocale, t } = useI18n();
   const navigate = useNavigate();
@@ -156,7 +185,7 @@ export function ThemesPage() {
                   onClick={() => {
                     setSelectedThemeId(theme.id);
                     setName(theme.name);
-                    setTokens((theme.tokens as ThemeTokens) || defaultTokens());
+                    setTokens(normalizeTokens(theme.tokens as ThemeTokens));
                     setWarnings([]);
                     setError('');
                   }}

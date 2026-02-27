@@ -22,6 +22,7 @@
   grid-template-columns: 300px 1fr 360px;
   gap: 12px;
   padding: 12px;
+  min-height: calc(100vh - 70px);
 }
 
 .panel {
@@ -29,7 +30,7 @@
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 12px;
-  min-height: 80vh;
+  min-height: 0;
 }
 
 .panel.center {
@@ -53,6 +54,15 @@
   padding: 6px 8px;
   margin: 8px 0;
   cursor: pointer;
+}
+
+.drag-remove {
+  margin-left: auto;
+  min-width: 28px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  line-height: 1;
 }
 
 .drag-item.active {
@@ -81,6 +91,46 @@
 .properties {
   display: grid;
   gap: 10px;
+}
+
+.layout-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.layout-picker-card {
+  display: grid;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+  background: var(--field-bg);
+  color: var(--text-main);
+  text-align: left;
+  cursor: pointer;
+}
+
+.layout-picker-card.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.layout-picker-thumb {
+  display: grid;
+  gap: 4px;
+  height: 64px;
+}
+
+.layout-picker-slot {
+  border-radius: 4px;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+  background: color-mix(in srgb, var(--accent) 10%, var(--field-bg));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .properties label {
@@ -223,6 +273,13 @@
   color: var(--danger);
 }
 
+.panel.right {
+  max-height: calc(100vh - 86px);
+  overflow-y: auto;
+  position: sticky;
+  top: 74px;
+}
+
 .pdf-status {
   font-size: 12px;
   color: color-mix(in srgb, var(--text-main) 70%, transparent);
@@ -237,5 +294,17 @@
 @media (max-width: 1200px) {
   .editor-grid {
     grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .layout-picker-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .panel.right {
+    max-height: none;
+    overflow: visible;
+    position: static;
+    top: auto;
   }
 }

@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { client } from '../api/client';
-import type { Block, Dataset, Slide } from '../api/types';
+import type { Block, Dataset, LayoutPreset, Slide } from '../api/types';
 import { BlockConfigForm, getDefaultConfig } from '../components/BlockConfigForm';
 import { useDebouncedEffect } from '../hooks/useDebouncedEffect';
 import { useI18n } from '../shared/i18n/I18nProvider';
@@ -21,12 +21,16 @@ function DragItem({
   active,
   onClick,
   dragHandleLabel,
+  removeLabel,
+  onRemove,
 }: {
   id: string;
   label: string;
   active: boolean;
   onClick: () => void;
   dragHandleLabel: string;
+  removeLabel?: string;
+  onRemove?: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
   return (
@@ -56,6 +60,21 @@ function DragItem({
         ::
       </Button>
       <span>{label}</span>
+      {onRemove ? (
+        <Button
+          variant="danger"
+          size="small"
+          className="drag-remove"
+          title={removeLabel || ''}
+          aria-label={removeLabel || ''}
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove();
+          }}
+        >
+          ×
+        </Button>
+      ) : null}
     </div>
   );
 }
@@ -160,6 +179,32 @@ function blockTypeLabel(type: Block['type'], t: (key: 'block.text' | 'block.imag
   return t('block.kpi');
 }
 
+function blockDisplayLabel(block: Block, index: number, t: (key: 'block.text' | 'block.image' | 'block.chart' | 'block.table' | 'block.kpi') => string): string {
+  return `${index + 1}. ${blockTypeLabel(block.type, t)}`;
+}
+
+function layoutPresetLabel(preset: LayoutPreset, t: (key: TranslationKey) => string): string {
+  if (preset.nameKey) {
+    return t(preset.nameKey as TranslationKey);
+  }
+  return preset.name;
+}
+
+function getLayoutPreviewGrid(schema: LayoutPreset['schema']) {
+  const rows = Array.isArray(schema?.grid?.areas) ? schema.grid.areas : [];
+  const rowCount = rows.length || 1;
+  const colCount = rows.length
+    ? Math.max(...rows.map((row) => String(row).trim().split(/\s+/).filter(Boolean).length), 1)
+    : 1;
+  const templateAreas = rows.length ? rows.map((row) => `"${row}"`).join(' ') : '';
+  return { rowCount, colCount, templateAreas };
+}
+
+function slotAllowsBlock(slot: { allowedBlockTypes?: Array<Block['type']> }, blockType: Block['type']) {
+  if (!Array.isArray(slot.allowedBlockTypes) || slot.allowedBlockTypes.length === 0) return true;
+  return slot.allowedBlockTypes.includes(blockType);
+}
+
 export function EditorPage() {
   const { locale, setLocale, t } = useI18n();
   const { id: presentationId = '' } = useParams();
@@ -180,7 +225,10 @@ export function EditorPage() {
   const [previewUrl, setPreviewUrl] = useState('');
   const [previewNonce, setPreviewNonce] = useState(0);
   const [renderJobId, setRenderJobId] = useState('');
-  const [themeMode, setThemeMode] = useState<'light' | 'dark'>('light');
+  const [themeMode, setThemeMode] = useState<'light' | 'dark'>(() => {
+    if (typeof window === 'undefined') return 'light';
+    return window.localStorage.getItem('prezgen-ui-mode') === 'dark' ? 'dark' : 'light';
+  });
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   const [selectedDatasetId, setSelectedDatasetId] = useState('');
@@ -242,6 +290,7 @@ export function EditorPage() {
 
   useEffect(() => {
     document.documentElement.dataset.mode = themeMode;
+    window.localStorage.setItem('prezgen-ui-mode', themeMode);
   }, [themeMode]);
 
   useEffect(() => {
@@ -334,7 +383,7 @@ export function EditorPage() {
   );
 
   const createSlideMutation = useMutation({
-    mutationFn: () => client.createSlide(presentationId, { type: 'content', title: 'New Slide' }),
+    mutationFn: (payload: { type: 'content' | 'title'; title: string }) => client.createSlide(presentationId, payload),
     onSuccess: (created) => {
       queryClient.invalidateQueries({ queryKey: ['slides', presentationId] });
       setSelectedSlideId(created.id);
@@ -367,9 +416,43 @@ export function EditorPage() {
     mutationFn: (slideIds: string[]) => client.reorderSlides(presentationId, slideIds),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['slides', presentationId] }),
   });
+  const deleteSlideMutation = useMutation({
+    mutationFn: (slideId: string) => client.deleteSlide(slideId),
+    onMutate: () => setSaveState('saving'),
+    onSuccess: async (_data, deletedSlideId) => {
+      const remainingSlides = slides.filter((slide) => slide.id !== deletedSlideId);
+      setSelectedSlideId((current) => (current === deletedSlideId ? (remainingSlides[0]?.id || '') : current));
+      setSelectedBlockId('');
+      await queryClient.invalidateQueries({ queryKey: ['slides', presentationId] });
+      if (remainingSlides[0]?.id) {
+        await queryClient.invalidateQueries({ queryKey: ['blocks', remainingSlides[0].id] });
+      }
+      buildPreviewMutation.mutate();
+      setSaveState('saved');
+    },
+    onError: (error) => {
+      setBlockError((error as Error).message);
+      setSaveState('error');
+    },
+  });
   const reorderBlocksMutation = useMutation({
     mutationFn: (blockIds: string[]) => client.reorderBlocks(selectedSlideId, blockIds),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['blocks', selectedSlideId] }),
+  });
+  const deleteBlockMutation = useMutation({
+    mutationFn: (blockId: string) => client.deleteBlock(blockId),
+    onMutate: () => setSaveState('saving'),
+    onSuccess: async (_data, blockId) => {
+      setSelectedBlockId((current) => (current === blockId ? '' : current));
+      setSlideSlotAssignments((prev) => prev.filter((item) => item.blockId !== blockId));
+      await queryClient.invalidateQueries({ queryKey: ['blocks', selectedSlideId] });
+      buildPreviewMutation.mutate();
+      setSaveState('saved');
+    },
+    onError: (error) => {
+      setBlockError((error as Error).message);
+      setSaveState('error');
+    },
   });
 
   const buildPreviewMutation = useMutation({
@@ -401,8 +484,16 @@ export function EditorPage() {
 
   const slides = slidesQuery.data || [];
   const blocks = blocksQuery.data || [];
+  const isTitleSlide = selectedSlide?.type === 'title';
   const slideIds = useMemo(() => slides.map((s) => s.id), [slides]);
   const blockIds = useMemo(() => blocks.map((b) => b.id), [blocks]);
+  const blockIndexMap = useMemo(() => {
+    const map = new Map<string, number>();
+    blocks.forEach((block, index) => {
+      map.set(block.id, index);
+    });
+    return map;
+  }, [blocks]);
 
   const previewBase = previewUrl || `/api/v1/preview/${presentationId}`;
   const previewSrc = `${previewBase}${previewBase.includes('?') ? '&' : '?'}_t=${previewNonce}`;
@@ -420,6 +511,23 @@ export function EditorPage() {
     [datasetDraftColumns, datasetDraftName, datasetDraftRows, datasetModalSnapshot],
   );
   const selectedLayoutPreset = (layoutPresetsQuery.data || []).find((preset) => preset.id === slideLayoutPresetId) || null;
+
+  useEffect(() => {
+    if (selectedSlide?.type === 'title') {
+      setSelectedBlockId('');
+    }
+  }, [selectedSlide?.id, selectedSlide?.type]);
+
+  const handleSelectLayoutPreset = (nextPresetId: string) => {
+    setSlideLayoutPresetId(nextPresetId);
+    const preset = (layoutPresetsQuery.data || []).find((item) => item.id === nextPresetId);
+    const slotIds = (preset?.schema?.slots || []).map((slot) => slot.id);
+    setSlideSlotAssignments((prev) =>
+      prev
+        .filter((item) => slotIds.includes(item.slotId))
+        .map((item) => ({ slotId: item.slotId, blockId: item.blockId })),
+    );
+  };
 
   const createManualDatasetDraft = () => {
     const next = emptyDatasetDraft();
@@ -630,9 +738,14 @@ export function EditorPage() {
         <aside className="panel left">
           <div className="panel-row">
             <h3>{t('editor.slides')}</h3>
-            <Button size="small" onClick={() => createSlideMutation.mutate()}>
-              {t('editor.addSlide')}
-            </Button>
+            <div className="panel-row">
+              <Button size="small" onClick={() => createSlideMutation.mutate({ type: 'content', title: t('editor.untitled') })}>
+                {t('editor.addContentSlide')}
+              </Button>
+              <Button size="small" onClick={() => createSlideMutation.mutate({ type: 'title', title: t('editor.sectionTitleSlide') })}>
+                {t('editor.addSectionSlide')}
+              </Button>
+            </div>
           </div>
           <DndContext
             sensors={sensors}
@@ -651,9 +764,11 @@ export function EditorPage() {
                 <DragItem
                   key={slide.id}
                   id={slide.id}
-                  label={slide.title || t('editor.untitled')}
+                  label={`${slide.order + 1}. ${slide.title || t('editor.untitled')}`}
                   active={selectedSlideId === slide.id}
                   dragHandleLabel={t('editor.dragSlide', { name: slide.title || t('editor.untitled') })}
+                  removeLabel={t('common.delete')}
+                  onRemove={() => deleteSlideMutation.mutate(slide.id)}
                   onClick={() => {
                     setSelectedSlideId(slide.id);
                     setSelectedBlockId('');
@@ -668,50 +783,58 @@ export function EditorPage() {
               <div className="panel-row mt">
                 <h3>{t('editor.blocks')}</h3>
               </div>
-              <div className="panel-row">
-                <select className="ui-select compact-select" value={newBlockType} onChange={(e) => setNewBlockType(e.target.value as Block['type'])}>
-                  <option value="text">{t('block.text')}</option>
-                  <option value="image">{t('block.image')}</option>
-                  <option value="chart">{t('block.chart')}</option>
-                  <option value="table">{t('block.table')}</option>
-                  <option value="kpi">{t('block.kpi')}</option>
-                </select>
-                <Button
-                  size="small"
-                  onClick={() => {
-                    setBlockError('');
-                    createBlockMutation.mutate(newBlockType);
-                  }}
-                >
-                  {t('editor.addBlock')}
-                </Button>
-              </div>
-              <p className="hint">{t('editor.addBlockHint')}</p>
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={(e) => {
-                  const { active, over } = e;
-                  if (!over || active.id === over.id) return;
-                  const oldIndex = blocks.findIndex((b) => b.id === active.id);
-                  const newIndex = blocks.findIndex((b) => b.id === over.id);
-                  const updated = arrayMove(blocks, oldIndex, newIndex).map((b) => b.id);
-                  reorderBlocksMutation.mutate(updated);
-                }}
-              >
-                <SortableContext items={blockIds} strategy={verticalListSortingStrategy}>
-                  {blocks.map((block) => (
+              {isTitleSlide ? (
+                <p className="hint">{t('editor.titleSlideNoBlocks')}</p>
+              ) : (
+                <>
+                  <div className="panel-row">
+                    <select className="ui-select compact-select" value={newBlockType} onChange={(e) => setNewBlockType(e.target.value as Block['type'])}>
+                      <option value="text">{t('block.text')}</option>
+                      <option value="image">{t('block.image')}</option>
+                      <option value="chart">{t('block.chart')}</option>
+                      <option value="table">{t('block.table')}</option>
+                      <option value="kpi">{t('block.kpi')}</option>
+                    </select>
+                    <Button
+                      size="small"
+                      onClick={() => {
+                        setBlockError('');
+                        createBlockMutation.mutate(newBlockType);
+                      }}
+                    >
+                      {t('editor.addBlock')}
+                    </Button>
+                  </div>
+                  <p className="hint">{t('editor.addBlockHint')}</p>
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={(e) => {
+                      const { active, over } = e;
+                      if (!over || active.id === over.id) return;
+                      const oldIndex = blocks.findIndex((b) => b.id === active.id);
+                      const newIndex = blocks.findIndex((b) => b.id === over.id);
+                      const updated = arrayMove(blocks, oldIndex, newIndex).map((b) => b.id);
+                      reorderBlocksMutation.mutate(updated);
+                    }}
+                  >
+                    <SortableContext items={blockIds} strategy={verticalListSortingStrategy}>
+                  {blocks.map((block, index) => (
                     <DragItem
                       key={block.id}
                       id={block.id}
-                      label={blockTypeLabel(block.type, t)}
+                      label={blockDisplayLabel(block, index, t)}
                       active={selectedBlockId === block.id}
-                      dragHandleLabel={t('editor.dragBlock', { name: blockTypeLabel(block.type, t) })}
+                      dragHandleLabel={t('editor.dragBlock', { name: blockDisplayLabel(block, index, t) })}
                       onClick={() => setSelectedBlockId(block.id)}
+                      removeLabel={t('editor.deleteBlock')}
+                      onRemove={() => deleteBlockMutation.mutate(block.id)}
                     />
                   ))}
-                </SortableContext>
-              </DndContext>
+                  </SortableContext>
+                </DndContext>
+                </>
+              )}
             </>
           )}
         </aside>
@@ -741,81 +864,131 @@ export function EditorPage() {
           {selectedSlide && (
             <SectionCard title={t('editor.slideSettings')}>
               <div className="properties">
+                <Field label={t('editor.slideType')}>
+                  <input className="ui-input" value={isTitleSlide ? t('editor.sectionTitleSlide') : t('editor.contentSlide')} readOnly />
+                </Field>
                 <Field label={t('editor.slideTitle')}>
                   <input className="ui-input" value={slideTitle} onChange={(e) => setSlideTitle(e.target.value)} />
                 </Field>
                 <Field label={t('editor.slideSubtitle')}>
                   <input className="ui-input" value={slideSubtitle} onChange={(e) => setSlideSubtitle(e.target.value)} />
                 </Field>
-                <Field label={t('editor.layoutPreset')}>
-                  <select
-                    className="ui-select"
-                    value={slideLayoutPresetId}
-                    onChange={(e) => {
-                      const nextPresetId = e.target.value;
-                      setSlideLayoutPresetId(nextPresetId);
-                      const preset = (layoutPresetsQuery.data || []).find((item) => item.id === nextPresetId);
-                      const slotIds = (preset?.schema?.slots || []).map((slot) => slot.id);
-                      setSlideSlotAssignments((prev) =>
-                        prev
-                          .filter((item) => slotIds.includes(item.slotId))
-                          .map((item) => ({ slotId: item.slotId, blockId: item.blockId })),
-                      );
-                    }}
-                  >
-                    <option value="">{t('editor.selectLayoutPreset')}</option>
-                    {(layoutPresetsQuery.data || []).map((preset) => (
-                      <option key={preset.id} value={preset.id}>
-                        {preset.name}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-                {selectedLayoutPreset?.schema?.slots?.map((slot) => {
-                  const selectedBlockForSlot = slideSlotAssignments.find((item) => item.slotId === slot.id)?.blockId || '';
-                  return (
-                    <Field key={slot.id} label={`${t('editor.slot')}: ${slot.id}`}>
-                      <select
-                        className="ui-select"
-                        value={selectedBlockForSlot}
-                        onChange={(e) => {
-                          const nextBlockId = e.target.value;
-                          setSlideSlotAssignments((prev) => {
-                            const withoutCurrent = prev.filter((item) => item.slotId !== slot.id);
-                            if (!nextBlockId) return withoutCurrent;
-                            return [...withoutCurrent, { slotId: slot.id, blockId: nextBlockId }];
-                          });
-                        }}
-                      >
-                        <option value="">{t('editor.unassigned')}</option>
-                        {blocks.map((block) => (
-                          <option key={block.id} value={block.id}>
-                            {blockTypeLabel(block.type, t)} ({block.id.slice(0, 8)})
-                          </option>
-                        ))}
-                      </select>
+                {!isTitleSlide && (
+                  <>
+                    <Field label={t('editor.layoutPreset')}>
+                      <p className="hint">{t('editor.selectLayoutPreset')}</p>
                     </Field>
-                  );
-                })}
-                <Button
-                  variant="secondary"
-                  disabled={!selectedSlide?.id || !slideLayoutPresetId}
-                  onClick={() => {
-                    if (!selectedSlide?.id || !slideLayoutPresetId) return;
-                    patchSlideLayoutMutation.mutate({
-                      slideId: selectedSlide.id,
-                      layoutPresetId: slideLayoutPresetId,
-                      slotAssignments: slideSlotAssignments,
-                    });
-                  }}
-                >
-                  {t('editor.saveLayout')}
-                </Button>
+                    <div className="layout-picker-grid" role="list" aria-label={t('editor.layoutPreset')}>
+                      {(layoutPresetsQuery.data || []).map((preset) => {
+                        const preview = getLayoutPreviewGrid(preset.schema || {});
+                        const isActive = slideLayoutPresetId === preset.id;
+                        return (
+                          <button
+                            type="button"
+                            key={preset.id}
+                            className={`layout-picker-card ${isActive ? 'active' : ''}`}
+                            onClick={() => handleSelectLayoutPreset(preset.id)}
+                            aria-pressed={isActive}
+                          >
+                            <div
+                              className="layout-picker-thumb"
+                              style={{
+                                gridTemplateColumns: `repeat(${preview.colCount}, 1fr)`,
+                                gridTemplateRows: `repeat(${preview.rowCount}, 1fr)`,
+                                gridTemplateAreas: preview.templateAreas || undefined,
+                              }}
+                            >
+                              {(preset.schema?.slots || []).map((slot, idx) => (
+                                <div key={slot.id} className="layout-picker-slot" style={slot.area ? { gridArea: slot.area } : undefined}>
+                                  {idx + 1}
+                                </div>
+                              ))}
+                            </div>
+                            <span>{layoutPresetLabel(preset, t)}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {selectedLayoutPreset?.schema?.slots?.map((slot) => {
+                      const selectedBlockForSlot = slideSlotAssignments.find((item) => item.slotId === slot.id)?.blockId || '';
+                      const allowedBlocks = blocks.filter((block) => slotAllowsBlock(slot, block.type));
+                      const imageOnlySlot =
+                        Array.isArray(slot.allowedBlockTypes) &&
+                        slot.allowedBlockTypes.length > 0 &&
+                        slot.allowedBlockTypes.every((type) => type === 'image');
+                      return (
+                        <Field key={slot.id} label={`${t('editor.slot')}: ${slot.id}`}>
+                          <select
+                            className="ui-select"
+                            value={selectedBlockForSlot}
+                            onChange={(e) => {
+                              const nextBlockId = e.target.value;
+                              setSlideSlotAssignments((prev) => {
+                                const withoutCurrent = prev.filter((item) => item.slotId !== slot.id);
+                                if (!nextBlockId) return withoutCurrent;
+                                return [...withoutCurrent, { slotId: slot.id, blockId: nextBlockId }];
+                              });
+                            }}
+                          >
+                            <option value="">{t('editor.unassigned')}</option>
+                            {allowedBlocks.map((block) => (
+                              <option key={block.id} value={block.id}>
+                                {blockDisplayLabel(block, blockIndexMap.get(block.id) || 0, t)}
+                              </option>
+                            ))}
+                          </select>
+                          {imageOnlySlot && (
+                            <Button
+                              size="small"
+                              onClick={async () => {
+                                if (!selectedSlideId) return;
+                                try {
+                                  setSaveState('saving');
+                                  setBlockError('');
+                                  const created = await client.createBlock(selectedSlideId, {
+                                    type: 'image',
+                                    config: getDefaultConfig('image'),
+                                  });
+                                  await queryClient.invalidateQueries({ queryKey: ['blocks', selectedSlideId] });
+                                  setSelectedBlockId(created.id);
+                                  setSlideSlotAssignments((prev) => {
+                                    const withoutCurrent = prev.filter((item) => item.slotId !== slot.id);
+                                    return [...withoutCurrent, { slotId: slot.id, blockId: created.id }];
+                                  });
+                                  setSaveState('saved');
+                                } catch (error) {
+                                  setBlockError((error as Error).message);
+                                  setSaveState('error');
+                                }
+                              }}
+                            >
+                              {t('editor.addImageToSlot')}
+                            </Button>
+                          )}
+                        </Field>
+                      );
+                    })}
+                    <Button
+                      variant="secondary"
+                      disabled={!selectedSlide?.id || !slideLayoutPresetId}
+                      onClick={() => {
+                        if (!selectedSlide?.id || !slideLayoutPresetId) return;
+                        patchSlideLayoutMutation.mutate({
+                          slideId: selectedSlide.id,
+                          layoutPresetId: slideLayoutPresetId,
+                          slotAssignments: slideSlotAssignments,
+                        });
+                      }}
+                    >
+                      {t('editor.saveLayout')}
+                    </Button>
+                  </>
+                )}
               </div>
             </SectionCard>
           )}
 
-          {selectedBlock && (
+          {selectedBlock && !isTitleSlide && (
             <SectionCard title={t('editor.blockSettings')} className="mt">
               <BlockConfigForm
                 presentationId={presentationId}
@@ -829,12 +1002,7 @@ export function EditorPage() {
               {blockError && <p className="ui-error">{blockError}</p>}
               <Button
                 variant="danger"
-                onClick={() => {
-                  client.deleteBlock(selectedBlock.id).then(() => {
-                    setSelectedBlockId('');
-                    queryClient.invalidateQueries({ queryKey: ['blocks', selectedSlideId] });
-                  });
-                }}
+                onClick={() => deleteBlockMutation.mutate(selectedBlock.id)}
               >
                 {t('editor.deleteBlock')}
               </Button>
