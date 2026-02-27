@@ -87,7 +87,7 @@ Branch: `feat/frontend-mvp-editor`
 17. Render and demo polish (post-MVP additions implemented):
     - image blocks now support fit/position payload (`fitMode`, `focalPoint`) in render model.
     - layout slots now expose deterministic CSS classes (`layout-preset-*`, `slot-*`) for slot-specific visual tuning.
-    - image cluster presets apply slot-specific anchor defaults for better crop/alignment with mixed aspect ratios.
+    - image cluster presets switched to no-crop baseline (`contain`) with stable cell framing.
     - KPI blocks now use adaptive internal grid sizing in dense layouts (`2x2` and similar), reducing card overflow.
     - `layout-single-column` seed now supports stacked `text + kpi` via two vertical slots.
     - QA demo seed content expanded with long/medium/short text stress cases and full slot bindings.
@@ -130,5 +130,4 @@ Branch: `feat/frontend-mvp-editor`
 
 1. Add user-facing controls in block editor for `fitMode` / `focalPoint` (currently renderer supports these fields, UI editing is not exposed yet).
 2. Add dedicated visual regression checklist for cluster anchors and dense KPI grids (manual + scripted snapshots).
-3. Add user-facing controls in block editor for `fitMode` / `focalPoint` (renderer supports these fields, UI editing is not exposed yet).
-4. Add dedicated visual regression checklist for collapsed-header workspace and multi-zone scroll behavior.
+3. Add dedicated visual regression checklist for collapsed-header workspace and multi-zone scroll behavior.
