@@ -100,6 +100,7 @@ Branch: `feat/frontend-mvp-editor`
       - left panel (`Slides` + `Blocks`);
       - center preview frame;
       - right properties panel.
+    - image block editor now exposes user-facing `fitMode` and `focalPoint` controls.
 
 ## Verification after changes
 
@@ -128,6 +129,5 @@ Branch: `feat/frontend-mvp-editor`
 
 ## Planned Additions (Next Pass)
 
-1. Add user-facing controls in block editor for `fitMode` / `focalPoint` (currently renderer supports these fields, UI editing is not exposed yet).
-2. Add dedicated visual regression checklist for cluster anchors and dense KPI grids (manual + scripted snapshots).
-3. Add dedicated visual regression checklist for collapsed-header workspace and multi-zone scroll behavior.
+1. Add dedicated visual regression checklist for cluster anchors and dense KPI grids (manual + scripted snapshots).
+2. Add dedicated visual regression checklist for collapsed-header workspace and multi-zone scroll behavior.

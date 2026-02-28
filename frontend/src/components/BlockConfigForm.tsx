@@ -42,7 +42,7 @@ function update(
 
 export function getDefaultConfig(type: Block['type']): Record<string, unknown> {
   if (type === 'text') return { html: '<p>Text</p>' };
-  if (type === 'image') return { url: 'https://placehold.co/400x240' };
+  if (type === 'image') return { url: 'https://placehold.co/400x240', fitMode: 'contain', focalPoint: 'center center' };
   if (type === 'chart') {
     return {
       datasetId: '',
@@ -149,6 +149,30 @@ export function BlockConfigForm({
           <label>
             {t('block.imageUrl')}
             <input value={asString(config.url)} onChange={(e) => update(config, 'url', e.target.value, onConfigChange)} />
+          </label>
+          <label>
+            {t('block.imageFit')}
+            <select value={asString(config.fitMode) || 'contain'} onChange={(e) => update(config, 'fitMode', e.target.value, onConfigChange)}>
+              <option value="contain">{t('block.imageFitContain')}</option>
+              <option value="cover">{t('block.imageFitCover')}</option>
+            </select>
+          </label>
+          <label>
+            {t('block.imageFocus')}
+            <select
+              value={asString(config.focalPoint) || 'center center'}
+              onChange={(e) => update(config, 'focalPoint', e.target.value, onConfigChange)}
+            >
+              <option value="center center">{t('block.imageFocusCenter')}</option>
+              <option value="left top">{t('block.imageFocusLeftTop')}</option>
+              <option value="center top">{t('block.imageFocusCenterTop')}</option>
+              <option value="right top">{t('block.imageFocusRightTop')}</option>
+              <option value="left center">{t('block.imageFocusLeftCenter')}</option>
+              <option value="right center">{t('block.imageFocusRightCenter')}</option>
+              <option value="left bottom">{t('block.imageFocusLeftBottom')}</option>
+              <option value="center bottom">{t('block.imageFocusCenterBottom')}</option>
+              <option value="right bottom">{t('block.imageFocusRightBottom')}</option>
+            </select>
           </label>
           <label
             onDragOver={(e) => e.preventDefault()}

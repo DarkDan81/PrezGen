@@ -136,6 +136,38 @@ Branch/Commit: __________
 - [ ] Ensure invalid slot mapping is rejected by API (manual API test)
 - [ ] Refresh preview and confirm no regressions in slide rendering
 
+## 16. QA Demo Deck (Seeded Reference)
+
+Precondition:
+
+- [ ] Run `npm run seed:qa-demo`
+- [ ] Open presentation named `QA Demo Deck`
+
+Slides and content integrity:
+
+- [ ] `Single Column` slide: both `text` and `kpi` are visible (no `Dataset not found: n/a`)
+- [ ] `Two Columns` slide: long token text stays inside left column (no overflow outside block)
+- [ ] `2x2 Grid` slide: KPI cards fit cleanly inside slot and do not overlap
+- [ ] `Content + 3 Images Right` slide: all 3 images are fully visible (no crop) and framed consistently
+- [ ] `3 Images Left + Content` slide: same no-crop behavior in mirrored variant
+- [ ] `Content + 4 Images Right` slide: all four image cells render without clipping/overlap
+- [ ] `4 Images Left + Content` slide: same no-crop behavior in mirrored variant
+
+Image block controls (new):
+
+- [ ] Open an image block in right panel and change `Image fit` to `Cover` -> preview fills slot (crop allowed)
+- [ ] Switch back to `Contain` -> full image visible without crop
+- [ ] Change `Image focus` to corner values and verify focus shift in `Cover` mode
+
+## 17. Editor Workspace Usability (Phase 8)
+
+- [ ] Top header collapse/expand toggle works (`▲/▼`)
+- [ ] Header collapsed state persists after page reload
+- [ ] Left panel scroll is independent from center preview and right properties panel
+- [ ] Right properties panel scroll is independent
+- [ ] Center preview scroll is independent
+- [ ] With header collapsed, preview area height increases and routine work does not require page-level scrolling
+
 ## Notes / Bugs Found
 
 - ________________________________________________
