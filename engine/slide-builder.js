@@ -226,6 +226,9 @@ function buildSlides(data) {
                 const isHorizontal = config.horizontal === true;
                 const labelsCount = config.data?.labels?.length || 0;
                 const denseLabels = labelsCount > 8;
+                const rootStyles = getComputedStyle(document.documentElement);
+                const axisColor = rootStyles.getPropertyValue('--pg-chart-axis').trim() || '#f4f8ff';
+                const labelColor = rootStyles.getPropertyValue('--pg-chart-label').trim() || '#ffffff';
                 return {
                     indexAxis: isHorizontal ? 'y' : 'x',
                     responsive: true,
@@ -236,6 +239,7 @@ function buildSlides(data) {
                         x: {
                             grid: { display: false },
                             ticks: {
+                                color: axisColor,
                                 font: { size: denseLabels ? 18 : 22, weight: 'bold' },
                                 maxRotation: isHorizontal ? 0 : 35,
                                 minRotation: isHorizontal ? 0 : 35,
@@ -243,6 +247,7 @@ function buildSlides(data) {
                         },
                         y: {
                             ticks: {
+                                color: axisColor,
                                 font: { size: denseLabels ? 16 : 20, weight: 'bold' },
                             },
                         },
@@ -251,7 +256,7 @@ function buildSlides(data) {
                         legend: {
                             display: (config.data?.datasets || []).length > 1,
                             position: 'bottom',
-                            labels: { font: { size: 18, weight: 'bold' } },
+                            labels: { color: axisColor, font: { size: 18, weight: 'bold' } },
                         },
                         datalabels: {
                             display: config.showLabels !== false,
@@ -261,7 +266,7 @@ function buildSlides(data) {
                                 return ctx.dataset.data[ctx.dataIndex] >= 0 ? 'top' : 'bottom';
                             },
                             offset: 8,
-                            color: '#333',
+                            color: labelColor,
                             font: { size: denseLabels ? 16 : 20, weight: '700' },
                             formatter: (v) => {
                                 if (v === null || v === undefined) return '';
@@ -276,10 +281,43 @@ function buildSlides(data) {
             }
 
             function initCharts() {
+                const rootStyles = getComputedStyle(document.documentElement);
+                const palette = [
+                    rootStyles.getPropertyValue('--pg-chart-1').trim(),
+                    rootStyles.getPropertyValue('--pg-chart-2').trim(),
+                    rootStyles.getPropertyValue('--pg-chart-3').trim(),
+                    rootStyles.getPropertyValue('--pg-chart-4').trim(),
+                ].filter(Boolean);
+                function applyThemePalette(config) {
+                    if (!palette.length) return;
+                    const datasets = Array.isArray(config?.data?.datasets) ? config.data.datasets : [];
+                    datasets.forEach((dataset, datasetIndex) => {
+                        const baseColor = palette[datasetIndex % palette.length];
+                        const altColor = palette[(datasetIndex + 1) % palette.length];
+
+                        if (Array.isArray(dataset.backgroundColor)) {
+                            dataset.backgroundColor = dataset.backgroundColor.map((_value, pointIndex) =>
+                                palette[(datasetIndex + pointIndex) % palette.length]
+                            );
+                        } else {
+                            dataset.backgroundColor = baseColor;
+                        }
+
+                        if (Array.isArray(dataset.borderColor)) {
+                            dataset.borderColor = dataset.borderColor.map((_value, pointIndex) =>
+                                palette[(datasetIndex + pointIndex) % palette.length]
+                            );
+                        } else {
+                            dataset.borderColor = dataset.borderColor ? baseColor : (dataset.backgroundColor || altColor);
+                        }
+                    });
+                }
+
                 document.querySelectorAll('canvas').forEach((canvas) => {
                     try {
                         const ctx = canvas.getContext('2d');
                         const config = JSON.parse(canvas.dataset.config);
+                        applyThemePalette(config);
                         new Chart(ctx, {
                             type: canvas.dataset.type,
                             data: config.data,

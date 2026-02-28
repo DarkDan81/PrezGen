@@ -1,0 +1,21 @@
+color:
+  bgCanvas: "#05080d"
+  textPrimary: "#e7edf6"
+  accent: "#ff7b1f"
+typography:
+  titleSize: 64
+  subtitleSize: 30
+  bodySize: 28
+  lineHeight: 1.38
+spacing:
+  radius: 8
+  borderWidth: 1
+chart:
+  palette:
+    - "#39a8ff"
+    - "#ff7b1f"
+    - "#69bcff"
+    - "#ff9a4d"
+table:
+  headerBg: "#152135"
+  headerText: "#f2f7ff"

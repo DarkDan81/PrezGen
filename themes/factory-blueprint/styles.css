@@ -1,0 +1,298 @@
+:root {
+    --fd-bg: #05080d;
+    --fd-bg-soft: #0a1019;
+    --fd-surface: #0d1522;
+    --fd-surface-2: #111c2d;
+    --fd-text: #e7edf6;
+    --fd-text-muted: #8f9db4;
+    --fd-blue: #39a8ff;
+    --fd-orange: #ff7b1f;
+    --fd-grid: rgba(57, 168, 255, 0.12);
+    --fd-divider: rgba(143, 157, 180, 0.24);
+    --pg-chart-1: #39a8ff;
+    --pg-chart-2: #ff7b1f;
+    --pg-chart-3: #69bcff;
+    --pg-chart-4: #ff9a4d;
+    --pg-chart-axis: #e8effa;
+    --pg-chart-label: #ffffff;
+}
+
+*, *::before, *::after {
+    font-family: "Segoe UI", Tahoma, Arial, sans-serif !important;
+}
+
+body.viewer-mode {
+    background: #02050a;
+}
+
+.corner-logo {
+    display: none;
+}
+
+.slide {
+    background: radial-gradient(circle at 84% 10%, rgba(57, 168, 255, 0.1), transparent 45%),
+        radial-gradient(circle at 10% 84%, rgba(255, 123, 31, 0.08), transparent 45%),
+        var(--fd-bg);
+    color: var(--fd-text);
+}
+
+.slide::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+        linear-gradient(var(--fd-grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--fd-grid) 1px, transparent 1px);
+    background-size: 64px 64px;
+    opacity: 0.7;
+}
+
+.slide::after {
+    content: "DARKDAN";
+    position: absolute;
+    top: 28px;
+    right: 38px;
+    z-index: 9;
+    padding: 10px 16px;
+    border: 1px solid rgba(57, 168, 255, 0.55);
+    border-right-color: rgba(255, 123, 31, 0.85);
+    border-bottom-color: rgba(255, 123, 31, 0.85);
+    letter-spacing: 2px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #f2f6fc;
+    background: rgba(5, 8, 13, 0.9);
+}
+
+.decor-blob,
+.decor-line-left,
+.slide-decor-line {
+    position: absolute;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.decor-blob {
+    top: -220px;
+    right: -240px;
+    width: 560px;
+    height: 560px;
+    background:
+        radial-gradient(circle, rgba(57, 168, 255, 0.12) 0%, transparent 64%),
+        radial-gradient(circle at 35% 65%, rgba(255, 123, 31, 0.06) 0%, transparent 60%);
+    opacity: 0.6;
+}
+
+.decor-line-left {
+    left: 0;
+    top: 18%;
+    width: 3px;
+    height: 56%;
+    background: linear-gradient(to bottom, rgba(57, 168, 255, 0.85), rgba(255, 123, 31, 0.7));
+    opacity: 0.45;
+}
+
+.slide-decor-line {
+    right: 0;
+    bottom: 0;
+    width: 36%;
+    height: 34%;
+    background: linear-gradient(135deg, rgba(57, 168, 255, 0.08), rgba(255, 123, 31, 0.12));
+    clip-path: polygon(100% 0, 100% 100%, 0 100%);
+    opacity: 0.9;
+}
+
+.slide-header h2 {
+    font-size: 64px;
+    margin: 0;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #f4f8ff;
+    border-left: 10px solid var(--fd-orange);
+    padding-left: 26px;
+}
+
+.slide-subtitle {
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--fd-blue);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding-left: 30px;
+    margin-top: 10px;
+}
+
+.block-text {
+    color: var(--fd-text);
+    font-size: 28px;
+    line-height: 1.38;
+}
+
+.block-text h3 {
+    color: #f7fbff;
+    font-size: 44px;
+    margin: 0 0 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+}
+
+.block-text p {
+    color: #d0d9e8;
+}
+
+.block-text b {
+    color: var(--fd-orange);
+}
+
+.block-text ul,
+.block-text ol {
+    padding-left: 34px;
+}
+
+.block-text li::marker {
+    color: var(--fd-blue);
+}
+
+.table-block {
+    background: rgba(11, 17, 27, 0.92);
+    border: 1px solid rgba(57, 168, 255, 0.26);
+    border-radius: 8px;
+    box-shadow: inset 0 0 0 1px rgba(255, 123, 31, 0.08);
+}
+
+.ef-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 23px;
+    color: var(--fd-text);
+}
+
+.ef-table th {
+    background: rgba(21, 33, 53, 0.92);
+    color: #f2f7ff;
+    border-bottom: 2px solid rgba(57, 168, 255, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 800;
+}
+
+.ef-table td {
+    color: #d4deed;
+    border-bottom: 1px solid var(--fd-divider);
+}
+
+.ef-table tr:nth-child(even) {
+    background: transparent;
+}
+
+.ef-table tr:hover {
+    background: rgba(57, 168, 255, 0.08);
+}
+
+.chart-block {
+    background: rgba(11, 17, 27, 0.88);
+    border: 1px solid rgba(57, 168, 255, 0.24);
+    border-radius: 8px;
+}
+
+.kpi-card {
+    background: linear-gradient(180deg, rgba(17, 28, 45, 0.95), rgba(13, 21, 34, 0.95));
+    border: 1px solid rgba(57, 168, 255, 0.24);
+    border-top: 7px solid var(--fd-orange);
+    border-radius: 8px;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+}
+
+.kpi-card:nth-child(even) {
+    border-top-color: var(--fd-blue);
+}
+
+.kpi-card .label {
+    color: var(--fd-text-muted);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.45px;
+}
+
+.kpi-card .value {
+    color: #f7f9ff;
+    font-weight: 900;
+}
+
+.kpi-card .unit {
+    color: #aeb9cd;
+}
+
+.kpi-card .growth {
+    font-weight: 700;
+    font-size: 18px;
+}
+
+.image-container img {
+    border-radius: 8px;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+}
+
+.image-container {
+    background: transparent;
+}
+
+.title-slide {
+    background: radial-gradient(circle at 80% 22%, rgba(57, 168, 255, 0.16), transparent 42%),
+        radial-gradient(circle at 24% 86%, rgba(255, 123, 31, 0.12), transparent 44%),
+        var(--fd-bg);
+}
+
+.title-slide .decor-line-left {
+    display: none;
+}
+
+.title-slide h1 {
+    margin: 0;
+    font-size: 110px;
+    font-weight: 900;
+    text-transform: uppercase;
+    color: #f5f9ff;
+    letter-spacing: 1px;
+}
+
+.title-slide p {
+    margin-top: 24px;
+    font-size: 38px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--fd-blue);
+    letter-spacing: 2px;
+}
+
+.title-slide::after {
+    content: "DARKDAN";
+    position: absolute;
+    top: 36px;
+    right: 40px;
+    z-index: 9;
+    padding: 10px 16px;
+    border: 1px solid rgba(57, 168, 255, 0.55);
+    border-right-color: rgba(255, 123, 31, 0.85);
+    border-bottom-color: rgba(255, 123, 31, 0.85);
+    letter-spacing: 2px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #f2f6fc;
+    background: rgba(5, 8, 13, 0.9);
+}
+
+.slide-character {
+    filter: drop-shadow(0 16px 28px rgba(0, 0, 0, 0.42));
+}
+
+@media print {
+    html, body, .slide, .slide * {
+        font-family: "Segoe UI", Tahoma, Arial, sans-serif !important;
+    }
+}
