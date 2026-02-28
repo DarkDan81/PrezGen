@@ -2,17 +2,30 @@
 
 ## Current state
 
-Stage created, scope fixed, implementation not started.
+Implementation in progress.
+
+Completed in current iteration:
+
+1. Slide type in properties panel is rendered as static read-only text.
+2. Chart `Limit` field removed from frontend chart block settings.
+3. Shared custom file upload control introduced and wired to:
+   - image block upload;
+   - dataset CSV upload.
+4. Text block switched from plain textarea to dual-mode editor:
+   - `Visual` mode (TipTap toolbar);
+   - `HTML` mode with manual source editing and apply action.
+5. Theme color quick swatches added to visual text color controls.
+6. KPI block rendering switched to auto-grid classes with theme CSS updates for full-slot grid stretching.
+7. Card cluster alignment adjusted to centered placement in slot (no forced edge-to-edge stretching).
+8. Large card values now compact-format to `млн/млрд/трлн`; thousands remain full-formatted.
+9. Deprecated `layout-single-column` preset removed from system layout catalog.
+10. QA demo seed updated to avoid deprecated stacked single-column pattern.
 
 ## Planned items
 
-1. Slide type shown as static text in properties panel.
-2. Chart `Limit` removed from frontend block settings (backend cap retained).
-3. KPI adaptive layout (readability-first, full-slot occupation).
-4. Unified custom upload controls for image and dataset flows.
-5. TipTap-based visual text editor with `Visual/HTML` switch.
-6. Theme swatches in text color picker + custom color support.
-7. Sanitizer regression validation for text editor output.
+1. Manual QA validation pass for card behavior across all dense layout presets.
+2. Manual QA validation pass for visual/code mode sync edge-cases.
+3. Sync `docs/manual-test-checklist.md` with finalized Stage 6 expected behavior.
 
 ## Risks to watch
 
@@ -23,4 +36,3 @@ Stage created, scope fixed, implementation not started.
 ## Exit condition
 
 All planned items shipped and reflected in `docs/manual-test-checklist.md` with updated manual QA steps.
-

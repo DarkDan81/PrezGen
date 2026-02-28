@@ -118,3 +118,37 @@ textarea.ui-textarea:focus {
   color: var(--danger);
   font-size: 13px;
 }
+
+.ui-file-upload {
+  display: grid;
+  gap: 8px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  background: color-mix(in srgb, var(--field-bg) 86%, transparent);
+}
+
+.ui-file-upload-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ui-file-upload-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ui-file-upload-name {
+  margin: 0;
+  font-size: 12px;
+  color: color-mix(in srgb, var(--text-main) 72%, transparent);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-file-upload-input {
+  display: none;
+}

@@ -261,6 +261,9 @@ function seedLayoutPresets(db) {
             updated_at: now,
         });
     });
+
+    // Remove deprecated system presets that are no longer part of supported geometry set.
+    db.prepare('DELETE FROM layout_presets WHERE id = ?').run('layout-single-column');
 }
 
 function migrate() {

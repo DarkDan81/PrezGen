@@ -1,9 +1,10 @@
 ﻿import { useState } from 'react';
 import type { Dataset, Block } from '../api/types';
+import { RichTextEditor } from './RichTextEditor';
 import { useI18n } from '../shared/i18n/I18nProvider';
+import { FileUploadControl } from '../shared/ui/FileUploadControl';
 
 const LIMITS = {
-  chartLimit: 12,
   tableLimit: 14,
   kpiLimit: 6,
   textHtmlLength: 6000,
@@ -14,6 +15,7 @@ type Props = {
   type: Block['type'];
   config: Record<string, unknown>;
   datasets: Dataset[];
+  themeColors: string[];
   onTypeChange: (next: Block['type']) => void;
   onConfigChange: (next: Record<string, unknown>) => void;
   onImageUpload: (file: File) => Promise<string>;
@@ -61,7 +63,6 @@ export function getDefaultConfig(type: Block['type']): Record<string, unknown> {
       seriesField: '',
       filterField: '',
       filterValues: [],
-      limit: 10,
     };
   }
   if (type === 'table') return { datasetId: '', transpose: false, limit: 10 };
@@ -73,6 +74,7 @@ export function BlockConfigForm({
   type,
   config,
   datasets,
+  themeColors,
   onTypeChange,
   onConfigChange,
   onImageUpload,
@@ -142,15 +144,12 @@ export function BlockConfigForm({
       </label>
 
       {type === 'text' && (
-        <label>
-          {t('block.html')}
-          <textarea
-            rows={12}
-            value={asString(config.html)}
-            maxLength={LIMITS.textHtmlLength}
-            onChange={(e) => update(config, 'html', e.target.value, onConfigChange)}
-          />
-        </label>
+        <RichTextEditor
+          value={asString(config.html).slice(0, LIMITS.textHtmlLength)}
+          onChange={(next) => update(config, 'html', next.slice(0, LIMITS.textHtmlLength), onConfigChange)}
+          themeColors={themeColors}
+          t={t}
+        />
       )}
 
       {type === 'image' && (
@@ -226,26 +225,16 @@ export function BlockConfigForm({
               </label>
             </>
           )}
-          <label
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => {
-              e.preventDefault();
-              const file = e.dataTransfer.files?.[0];
-              if (file) void runImageUpload(file);
+          <FileUploadControl
+            label={t('block.uploadImage')}
+            buttonLabel={t('common.upload')}
+            accept="image/*"
+            disabled={uploading}
+            fileName={asString(config.url)}
+            onFileSelect={(file) => {
+              void runImageUpload(file);
             }}
-            style={{ border: '1px dashed var(--border)', padding: 10, borderRadius: 8 }}
-          >
-            {t('block.uploadImage')}
-            <input
-              type="file"
-              accept="image/*"
-              disabled={uploading}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) void runImageUpload(file);
-              }}
-            />
-          </label>
+          />
           {uploading && <p>{t('block.uploadingImage')}</p>}
           {uploadError && <p className="error">{uploadError}</p>}
               </>
@@ -302,16 +291,6 @@ export function BlockConfigForm({
               </select>
             </label>
           )}
-          <label>
-            {t('block.limit')}
-            <input
-              type="number"
-              value={asNumber(config.limit)}
-              min={1}
-              max={LIMITS.chartLimit}
-              onChange={(e) => update(config, 'limit', e.target.value ? Number(e.target.value) : undefined, onConfigChange)}
-            />
-          </label>
           <label className="inline-checkbox">
             <input
               type="checkbox"
@@ -473,3 +452,4 @@ export function BlockConfigForm({
     </div>
   );
 }
+

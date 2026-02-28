@@ -241,12 +241,11 @@ body.viewer-mode {
 }
 
 .kpi-card .value {
-    font-size: 80px; 
+    font-size: 54px;
     font-weight: 900;
     line-height: 1;
     color: var(--ef-dark);
-    /* ФИКС: Запрещаем перенос, чтобы скрипт мог измерить реальную ширину */
-    white-space: nowrap; 
+    white-space: nowrap;
     display: inline-block;
 }
 
@@ -691,39 +690,24 @@ body.viewer-mode {
     border-radius: 8px;
 }
 
-/* KPI grid sizing for dense presets (2x2 and similar) */
-.kpi-grid-horizontal {
+/* KPI auto-grid: fills available slot while keeping card readability */
+.kpi-grid-auto {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 18px;
-    align-content: start;
-    height: 100%;
-}
-
-.slide-body.layout-grid .kpi-grid-horizontal {
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: repeat(var(--kpi-cols, 2), minmax(240px, 300px));
+    grid-template-rows: repeat(var(--kpi-rows, 1), auto);
     gap: 14px;
+    align-content: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 0;
 }
 
-.kpi-grid-horizontal.kpi-dense-4,
-.kpi-grid-horizontal.kpi-dense-6 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+.kpi-grid-auto .kpi-card {
+    min-height: 0;
 }
 
-.kpi-grid-horizontal.kpi-dense-6 .kpi-card {
-    padding: 10px 12px;
-}
-
-.kpi-grid-horizontal.kpi-dense-6 .kpi-card .label {
-    font-size: 16px;
-}
-
-.kpi-grid-horizontal.kpi-dense-6 .kpi-card .value {
-    font-size: 40px;
-}
-
-.kpi-grid-horizontal.kpi-dense-6 .kpi-card .growth {
-    font-size: 14px;
+.kpi-grid-auto[data-kpi-count="1"] {
+    --kpi-cols: 1;
 }
 
 .slide-body.layout-grid .layout-slot[class*="slot-slot_img"] .image-container img {

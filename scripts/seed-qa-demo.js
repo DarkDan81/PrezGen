@@ -162,7 +162,7 @@ function run() {
     const { salesDataset } = createDatasets(presentationId);
 
     const s1 = createSlideRow(presentationId, 0, 'title', 'QA Demo Deck', 'Theme and Layout Validation');
-    const s2 = createSlideRow(presentationId, 1, 'content', 'Single Column', 'Text + KPI');
+    const s2 = createSlideRow(presentationId, 1, 'content', 'Single Column', 'Text only');
     const s3 = createSlideRow(presentationId, 2, 'content', 'Two Columns', 'Text + Image');
     const s4 = createSlideRow(presentationId, 3, 'content', '2x2 Grid', 'Mixed block types');
     const s5 = createSlideRow(presentationId, 4, 'content', 'Content + 3 Images Right', 'One big + two small');
@@ -186,17 +186,8 @@ function run() {
             '</ul>',
         ].join(''),
     });
-    const s2Kpi = createBlockRow(presentationId, s2.id, 1, 'kpi', {
-        mode: 'manual',
-        items: [
-            { label: 'Revenue', value: '450,000', unit: '$', growth: '+12%' },
-            { label: 'Orders', value: '3,800', unit: '', growth: '+8%' },
-            { label: 'NPS', value: '68', unit: '', growth: '+4' },
-        ],
-    });
     bindLayout(s2.id, 'layout-single-column', [
         { slotId: 'slot_main', blockId: s2Text.id },
-        { slotId: 'slot_secondary', blockId: s2Kpi.id },
     ]);
 
     const s3Text = createBlockRow(presentationId, s3.id, 0, 'text', {

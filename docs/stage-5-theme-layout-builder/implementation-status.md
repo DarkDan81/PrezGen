@@ -91,7 +91,7 @@ Branch: `feat/frontend-mvp-editor`
     - layout slots now expose deterministic CSS classes (`layout-preset-*`, `slot-*`) for slot-specific visual tuning.
     - image cluster presets switched to no-crop baseline (`contain`) with stable cell framing.
     - KPI blocks now use adaptive internal grid sizing in dense layouts (`2x2` and similar), reducing card overflow.
-    - `layout-single-column` seed now supports stacked `text + kpi` via two vertical slots.
+    - `layout-single-column` seed had stacked `text + kpi` via two vertical slots (deprecated and removed in Stage 6).
     - QA demo seed content expanded with long/medium/short text stress cases and full slot bindings.
 18. Phase 8 implementation progress:
     - fixed manual KPI render path (`mode=manual`) to avoid dataset-missing fallback.

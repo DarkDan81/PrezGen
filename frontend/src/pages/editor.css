@@ -341,6 +341,69 @@
   font-size: 13px;
 }
 
+.static-value {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--text-main) 92%, transparent);
+}
+
+.rich-editor {
+  display: grid;
+  gap: 8px;
+}
+
+.rich-editor-modes,
+.rich-editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.rich-editor-colors {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.rich-editor-swatches {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rich-editor-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.rich-editor-frame {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--field-bg);
+  min-height: 180px;
+}
+
+.rich-editor-content {
+  min-height: 180px;
+  padding: 10px;
+  outline: none;
+}
+
+.rich-editor-content p {
+  margin: 0 0 10px;
+}
+
+.rich-editor-html {
+  display: grid;
+  gap: 8px;
+}
+
 @media (max-width: 1200px) {
   .editor-page {
     height: auto;

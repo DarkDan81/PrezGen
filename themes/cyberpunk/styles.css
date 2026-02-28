@@ -248,6 +248,7 @@ body.viewer-mode {
     font-weight: 900;
     color: var(--cp-neon-green);
     text-shadow: 0 0 15px rgba(57,255,20,0.6);
+    white-space: nowrap;
 }
 
 .kpi-card .unit {
@@ -420,39 +421,24 @@ body.viewer-mode {
     border-radius: 10px;
 }
 
-/* KPI grid sizing for dense presets (2x2 and similar) */
-.kpi-grid-horizontal {
+/* KPI auto-grid: fills available slot while keeping card readability */
+.kpi-grid-auto {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 18px;
-    align-content: start;
-    height: 100%;
-}
-
-.slide-body.layout-grid .kpi-grid-horizontal {
-    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    grid-template-columns: repeat(var(--kpi-cols, 2), minmax(230px, 290px));
+    grid-template-rows: repeat(var(--kpi-rows, 1), auto);
     gap: 14px;
+    align-content: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 0;
 }
 
-.kpi-grid-horizontal.kpi-dense-4,
-.kpi-grid-horizontal.kpi-dense-6 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+.kpi-grid-auto .kpi-card {
+    min-height: 0;
 }
 
-.kpi-grid-horizontal.kpi-dense-6 .kpi-card {
-    padding: 10px 12px;
-}
-
-.kpi-grid-horizontal.kpi-dense-6 .kpi-card .label {
-    font-size: 14px;
-}
-
-.kpi-grid-horizontal.kpi-dense-6 .kpi-card .value {
-    font-size: 34px;
-}
-
-.kpi-grid-horizontal.kpi-dense-6 .kpi-card .growth {
-    font-size: 14px;
+.kpi-grid-auto[data-kpi-count="1"] {
+    --kpi-cols: 1;
 }
 
 .slide-body.layout-grid .layout-slot[class*="slot-slot_img"] .image-container img {

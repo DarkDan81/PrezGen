@@ -12,6 +12,7 @@ import { useI18n } from '../shared/i18n/I18nProvider';
 import type { TranslationKey } from '../shared/i18n/dictionaries';
 import { Button } from '../shared/ui/Button';
 import { Field } from '../shared/ui/Field';
+import { FileUploadControl } from '../shared/ui/FileUploadControl';
 import { SectionCard } from '../shared/ui/SectionCard';
 import './editor.css';
 
@@ -203,6 +204,22 @@ function getLayoutPreviewGrid(schema: LayoutPreset['schema']) {
 function slotAllowsBlock(slot: { allowedBlockTypes?: Array<Block['type']> }, blockType: Block['type']) {
   if (!Array.isArray(slot.allowedBlockTypes) || slot.allowedBlockTypes.length === 0) return true;
   return slot.allowedBlockTypes.includes(blockType);
+}
+
+function extractThemeColors(tokens: Record<string, unknown> | undefined) {
+  const values: string[] = [];
+  const color = (tokens?.color as Record<string, unknown> | undefined) || {};
+  const chart = (tokens?.chart as Record<string, unknown> | undefined) || {};
+  const palette = Array.isArray(chart.palette) ? chart.palette : [];
+
+  Object.values(color).forEach((value) => {
+    if (typeof value === 'string') values.push(value);
+  });
+  palette.forEach((value) => {
+    if (typeof value === 'string') values.push(value);
+  });
+
+  return values.filter((item) => /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(item));
 }
 
 export function EditorPage() {
@@ -514,6 +531,8 @@ export function EditorPage() {
     [datasetDraftColumns, datasetDraftName, datasetDraftRows, datasetModalSnapshot],
   );
   const selectedLayoutPreset = (layoutPresetsQuery.data || []).find((preset) => preset.id === slideLayoutPresetId) || null;
+  const selectedTheme = (themesQuery.data || []).find((theme) => theme.id === (presentationQuery.data?.themeId || 'theme-eurofoods'));
+  const themeColors = useMemo(() => extractThemeColors((selectedTheme?.tokens as Record<string, unknown> | undefined) || undefined), [selectedTheme]);
 
   useEffect(() => {
     if (selectedSlide?.type === 'title') {
@@ -852,6 +871,7 @@ export function EditorPage() {
                         type={blockType}
                         config={blockConfig}
                         datasets={datasetsQuery.data || []}
+                        themeColors={themeColors}
                         onTypeChange={setBlockType}
                         onConfigChange={setBlockConfig}
                         onImageUpload={uploadImageAndGetUrl}
@@ -897,7 +917,7 @@ export function EditorPage() {
             <SectionCard title={t('editor.slideSettings')}>
               <div className="properties">
                 <Field label={t('editor.slideType')}>
-                  <input className="ui-input" value={isTitleSlide ? t('editor.sectionTitleSlide') : t('editor.contentSlide')} readOnly />
+                  <p className="static-value">{isTitleSlide ? t('editor.sectionTitleSlide') : t('editor.contentSlide')}</p>
                 </Field>
                 <Field label={t('editor.slideTitle')}>
                   <input className="ui-input" value={slideTitle} onChange={(e) => setSlideTitle(e.target.value)} />
@@ -1047,9 +1067,13 @@ export function EditorPage() {
             </div>
             {datasetError && <p className="ui-error">{datasetError}</p>}
 
-            <Field label={t('editor.uploadCsv')}>
-              <input className="ui-input" type="file" accept=".csv,text/csv" onChange={(e) => setCsvFile(e.target.files?.[0] || null)} />
-            </Field>
+            <FileUploadControl
+              label={t('editor.uploadCsv')}
+              buttonLabel={t('common.upload')}
+              accept=".csv,text/csv"
+              fileName={csvFile?.name || ''}
+              onFileSelect={(file) => setCsvFile(file)}
+            />
             <Button
               onClick={() => {
                 if (!csvFile) return;

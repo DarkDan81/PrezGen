@@ -14,7 +14,8 @@
 3. KPI adaptive grid
 - Introduce adaptive KPI layout algorithm by slot dimensions + item count.
 - Tune min/max card width and gap rules.
-- Validate across common layouts (single column, 2x2, image/content mixed layouts).
+- Keep cluster centered when free space remains.
+- Validate across common layouts (2x2, image/content mixed layouts).
 
 4. Rich text editor foundation
 - Add TipTap dependencies and wrapper component.
@@ -28,6 +29,10 @@
 6. Sanitization and regression pass
 - Verify sanitizer compatibility with new editor output.
 - Validate preview and PDF parity on updated text samples.
+
+7. Layout preset cleanup
+- Drop deprecated `layout-single-column` from seeded system preset list.
+- Update QA seed and manual checks accordingly.
 
 ## Technical notes
 
@@ -43,4 +48,3 @@
 4. `feat(text): add tiptap visual editor with html toggle`
 5. `feat(text): add theme palette swatches and sanitizer compatibility fixes`
 6. `docs(stage-6): update status and manual checks`
-
