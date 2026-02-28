@@ -151,12 +151,15 @@ export function ThemesPage() {
           </Button>
           <h1>{t('themes.title')}</h1>
         </div>
-        <Field label={t('lang.label')} className="lang-field">
-          <select className="ui-select" value={locale} onChange={(e) => setLocale(e.target.value as 'ru' | 'en')}>
-            <option value="ru">{t('lang.ru')}</option>
-            <option value="en">{t('lang.en')}</option>
-          </select>
-        </Field>
+        <select
+          className="ui-select lang-select-inline"
+          value={locale}
+          aria-label={t('lang.label')}
+          onChange={(e) => setLocale(e.target.value as 'ru' | 'en')}
+        >
+          <option value="ru">🇷🇺 {t('lang.ru')}</option>
+          <option value="en">🇺🇸 {t('lang.en')}</option>
+        </select>
       </header>
 
       <div className="themes-grid">

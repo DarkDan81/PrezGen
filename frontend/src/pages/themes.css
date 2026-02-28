@@ -23,6 +23,10 @@
   margin: 0;
 }
 
+.lang-select-inline {
+  min-width: 170px;
+}
+
 .themes-grid {
   display: grid;
   grid-template-columns: 320px 1fr;

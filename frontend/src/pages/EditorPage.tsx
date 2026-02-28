@@ -724,12 +724,15 @@ export function EditorPage() {
         </div>
         {!headerCollapsed && (
           <div className="editor-header-controls">
-            <Field label={t('lang.label')} className="lang-field compact-lang-field">
-              <select className="ui-select compact-select" value={locale} onChange={(e) => setLocale(e.target.value as 'ru' | 'en')}>
-                <option value="ru">{t('lang.ru')}</option>
-                <option value="en">{t('lang.en')}</option>
-              </select>
-            </Field>
+            <select
+              className="ui-select compact-select lang-select-inline"
+              value={locale}
+              aria-label={t('lang.label')}
+              onChange={(e) => setLocale(e.target.value as 'ru' | 'en')}
+            >
+              <option value="ru">🇷🇺 {t('lang.ru')}</option>
+              <option value="en">🇺🇸 {t('lang.en')}</option>
+            </select>
             <select
               className="ui-select compact-select"
               value={presentationQuery.data?.themeId || 'theme-eurofoods'}

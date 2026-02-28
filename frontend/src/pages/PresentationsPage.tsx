@@ -44,12 +44,15 @@ export function PresentationsPage() {
           <Button variant="secondary" onClick={() => navigate('/themes')}>
             {t('nav.themes')}
           </Button>
-          <Field label={t('lang.label')} className="lang-field">
-            <select className="ui-select" value={locale} onChange={(e) => setLocale(e.target.value as 'ru' | 'en')}>
-              <option value="ru">{t('lang.ru')}</option>
-              <option value="en">{t('lang.en')}</option>
-            </select>
-          </Field>
+          <select
+            className="ui-select lang-select-inline"
+            value={locale}
+            aria-label={t('lang.label')}
+            onChange={(e) => setLocale(e.target.value as 'ru' | 'en')}
+          >
+            <option value="ru">🇷🇺 {t('lang.ru')}</option>
+            <option value="en">🇺🇸 {t('lang.en')}</option>
+          </select>
         </div>
       </header>
 

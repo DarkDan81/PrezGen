@@ -193,10 +193,24 @@
 }
 
 .inline-checkbox {
-  display: flex;
-  grid-template-columns: none;
+  display: flex !important;
+  grid-template-columns: none !important;
+  flex-direction: row !important;
+  justify-content: flex-start;
   align-items: center;
   gap: 8px;
+  width: auto;
+}
+
+.inline-checkbox input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.inline-checkbox span {
+  line-height: 1.3;
 }
 
 .modal-backdrop {
@@ -294,6 +308,10 @@
 
 .compact-lang-field {
   min-width: 140px;
+}
+
+.lang-select-inline {
+  min-width: 150px;
 }
 
 .dataset-meta {

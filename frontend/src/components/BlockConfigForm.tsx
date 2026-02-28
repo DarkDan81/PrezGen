@@ -318,7 +318,7 @@ export function BlockConfigForm({
               checked={asBoolean(config.showLabels, true)}
               onChange={(e) => update(config, 'showLabels', e.target.checked, onConfigChange)}
             />
-            {t('block.showLabels')}
+            <span>{t('block.showLabels')}</span>
           </label>
         </>
       )}
@@ -355,7 +355,7 @@ export function BlockConfigForm({
               checked={asBoolean(config.transpose, false)}
               onChange={(e) => update(config, 'transpose', e.target.checked, onConfigChange)}
             />
-            {t('block.transposeTable')}
+            <span>{t('block.transposeTable')}</span>
           </label>
         </>
       )}
