@@ -111,6 +111,8 @@ Branch: `feat/frontend-mvp-editor`
     - block settings moved to left workspace under selected slide block list.
     - right panel narrowed to slide settings, layout mapping, and datasets.
     - presentations list now supports delete action with confirmation dialog.
+    - language selector on key screens is now compact inline (flag + locale name, no separate label field).
+    - inline checkbox alignment fixed for block settings (including table transpose toggle).
 
 ## Verification after changes
 
