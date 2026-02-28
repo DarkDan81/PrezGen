@@ -97,8 +97,14 @@ function updatePresentationById(id, patch) {
     return getPresentationById(id);
 }
 
+function deletePresentationById(id) {
+    const db = getDb();
+    return db.prepare('DELETE FROM presentations WHERE id = ?').run(id).changes > 0;
+}
+
 module.exports = {
     createPresentation,
+    deletePresentationById,
     getPresentationById,
     listPresentations,
     updatePresentationById,

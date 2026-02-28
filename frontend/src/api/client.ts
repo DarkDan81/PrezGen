@@ -8,6 +8,7 @@ export const client = {
   getPresentation: (id: string) => apiGet<Presentation>(`/api/v1/presentations/${id}`),
   patchPresentation: (id: string, payload: Partial<Pick<Presentation, 'name' | 'description' | 'themeId'>>) =>
     apiPatch<Presentation, typeof payload>(`/api/v1/presentations/${id}`, payload),
+  deletePresentation: (id: string) => apiDelete(`/api/v1/presentations/${id}`),
 
   listSlides: (presentationId: string) => apiGet<Slide[]>(`/api/v1/presentations/${presentationId}/slides`),
   createSlide: (presentationId: string, payload: { type: 'title' | 'content'; title?: string }) =>

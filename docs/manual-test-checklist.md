@@ -1,40 +1,41 @@
-# PrezGen Manual Test Checklist
+# Чеклист Ручного Тестирования PrezGen
 
-Date: __________
-Tester: __________
-Branch/Commit: __________
+Дата: __________
+Тестировщик: __________
+Ветка/коммит: __________
 
-## 1. Startup
+## 1. Запуск
 
-- [ ] Backend starts: `npm run api`
-- [ ] Frontend starts: `npm --prefix frontend run dev`
-- [ ] Presentations list opens without errors
+- [ ] Backend запускается: `npm run api`
+- [ ] Frontend запускается: `npm --prefix frontend run dev`
+- [ ] Список презентаций открывается без ошибок
 
-## 2. Presentations and Slides
+## 2. Презентации и слайды
 
-- [ ] Create a new presentation
-- [ ] Open presentation editor
-- [ ] Add 2+ slides
-- [ ] Reorder slides with drag handle
-- [ ] Edit slide title/subtitle and verify autosave after page reload
+- [ ] Создать новую презентацию
+- [ ] Удалить презентацию из списка (`×`) с подтверждением удаления
+- [ ] Открыть редактор презентации
+- [ ] Добавить 2+ слайда
+- [ ] Перетаскиванием изменить порядок слайдов
+- [ ] Изменить заголовок/подзаголовок слайда и проверить автосохранение после перезагрузки страницы
 
-## 3. Blocks CRUD
+## 3. CRUD блоков
 
-- [ ] Add `text` block
-- [ ] Add `image` block
-- [ ] Add `table` block
-- [ ] Add `chart` block
-- [ ] Add `kpi` block
-- [ ] Reorder blocks with drag handle
-- [ ] Delete one block and confirm it stays deleted after reload
+- [ ] Добавить блок `text`
+- [ ] Добавить блок `image`
+- [ ] Добавить блок `table`
+- [ ] Добавить блок `chart`
+- [ ] Добавить блок `kpi`
+- [ ] Перетаскиванием изменить порядок блоков
+- [ ] Удалить один блок и проверить, что после перезагрузки он остается удаленным
 
-## 4. Text Block (HTML)
+## 4. Текстовый блок (HTML)
 
-- [ ] Paste HTML sample (below) into text block
-- [ ] Preview renders headings/lists/emphasis correctly
-- [ ] Refresh Preview keeps latest content
+- [ ] Вставить HTML-пример (ниже) в текстовый блок
+- [ ] В превью корректно отображаются заголовки/списки/акценты
+- [ ] `Обновить превью` показывает актуальный контент
 
-### HTML Sample To Paste
+### HTML-Пример Для Вставки
 
 ```html
 <h3>Q1 Summary</h3>
@@ -48,127 +49,129 @@ Branch/Commit: __________
 <p>Focus on conversion, repeat purchases, and average order value.</p>
 ```
 
-## 5. Image Block
+## 5. Блок изображения
 
-- [ ] Upload image via file picker
-- [ ] Upload image via drag-and-drop
-- [ ] Uploaded image appears in preview
-- [ ] Image still visible after Refresh Preview
-- [ ] Image still visible after full page reload
+- [ ] Загрузить изображение через выбор файла
+- [ ] Загрузить изображение через drag-and-drop
+- [ ] Загруженное изображение появляется в превью
+- [ ] Изображение остается после `Обновить превью`
+- [ ] Изображение остается после полной перезагрузки страницы
 
-## 6. Datasets (Manual Editor)
+## 6. Датасеты (ручной редактор)
 
-- [ ] Create new manual dataset
-- [ ] Open `Edit dataset` modal
-- [ ] Change dataset name and save
-- [ ] Edit a few cells and save
-- [ ] Add row and save
-- [ ] Add column and save
-- [ ] Remove row and save
-- [ ] Remove column and save
-- [ ] Unsaved-change guard works (`Close/Cancel/Esc` prompts before discard)
+- [ ] Создать новый ручной датасет
+- [ ] Открыть модалку `Редактировать датасет`
+- [ ] Изменить имя датасета и сохранить
+- [ ] Изменить несколько ячеек и сохранить
+- [ ] Добавить строку и сохранить
+- [ ] Добавить колонку и сохранить
+- [ ] Удалить строку и сохранить
+- [ ] Удалить колонку и сохранить
+- [ ] Защита от потери несохраненных изменений работает (`Закрыть/Отмена/Esc` с подтверждением)
 
-## 7. Datasets (CSV Upload)
+## 7. Датасеты (загрузка CSV)
 
-- [ ] Upload sample CSV from `docs/test-data/manual-upload-sample.csv`
-- [ ] Dataset appears in selector
-- [ ] Rows/columns look correct in dataset editor
+- [ ] Загрузить тестовый CSV из `docs/test-data/manual-upload-sample.csv`
+- [ ] Датасет появляется в селекторе
+- [ ] Строки/колонки корректно отображаются в редакторе датасета
 
-## 8. Table Block
+## 8. Блок таблицы
 
-- [ ] Select dataset in table block
-- [ ] Headers use dataset labels (not `col_1`, `col_2`)
-- [ ] `Limit` affects rendered row count
-- [ ] `Transpose table` ON changes orientation
-- [ ] In transposed mode, first header uses first column label (e.g. `Month`)
-- [ ] Refresh Preview preserves correct table state
+- [ ] Выбрать датасет в блоке таблицы
+- [ ] Заголовки берутся из labels датасета (не `col_1`, `col_2`)
+- [ ] `Limit` влияет на число отображаемых строк
+- [ ] Включение `Transpose table` меняет ориентацию
+- [ ] В режиме transpose первый заголовок = первый label колонки (например `Month`)
+- [ ] `Обновить превью` сохраняет корректное состояние таблицы
 
-## 9. Chart Block
+## 9. Блок графика
 
-- [ ] Configure line chart (x/value)
-- [ ] Configure bar chart
-- [ ] Configure horizontal bar chart
-- [ ] Row filtering works (`filterField` + values)
-- [ ] Chart updates after Refresh Preview
+- [ ] Настроить line chart (x/value)
+- [ ] Настроить bar chart
+- [ ] Настроить horizontal bar chart
+- [ ] Фильтрация строк работает (`filterField` + значения)
+- [ ] График обновляется после `Обновить превью`
 
-## 10. KPI Block
+## 10. Блок KPI
 
-- [ ] Dataset mode works (label/value fields)
-- [ ] `Limit` works
-- [ ] Row filtering works (`filterField` + values)
-- [ ] KPI cards update in preview correctly
+- [ ] Режим dataset работает (поля label/value)
+- [ ] `Limit` работает
+- [ ] Фильтрация строк работает (`filterField` + значения)
+- [ ] KPI-карточки корректно обновляются в превью
 
-## 11. PDF Export
+## 11. Экспорт PDF
 
-- [ ] Start export with `Export PDF`
-- [ ] Job reaches `done`
-- [ ] Download/open PDF
-- [ ] PDF visually matches preview for text/image/table/chart/kpi slides
+- [ ] Запустить экспорт через `Экспорт PDF`
+- [ ] Статус задачи доходит до `done`
+- [ ] Скачать/открыть PDF
+- [ ] PDF визуально совпадает с превью для слайдов с text/image/table/chart/kpi
 
-## 12. Theme / UI Mode
+## 12. Тема / UI-режим
 
-- [ ] Switch presentation theme and verify preview updates
-- [ ] Toggle constructor `Dark UI/Light UI`
-- [ ] Core editor actions still work in both modes
+- [ ] Переключить тему презентации и проверить обновление превью
+- [ ] Переключить режим конструктора `Темный UI/Светлый UI`
+- [ ] Базовые действия редактора работают в обоих режимах
 
-## 13. Final Regression Pass
+## 13. Финальный регрессионный проход
 
-- [ ] Close and reopen app
-- [ ] Open same presentation
-- [ ] Confirm slides, blocks, datasets, image URLs, and table transpose are persisted
+- [ ] Закрыть и заново открыть приложение
+- [ ] Открыть ту же презентацию
+- [ ] Проверить, что слайды, блоки, датасеты, URL изображений и transpose таблицы сохранены
 
-## 14. Theme Builder (Stage 5)
+## 14. Редактор Тем (Stage 5)
 
-- [ ] Open `/themes` page from presentations screen
-- [ ] Create custom theme from scratch and save
-- [ ] Duplicate system theme and save duplicate
-- [ ] Edit custom theme tokens (color/typography/spacing fields) and save
-- [ ] Confirm system theme cannot be edited/deleted directly
-- [ ] Delete custom theme and confirm it is removed from list
-- [ ] Apply selected theme to a presentation and verify presentation `themeId` changes
-- [ ] Trigger validation warning (for example low-contrast colors) and verify warning appears
+- [ ] Открыть страницу `/themes` из списка презентаций
+- [ ] Создать пользовательскую тему с нуля и сохранить
+- [ ] Дублировать системную тему и сохранить копию
+- [ ] Изменить токены пользовательской темы (color/typography/spacing) и сохранить
+- [ ] Убедиться, что системную тему нельзя редактировать/удалять напрямую
+- [ ] Удалить пользовательскую тему и проверить, что она пропала из списка
+- [ ] Применить выбранную тему к презентации и проверить, что `themeId` презентации изменился
+- [ ] Вызвать warning валидации (например, низкий контраст) и проверить отображение warning
 
-## 15. Slide Layout Presets (Stage 5)
+## 15. Пресеты Лейаута Слайда (Stage 5)
 
-- [ ] In editor, select a slide and choose a layout preset
-- [ ] Assign blocks to layout slots and save layout
-- [ ] Reload page and confirm `layoutPresetId` + slot assignments are persisted
-- [ ] Ensure invalid slot mapping is rejected by API (manual API test)
-- [ ] Refresh preview and confirm no regressions in slide rendering
+- [ ] В редакторе выбрать слайд и выбрать пресет лейаута
+- [ ] Назначить блоки в слоты лейаута и сохранить
+- [ ] Перезагрузить страницу и проверить, что `layoutPresetId` + slot assignments сохранены
+- [ ] Проверить, что невалидные назначения слотов отклоняются API (ручной API-тест)
+- [ ] Обновить превью и убедиться в отсутствии регрессий рендера
 
-## 16. QA Demo Deck (Seeded Reference)
+## 16. QA Demo Deck (Эталонная Тестовая Презентация)
 
-Precondition:
+Предусловия:
 
-- [ ] Run `npm run seed:qa-demo`
-- [ ] Open presentation named `QA Demo Deck`
+- [ ] Выполнить `npm run seed:qa-demo`
+- [ ] Открыть презентацию с именем `QA Demo Deck`
 
-Slides and content integrity:
+Целостность слайдов и контента:
 
-- [ ] `Single Column` slide: both `text` and `kpi` are visible (no `Dataset not found: n/a`)
-- [ ] `Two Columns` slide: long token text stays inside left column (no overflow outside block)
-- [ ] `2x2 Grid` slide: KPI cards fit cleanly inside slot and do not overlap
-- [ ] `Content + 3 Images Right` slide: all 3 images are fully visible (no crop) and framed consistently
-- [ ] `3 Images Left + Content` slide: same no-crop behavior in mirrored variant
-- [ ] `Content + 4 Images Right` slide: all four image cells render without clipping/overlap
-- [ ] `4 Images Left + Content` slide: same no-crop behavior in mirrored variant
+- [ ] Слайд `Single Column`: видны оба блока `text` и `kpi` (нет `Dataset not found: n/a`)
+- [ ] Слайд `Two Columns`: длинный токен текста остается внутри левой колонки (нет overflow за границы блока)
+- [ ] Слайд `2x2 Grid`: KPI-карточки аккуратно помещаются в слот и не перекрываются
+- [ ] Слайд `Content + 3 Images Right`: все 3 изображения отображаются целиком (без кропа) и с ровным фреймингом
+- [ ] Слайд `3 Images Left + Content`: то же поведение без кропа в зеркальном варианте
+- [ ] Слайд `Content + 4 Images Right`: все 4 ячейки изображений без клиппинга/перекрытий
+- [ ] Слайд `4 Images Left + Content`: то же поведение в зеркальном варианте
 
-Image block controls (new):
+Новые настройки блока изображения:
 
-- [ ] Open an image block in right panel and change `Image fit` to `Cover` -> preview fills slot (crop allowed)
-- [ ] Switch back to `Contain` -> full image visible without crop
-- [ ] Change `Image focus` to corner values and verify focus shift in `Cover` mode
+- [ ] Открыть image-блок и переключить `Image fit` на `Cover` -> изображение заполняет слот (кроп допустим)
+- [ ] Вернуть `Contain` -> изображение снова видно целиком без кропа
+- [ ] Изменить `Image focus` на угловые значения и проверить смещение фокуса в режиме `Cover`
 
-## 17. Editor Workspace Usability (Phase 8)
+## 17. Удобство Рабочей Области Редактора (Phase 8)
 
-- [ ] Top header collapse/expand toggle works (`▲/▼`)
-- [ ] Header collapsed state persists after page reload
-- [ ] Left panel scroll is independent from center preview and right properties panel
-- [ ] Right properties panel scroll is independent
-- [ ] Center preview scroll is independent
-- [ ] With header collapsed, preview area height increases and routine work does not require page-level scrolling
+- [ ] Переключатель сворачивания/разворачивания верхнего хедера работает (`▲/▼`)
+- [ ] Состояние свернутого хедера сохраняется после перезагрузки страницы
+- [ ] Скролл левой панели независим от центра и правой панели
+- [ ] Скролл правой панели независим
+- [ ] Скролл центрального превью независим
+- [ ] При свернутом хедере высота превью увеличивается, и для типовых действий не нужен page-level scroll
+- [ ] Настройки блока открываются в левой колонке (под блоками выбранного слайда)
+- [ ] Правая колонка содержит только настройки слайда/лейаута/датасетов
 
-## Notes / Bugs Found
+## Заметки / Найденные Баги
 
 - ________________________________________________
 - ________________________________________________

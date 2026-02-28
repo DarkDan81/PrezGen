@@ -101,6 +101,9 @@ Branch: `feat/frontend-mvp-editor`
       - center preview frame;
       - right properties panel.
     - image block editor now exposes user-facing `fitMode` and `focalPoint` controls.
+    - block settings moved to left workspace under selected slide block list.
+    - right panel narrowed to slide settings, layout mapping, and datasets.
+    - presentations list now supports delete action with confirmation dialog.
 
 ## Verification after changes
 

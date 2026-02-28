@@ -27,6 +27,14 @@ export function PresentationsPage() {
     },
     onError: (e) => setError((e as Error).message),
   });
+  const deleteMutation = useMutation({
+    mutationFn: (presentationId: string) => client.deletePresentation(presentationId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['presentations'] });
+      setError('');
+    },
+    onError: (e) => setError((e as Error).message),
+  });
 
   return (
     <div className="page">
@@ -76,13 +84,27 @@ export function PresentationsPage() {
         <ul className="presentations-list">
           {(presentationsQuery.data || []).map((presentation) => (
             <li key={presentation.id}>
-              <Button
-                variant="ghost"
-                className="presentation-list-button"
-                onClick={() => navigate(`/presentations/${presentation.id}`)}
-              >
-                <span>{presentation.name}</span> <small>({presentation.status})</small>
-              </Button>
+              <div className="presentation-list-row">
+                <Button
+                  variant="ghost"
+                  className="presentation-list-button"
+                  onClick={() => navigate(`/presentations/${presentation.id}`)}
+                >
+                  <span>{presentation.name}</span> <small>({presentation.status})</small>
+                </Button>
+                <Button
+                  variant="danger"
+                  size="small"
+                  className="presentation-delete-button"
+                  onClick={() => {
+                    const confirmed = window.confirm(t('presentations.deleteConfirm', { name: presentation.name }));
+                    if (!confirmed) return;
+                    deleteMutation.mutate(presentation.id);
+                  }}
+                >
+                  ×
+                </Button>
+              </div>
             </li>
           ))}
         </ul>

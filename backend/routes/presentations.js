@@ -5,6 +5,7 @@ const path = require('path');
 const { randomUUID } = require('crypto');
 const {
     createPresentation,
+    deletePresentationById,
     getPresentationById,
     listPresentations,
     updatePresentationById,
@@ -191,6 +192,17 @@ router.patch('/presentations/:presentationId', (req, res, next) => {
             updatedAt: new Date().toISOString(),
         });
         return sendData(req, res, data);
+    } catch (error) {
+        return next(error);
+    }
+});
+
+router.delete('/presentations/:presentationId', (req, res, next) => {
+    try {
+        const { presentationId } = req.params;
+        const ok = deletePresentationById(presentationId);
+        if (!ok) throw notFound('Presentation not found');
+        return res.status(204).send();
     } catch (error) {
         return next(error);
     }

@@ -131,9 +131,15 @@ Exit criteria:
 5. QA checklist update:
    - add explicit test cases for collapsed-header workflow;
    - add scroll-behavior checks for left/center/right zones.
+6. Interaction-flow simplification:
+   - move block settings to left workspace under selected slide/block controls;
+   - keep right panel focused on slide settings, layout, and datasets only.
+7. Presentations list hygiene:
+   - add delete action in presentations list with mandatory confirmation.
 
 Exit criteria:
 
 1. Editor can be used without continuous page-level scrolling.
 2. Header collapse materially increases usable preview area.
 3. QA demo deck renders without current overflow/fallback defects.
+4. Block editing flow requires fewer cross-column mouse/eye jumps.

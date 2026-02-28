@@ -810,6 +810,9 @@ export function EditorPage() {
                 <p className="hint">{t('editor.titleSlideNoBlocks')}</p>
               ) : (
                 <>
+                  <p className="hint">
+                    {selectedSlide ? `${t('editor.slideTitle')}: ${selectedSlide.title || t('editor.untitled')}` : ''}
+                  </p>
                   <div className="panel-row">
                     <select className="ui-select compact-select" value={newBlockType} onChange={(e) => setNewBlockType(e.target.value as Block['type'])}>
                       <option value="text">{t('block.text')}</option>
@@ -854,8 +857,28 @@ export function EditorPage() {
                       onRemove={() => deleteBlockMutation.mutate(block.id)}
                     />
                   ))}
-                  </SortableContext>
-                </DndContext>
+                    </SortableContext>
+                  </DndContext>
+                  {selectedBlock && (
+                    <SectionCard title={t('editor.blockSettings')} className="mt">
+                      <BlockConfigForm
+                        presentationId={presentationId}
+                        type={blockType}
+                        config={blockConfig}
+                        datasets={datasetsQuery.data || []}
+                        onTypeChange={setBlockType}
+                        onConfigChange={setBlockConfig}
+                        onImageUpload={uploadImageAndGetUrl}
+                      />
+                      {blockError && <p className="ui-error">{blockError}</p>}
+                      <Button
+                        variant="danger"
+                        onClick={() => deleteBlockMutation.mutate(selectedBlock.id)}
+                      >
+                        {t('editor.deleteBlock')}
+                      </Button>
+                    </SectionCard>
+                  )}
                 </>
               )}
             </>
@@ -1008,27 +1031,6 @@ export function EditorPage() {
                   </>
                 )}
               </div>
-            </SectionCard>
-          )}
-
-          {selectedBlock && !isTitleSlide && (
-            <SectionCard title={t('editor.blockSettings')} className="mt">
-              <BlockConfigForm
-                presentationId={presentationId}
-                type={blockType}
-                config={blockConfig}
-                datasets={datasetsQuery.data || []}
-                onTypeChange={setBlockType}
-                onConfigChange={setBlockConfig}
-                onImageUpload={uploadImageAndGetUrl}
-              />
-              {blockError && <p className="ui-error">{blockError}</p>}
-              <Button
-                variant="danger"
-                onClick={() => deleteBlockMutation.mutate(selectedBlock.id)}
-              >
-                {t('editor.deleteBlock')}
-              </Button>
             </SectionCard>
           )}
 
