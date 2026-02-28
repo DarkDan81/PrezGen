@@ -10,6 +10,7 @@ Current scope:
 - Stage 4: UX polish planning for constructor consistency and localization prep.
 - Stage 5: theme and layout builder planning (tokens, presets, dedicated editor).
 - Stage 6: editor usability and content authoring improvements (rich text, KPI layout, upload UX unification).
+- Stage 7: strict separation of theme skin from structural layout behavior.
 
 Structure:
 
@@ -37,4 +38,8 @@ Structure:
 - `stage-6-editor-usability-bugs/decisions.md` - approved implementation decisions for usability scope.
 - `stage-6-editor-usability-bugs/implementation-plan.md` - phased implementation plan and commit slicing.
 - `stage-6-editor-usability-bugs/implementation-status.md` - current implementation status for stage 6.
+- `stage-7-theme-structure-separation/README.md` - stage overview and acceptance criteria.
+- `stage-7-theme-structure-separation/decisions.md` - approved decisions for structure vs skin boundary.
+- `stage-7-theme-structure-separation/implementation-plan.md` - phased implementation plan.
+- `stage-7-theme-structure-separation/implementation-status.md` - current implementation status for stage 7.
 - `qa-demo-deck-assets.md` - source image naming and run instructions for QA demo deck seed script.
