@@ -74,9 +74,6 @@ export type ThemeTokens = {
     [key: string]: number | string;
   };
   spacing: {
-    slidePadding: number;
-    blockGap: number;
-    cardPadding: number;
     radius: number;
     borderWidth: number;
     [key: string]: number;

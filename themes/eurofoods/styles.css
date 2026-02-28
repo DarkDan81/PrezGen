@@ -22,21 +22,9 @@ body.viewer-mode {
     background: #1a1a1a; /* Цвет фона за пределами слайда */
 }
 
-/* ============================================================
-   2. СТРУКТУРА СЛАЙДА
-   ============================================================ */
 .slide {
-    width: 1920px;
-    height: 1080px;
     background: white;
     color: var(--ef-dark);
-    padding: 60px 80px; 
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    overflow: hidden;
-    transform-origin: top left; /* Для корректного масштабирования */
 }
 
 .slide-subtitle {
@@ -47,16 +35,6 @@ body.viewer-mode {
     padding-left: 30px; /* Чтобы был на одной линии с заголовком */
     text-transform: uppercase;
     letter-spacing: 1px;
-}
-
-/* Общий контейнер для любого блока (график, таблица, текст) */
-.block-wrapper {
-    position: relative;
-    z-index: 10; /* Контент всегда выше декора */
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    min-height: 0;
 }
 
 /* ============================================================
@@ -127,12 +105,6 @@ body.viewer-mode {
     z-index: 10;
 }
 
-.slide-header {
-    position: relative;
-    z-index: 10;
-    margin-bottom: 40px;
-}
-
 .slide-header h2 {
     font-size: 64px;
     font-weight: 900;
@@ -143,25 +115,11 @@ body.viewer-mode {
     padding-left: 30px;
 }
 
-.slide-body {
-    display: flex;
-    flex-direction: row;
-    gap: 30px;
-    flex-grow: 1;
-    align-items: stretch;
-    width: 100%;
-    min-height: 0; 
-    max-height: 820px; /* СТРОГОЕ ОГРАНИЧЕНИЕ, чтобы не лезло на заголовок */
-    overflow: hidden;
-    margin-top: 20px;
-}
-
 /* ============================================================
    5. ТАБЛИЦЫ
    ============================================================ */
 .table-block {
     background: white; /* Чтобы подложка-декор не мешала читать текст */
-    padding: 5px;
     border-radius: 4px;
 }
 
@@ -195,51 +153,14 @@ body.viewer-mode {
    ============================================================ */
 
 .kpi-card {
-    flex: 1;
     background: white;
-    padding: 30px; /* Уменьшили стандартный паддинг с 40 до 30 */
     border: 1px solid #eee;
     border-top: 10px solid var(--ef-red);
     box-shadow: 0 10px 30px rgba(0,0,0,0.05);
     border-radius: 8px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    min-height: 0; /* ВАЖНО: разрешаем карточке сжиматься меньше контента */
-    overflow: hidden;
-    position: relative;
 }
 
 /* КОМПАКТНЫЙ РЕЖИМ (когда карточек > 2) */
-.compact .kpi-card {
-    padding: 15px 25px; /* Резко уменьшаем отступы */
-    border-top-width: 6px;
-}
-
-.kpi-card .label {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis; /* Если заголовок слишком длинный, он просто сократится с троеточием */
-}
-
-.compact .kpi-card .growth {
-    font-size: 18px;
-    margin-top: 5px;
-    padding: 2px 8px;
-}
-
-/* Фикс для вертикального расположения */
-.kpi-grid-vertical {
-    flex-direction: column;
-    gap: 15px; /* Уменьшили зазор между карточками */
-}
-
-.kpi-value-row {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-}
-
 .kpi-card .value {
     font-size: 54px;
     font-weight: 900;
@@ -250,38 +171,12 @@ body.viewer-mode {
 }
 
 /* ============================================================
-   7. ГРАФИКИ (ОЧЕНЬ ВАЖНО ДЛЯ ОТОБРАЖЕНИЯ)
-   ============================================================ */
-.chart-block {
-    justify-content: center;
-    align-items: center;
-    height: 100%;
-    width: 100%;
-}
-
-.chart-block canvas {
-    width: 100% !important;
-    height: 100% !important;
-    max-height: 850px;
-}
-
-/* ============================================================
    8. ТЕКСТОВЫЕ БЛОКИ И ВНУТРЕННЯЯ СЕТКА
    ============================================================ */
-.text-block {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    max-height: 800px; /* Чтобы не лезло на заголовок */
-    overflow: hidden;
-}
-
 .block-text {
     font-size: 28px;
     line-height: 1.4;
     color: var(--ef-dark);
-    overflow-wrap: anywhere;
-    word-break: break-word;
 }
 
 .text-grid {
@@ -358,9 +253,6 @@ body.viewer-mode {
    ============================================================ */
 .title-slide {
     background: white;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
 }
 
 .title-logo {
@@ -403,15 +295,7 @@ body.viewer-mode {
 /* ============================================================
    10. КАРТИНКИ
    ============================================================ */
-.image-block {
-    justify-content: center;
-    align-items: center;
-}
-
 .image-container img {
-    max-height: 800px;
-    max-width: 100%;
-    object-fit: contain;
     border-radius: 10px;
     box-shadow: 0 20px 50px rgba(0,0,0,0.1);
 }
@@ -535,16 +419,10 @@ body.viewer-mode {
    ПЕРСОНАЖ (ОБНОВЛЕННЫЙ КОРП СТИЛЬ)
    ============================================================ */
 .slide-character {
-    position: absolute;
-    height: 480px;
-    width: auto;
-    z-index: 100;
     /* УБРАЛИ: циановое свечение */
     /* ДОБАВИЛИ: мягкую естественную тень для объема */
     filter: drop-shadow(0 15px 30px rgba(0, 0, 0, 0.15)); 
-    pointer-events: none;
     transition: all 0.3s ease;
-    object-fit: contain;
 }
 
 /* Если хочешь добавить легкий брендовый акцент (например, легкое зеленое свечение вместо тени), 
@@ -552,165 +430,3 @@ body.viewer-mode {
    filter: drop-shadow(0 0 15px rgba(140, 198, 63, 0.3)); 
 */
 
-/* СЛЕВА: Оригинальный вид (смотрит вправо) */
-.char-bottom-left {
-    bottom: -20px;
-    left: 20px;
-}
-
-.char-top-left {
-    top: 150px;
-    left: 20px;
-}
-
-/* СПРАВА: Отзеркаленный вид */
-.char-bottom-right {
-    bottom: -20px;
-    right: 20px;
-    /* Важно: сохраняем зеркалирование, если персонаж должен смотреть на контент */
-    transform: scaleX(-1); 
-}
-
-.char-top-right {
-    top: 150px;
-    right: 20px;
-    transform: scaleX(-1);
-}
-/* Deterministic layout overrides */
-.slide-body {
-    align-items: stretch;
-    overflow: hidden;
-}
-
-.block-wrapper {
-    min-width: 0;
-    min-height: 0;
-    overflow: hidden;
-}
-
-.table-block {
-    overflow: hidden;
-}
-
-.ef-table {
-    table-layout: fixed;
-}
-
-.ef-table th,
-.ef-table td {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.table-block.table-compact .ef-table {
-    font-size: 20px;
-    line-height: 1.05;
-}
-
-.table-block.table-compact .ef-table th,
-.table-block.table-compact .ef-table td {
-    padding: 8px 10px;
-}
-
-.chart-block canvas {
-    max-height: 100%;
-}
-
-.kpi-wrapper.kpi-compact .kpi-card {
-    padding: 14px 16px;
-    border-top-width: 6px;
-}
-
-.kpi-wrapper.kpi-compact .kpi-card .label {
-    font-size: 18px;
-}
-
-.kpi-wrapper.kpi-compact .kpi-card .value {
-    font-size: 54px;
-}
-
-.kpi-wrapper.kpi-compact .kpi-card .growth {
-    font-size: 16px;
-}
-
-.text-block.dense .block-text {
-    font-size: 24px;
-    line-height: 1.3;
-}
-
-.text-block.dense .block-text h3 {
-    font-size: 30px;
-}
-
-.image-container,
-.image-container img {
-    width: 100%;
-    height: 100%;
-}
-
-.image-container {
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.image-container img {
-    object-fit: contain;
-    transform-origin: center center;
-}
-
-.slide-body.layout-grid {
-    align-items: stretch;
-}
-
-.slide-body.layout-grid .layout-slot {
-    min-width: 0;
-    min-height: 0;
-    display: flex;
-}
-
-.slide-body.layout-grid .layout-slot > .block-wrapper {
-    width: 100%;
-}
-
-.slide-body.layout-grid .image-block {
-    justify-content: stretch;
-    align-items: stretch;
-}
-
-.slide-body.layout-grid .image-block .image-container {
-    flex: 1;
-    min-height: 0;
-}
-
-.slot-empty {
-    border: 1px dashed rgba(84, 83, 89, 0.25);
-    border-radius: 8px;
-}
-
-/* KPI auto-grid: fills available slot while keeping card readability */
-.kpi-grid-auto {
-    display: grid;
-    grid-template-columns: repeat(var(--kpi-cols, 2), minmax(240px, 300px));
-    grid-template-rows: repeat(var(--kpi-rows, 1), auto);
-    gap: 14px;
-    align-content: center;
-    justify-content: center;
-    height: 100%;
-    min-height: 0;
-}
-
-.kpi-grid-auto .kpi-card {
-    min-height: 0;
-}
-
-.kpi-grid-auto[data-kpi-count="1"] {
-    --kpi-cols: 1;
-}
-
-.slide-body.layout-grid .layout-slot[class*="slot-slot_img"] .image-container img {
-    object-fit: contain;
-    object-position: center center;
-}

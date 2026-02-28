@@ -143,11 +143,21 @@ function loadThemeCss(themeName) {
     }
 }
 
+function loadStructureCss() {
+    try {
+        const structurePath = path.join(__dirname, 'structure.css');
+        return fs.readFileSync(structurePath, 'utf8');
+    } catch (_e) {
+        return '';
+    }
+}
+
 function buildSlides(data) {
     const themeName = data.meta.theme;
     const logoPath = data.meta.logoPath || '';
     const charactersMap = data.meta.characters || {};
     const themeCss = loadThemeCss(themeName);
+    const structureCss = loadStructureCss();
 
     const slidesHtml = data.slides.map((slide, index) => {
         const isTitle = slide.type === 'title';
@@ -190,6 +200,7 @@ function buildSlides(data) {
         <meta charset="UTF-8">
         <link rel="stylesheet" href="/themes/${themeName}/styles.css">
         ${themeCss ? `<style>${themeCss}</style>` : ''}
+        ${structureCss ? `<style>${structureCss}</style>` : ''}
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     </head>

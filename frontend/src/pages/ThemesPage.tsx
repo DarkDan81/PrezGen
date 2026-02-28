@@ -23,9 +23,6 @@ function defaultTokens(): ThemeTokens {
       lineHeight: 1.4,
     },
     spacing: {
-      slidePadding: 40,
-      blockGap: 20,
-      cardPadding: 16,
       radius: 12,
       borderWidth: 1,
     },
@@ -245,16 +242,6 @@ export function ThemesPage() {
                 value={tokens.typography.bodySize}
                 onChange={(e) =>
                   setTokens((prev) => ({ ...prev, typography: { ...prev.typography, bodySize: Number(e.target.value || 0) } }))
-                }
-              />
-            </Field>
-            <Field label={t('themes.slidePadding')}>
-              <input
-                className="ui-input"
-                type="number"
-                value={tokens.spacing.slidePadding}
-                onChange={(e) =>
-                  setTokens((prev) => ({ ...prev, spacing: { ...prev.spacing, slidePadding: Number(e.target.value || 0) } }))
                 }
               />
             </Field>

@@ -57,9 +57,27 @@ function validateThemeTokens(tokens) {
     addRangeDetails(details, 'tokens.typography.subtitleSize', typography.subtitleSize, 12, 72);
     addRangeDetails(details, 'tokens.typography.bodySize', typography.bodySize, 10, 48);
     addRangeDetails(details, 'tokens.typography.lineHeight', typography.lineHeight, 1, 2.2);
-    addRangeDetails(details, 'tokens.spacing.slidePadding', spacing.slidePadding, 0, 140);
-    addRangeDetails(details, 'tokens.spacing.blockGap', spacing.blockGap, 0, 80);
-    addRangeDetails(details, 'tokens.spacing.cardPadding', spacing.cardPadding, 0, 80);
+    if (spacing.slidePadding !== undefined) {
+        details.push({
+            path: 'tokens.spacing.slidePadding',
+            rule: 'forbidden',
+            message: 'slidePadding is structural and cannot be theme-controlled',
+        });
+    }
+    if (spacing.blockGap !== undefined) {
+        details.push({
+            path: 'tokens.spacing.blockGap',
+            rule: 'forbidden',
+            message: 'blockGap is structural and cannot be theme-controlled',
+        });
+    }
+    if (spacing.cardPadding !== undefined) {
+        details.push({
+            path: 'tokens.spacing.cardPadding',
+            rule: 'forbidden',
+            message: 'cardPadding is structural and cannot be theme-controlled',
+        });
+    }
     addRangeDetails(details, 'tokens.spacing.radius', spacing.radius, 0, 48);
     addRangeDetails(details, 'tokens.spacing.borderWidth', spacing.borderWidth, 0, 12);
 
