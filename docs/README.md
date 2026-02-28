@@ -11,6 +11,7 @@ Current scope:
 - Stage 5: theme and layout builder planning (tokens, presets, dedicated editor).
 - Stage 6: editor usability and content authoring improvements (rich text, KPI layout, upload UX unification).
 - Stage 7: strict separation of theme skin from structural layout behavior.
+- Stage 8: PPTX-safe theme editor contract (visual capabilities constrained to exportable model).
 
 Structure:
 
@@ -42,4 +43,9 @@ Structure:
 - `stage-7-theme-structure-separation/decisions.md` - approved decisions for structure vs skin boundary.
 - `stage-7-theme-structure-separation/implementation-plan.md` - phased implementation plan.
 - `stage-7-theme-structure-separation/implementation-status.md` - current implementation status for stage 7.
+- `stage-8-pptx-safe-theme-editor/README.md` - stage overview and acceptance criteria for PPTX-safe theme editing.
+- `stage-8-pptx-safe-theme-editor/decisions.md` - approved export-first constraints and safety model.
+- `stage-8-pptx-safe-theme-editor/implementation-plan.md` - phased implementation plan for schema/validation/editor.
+- `stage-8-pptx-safe-theme-editor/implementation-status.md` - current implementation status for stage 8.
+- `stage-8-pptx-safe-theme-editor/pptx-safe-matrix.md` - draft capability matrix (`safe-native`/`safe-raster`/`blocked`).
 - `qa-demo-deck-assets.md` - source image naming and run instructions for QA demo deck seed script.
