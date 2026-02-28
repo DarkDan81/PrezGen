@@ -122,6 +122,8 @@ Notes:
 5. `layout-stack-left-3-hero-right` (`3 images + content`)
 6. `layout-hero-left-stack-right-4` (`content + 4 images`)
 7. `layout-image-full-caption` (`4 images + content`)
+8. `layout-content-left-two-vertical-right` (`content + 2 vertical images`)
+9. `layout-content-left-vertical-plus-two-horizontal-right` (`content + 1 vertical + 2 horizontal`)
 
 ## 4) Slide Binding Extension
 

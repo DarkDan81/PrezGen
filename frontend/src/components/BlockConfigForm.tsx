@@ -42,7 +42,16 @@ function update(
 
 export function getDefaultConfig(type: Block['type']): Record<string, unknown> {
   if (type === 'text') return { html: '<p>Text</p>' };
-  if (type === 'image') return { url: 'https://placehold.co/400x240', fitMode: 'contain', focalPoint: 'center center' };
+  if (type === 'image') {
+    return {
+      url: 'https://placehold.co/400x240',
+      fitMode: 'contain',
+      focalPoint: 'center center',
+      zoom: 100,
+      offsetX: 0,
+      offsetY: 0,
+    };
+  }
   if (type === 'chart') {
     return {
       datasetId: '',
@@ -146,13 +155,18 @@ export function BlockConfigForm({
 
       {type === 'image' && (
         <>
+          {(() => {
+            const fitMode = asString(config.fitMode) || 'contain';
+            const isCover = fitMode === 'cover';
+            return (
+              <>
           <label>
             {t('block.imageUrl')}
             <input value={asString(config.url)} onChange={(e) => update(config, 'url', e.target.value, onConfigChange)} />
           </label>
           <label>
             {t('block.imageFit')}
-            <select value={asString(config.fitMode) || 'contain'} onChange={(e) => update(config, 'fitMode', e.target.value, onConfigChange)}>
+            <select value={fitMode} onChange={(e) => update(config, 'fitMode', e.target.value, onConfigChange)}>
               <option value="contain">{t('block.imageFitContain')}</option>
               <option value="cover">{t('block.imageFitCover')}</option>
             </select>
@@ -174,6 +188,44 @@ export function BlockConfigForm({
               <option value="right bottom">{t('block.imageFocusRightBottom')}</option>
             </select>
           </label>
+          <label>
+            {t('block.imageZoom')}
+            <input
+              type="range"
+              min={100}
+              max={300}
+              step={1}
+              value={asNumber(config.zoom) || 100}
+              onChange={(e) => update(config, 'zoom', Number(e.target.value), onConfigChange)}
+              disabled={!isCover}
+            />
+          </label>
+          {isCover && (
+            <>
+              <label>
+                {t('block.imageOffsetX')}
+                <input
+                  type="range"
+                  min={-100}
+                  max={100}
+                  step={1}
+                  value={asNumber(config.offsetX) || 0}
+                  onChange={(e) => update(config, 'offsetX', Number(e.target.value), onConfigChange)}
+                />
+              </label>
+              <label>
+                {t('block.imageOffsetY')}
+                <input
+                  type="range"
+                  min={-100}
+                  max={100}
+                  step={1}
+                  value={asNumber(config.offsetY) || 0}
+                  onChange={(e) => update(config, 'offsetY', Number(e.target.value), onConfigChange)}
+                />
+              </label>
+            </>
+          )}
           <label
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => {
@@ -196,6 +248,9 @@ export function BlockConfigForm({
           </label>
           {uploading && <p>{t('block.uploadingImage')}</p>}
           {uploadError && <p className="error">{uploadError}</p>}
+              </>
+            );
+          })()}
         </>
       )}
 

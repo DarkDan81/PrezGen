@@ -34,6 +34,10 @@
   gap: 10px;
 }
 
+.header-refresh-btn {
+  margin-left: auto;
+}
+
 .editor-header-controls {
   display: flex;
   align-items: end;

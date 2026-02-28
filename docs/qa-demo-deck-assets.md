@@ -33,6 +33,11 @@ Examples:
 
 If a file is missing, script will use a placeholder image for that slot.
 
+Orientation convention used in seeded QA deck:
+
+1. Horizontal images: `grid-2`, `grid-3`, `grid-4`, `side-3`
+2. Other listed files are treated as vertical/general images
+
 ## Run
 
 ```bash

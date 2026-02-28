@@ -169,8 +169,10 @@ function run() {
     const s6 = createSlideRow(presentationId, 5, 'content', '3 Images Left + Content', 'Mirrored composition');
     const s7 = createSlideRow(presentationId, 6, 'content', 'Content + 4 Images Right', '2x2 image grid');
     const s8 = createSlideRow(presentationId, 7, 'content', '4 Images Left + Content', 'Mirrored 2x2 image grid');
-    const s9 = createSlideRow(presentationId, 8, 'title', 'Section Break', 'Final quality checks');
-    const s10 = createSlideRow(presentationId, 9, 'content', 'Final Notes', 'Long text and table readability');
+    const s9 = createSlideRow(presentationId, 8, 'content', 'Content + 2 Vertical Images Right', 'Portrait pair');
+    const s10 = createSlideRow(presentationId, 9, 'content', 'Content + Vertical + 2 Horizontal', 'Mixed orientation');
+    const s11 = createSlideRow(presentationId, 10, 'title', 'Section Break', 'Final quality checks');
+    const s12 = createSlideRow(presentationId, 11, 'content', 'Final Notes', 'Long text and table readability');
 
     const s2Text = createBlockRow(presentationId, s2.id, 0, 'text', {
         html: [
@@ -318,7 +320,39 @@ function run() {
         { slotId: 'slot_content', blockId: s8Content.id },
     ]);
 
-    const s10Text = createBlockRow(presentationId, s10.id, 0, 'text', {
+    const s9Content = createBlockRow(presentationId, s9.id, 0, 'text', {
+        html: [
+            '<h3>Portrait Duo</h3>',
+            '<p>This layout validates two vertical images beside a text narrative block.</p>',
+            '<p>Expected: both portrait assets remain fully visible and balanced.</p>',
+        ].join(''),
+    });
+    const s9V1 = createBlockRow(presentationId, s9.id, 1, 'image', { url: images.hero });
+    const s9V2 = createBlockRow(presentationId, s9.id, 2, 'image', { url: images.side1 });
+    bindLayout(s9.id, 'layout-content-left-two-vertical-right', [
+        { slotId: 'slot_content', blockId: s9Content.id },
+        { slotId: 'slot_img_v1', blockId: s9V1.id },
+        { slotId: 'slot_img_v2', blockId: s9V2.id },
+    ]);
+
+    const s10Content = createBlockRow(presentationId, s10.id, 0, 'text', {
+        html: [
+            '<h3>Mixed Orientation Cluster</h3>',
+            '<p>One vertical image and two horizontal images on the right.</p>',
+            '<p>Horizontal files used by convention: grid-2, grid-3, grid-4, side-3.</p>',
+        ].join(''),
+    });
+    const s10Vertical = createBlockRow(presentationId, s10.id, 1, 'image', { url: images.alt1 });
+    const s10H1 = createBlockRow(presentationId, s10.id, 2, 'image', { url: images.grid2 });
+    const s10H2 = createBlockRow(presentationId, s10.id, 3, 'image', { url: images.side3 });
+    bindLayout(s10.id, 'layout-content-left-vertical-plus-two-horizontal-right', [
+        { slotId: 'slot_content', blockId: s10Content.id },
+        { slotId: 'slot_img_vertical', blockId: s10Vertical.id },
+        { slotId: 'slot_img_h1', blockId: s10H1.id },
+        { slotId: 'slot_img_h2', blockId: s10H2.id },
+    ]);
+
+    const s12Text = createBlockRow(presentationId, s12.id, 0, 'text', {
         html: [
             '<h3>Readability Check</h3>',
             '<p>Use this slide to validate long paragraph wrapping, bullet spacing, and general rhythm in both light and dark UI modes.</p>',
@@ -331,14 +365,14 @@ function run() {
             '</ul>',
         ].join(''),
     });
-    const s10Table = createBlockRow(presentationId, s10.id, 1, 'table', {
+    const s12Table = createBlockRow(presentationId, s12.id, 1, 'table', {
         datasetId: salesDataset.id,
         limit: 6,
         transpose: false,
     });
-    bindLayout(s10.id, 'layout-two-columns', [
-        { slotId: 'slot_left', blockId: s10Text.id },
-        { slotId: 'slot_right', blockId: s10Table.id },
+    bindLayout(s12.id, 'layout-two-columns', [
+        { slotId: 'slot_left', blockId: s12Text.id },
+        { slotId: 'slot_right', blockId: s12Table.id },
     ]);
 
     console.log('QA demo deck created.');

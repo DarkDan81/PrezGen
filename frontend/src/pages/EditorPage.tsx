@@ -718,6 +718,9 @@ export function EditorPage() {
             {t('editor.backToList')}
           </Button>
           <strong>{presentationQuery.data?.name || t('editor.titleFallback')}</strong>
+          <Button variant="secondary" size="small" className="header-refresh-btn" onClick={() => buildPreviewMutation.mutate()}>
+            {t('editor.refreshPreview')}
+          </Button>
         </div>
         {!headerCollapsed && (
           <div className="editor-header-controls">
@@ -740,9 +743,6 @@ export function EditorPage() {
             </select>
             <Button variant="secondary" onClick={() => setThemeMode(themeMode === 'light' ? 'dark' : 'light')}>
               {themeMode === 'light' ? t('editor.darkUi') : t('editor.lightUi')}
-            </Button>
-            <Button variant="secondary" onClick={() => buildPreviewMutation.mutate()}>
-              {t('editor.refreshPreview')}
             </Button>
             <Button variant="primary" onClick={() => startPdfMutation.mutate()}>
               {t('editor.exportPdf')}

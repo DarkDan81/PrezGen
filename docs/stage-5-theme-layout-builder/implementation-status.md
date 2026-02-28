@@ -25,6 +25,8 @@ Branch: `feat/frontend-mvp-editor`
      - `3-images-left + content-right`
      - `content-left + 4-images-right`
      - `4-images-left + content-right`
+     - `content-left + 2-vertical-right`
+     - `content-left + vertical + 2-horizontal-right`
 4. Backend read path prep:
    - Added DB repositories:
      - `theme-repository`
@@ -101,6 +103,11 @@ Branch: `feat/frontend-mvp-editor`
       - center preview frame;
       - right properties panel.
     - image block editor now exposes user-facing `fitMode` and `focalPoint` controls.
+    - image block editor now also supports `zoom`, `offsetX`, `offsetY` for in-slot framing adjustments.
+    - removed helper frames/background from cluster image slots in final render path (preview + PDF).
+    - cover-mode framing now uses viewport-oriented object-position shifting (instead of moving already cropped bitmap).
+    - switching back to `contain` no longer keeps crop-like framing artifacts.
+    - `Refresh Preview` action moved to persistent top row so it remains visible when header is collapsed.
     - block settings moved to left workspace under selected slide block list.
     - right panel narrowed to slide settings, layout mapping, and datasets.
     - presentations list now supports delete action with confirmation dialog.

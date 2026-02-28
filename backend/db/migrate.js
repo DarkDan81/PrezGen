@@ -200,6 +200,43 @@ function seedLayoutPresets(db) {
                 ],
             },
         },
+        {
+            id: 'layout-content-left-two-vertical-right',
+            name: 'Content Left + 2 Vertical Right',
+            nameKey: 'layout.contentLeftTwoVerticalRight',
+            schema: {
+                grid: {
+                    columns: '1.35fr 1fr 1fr',
+                    rows: '1fr',
+                    areas: ['content v1 v2'],
+                    gap: 16,
+                },
+                slots: [
+                    { id: 'slot_content', area: 'content', allowedBlockTypes: anyBlock },
+                    { id: 'slot_img_v1', area: 'v1', allowedBlockTypes: imageOnly },
+                    { id: 'slot_img_v2', area: 'v2', allowedBlockTypes: imageOnly },
+                ],
+            },
+        },
+        {
+            id: 'layout-content-left-vertical-plus-two-horizontal-right',
+            name: 'Content Left + Vertical + 2 Horizontal',
+            nameKey: 'layout.contentLeftVerticalPlusTwoHorizontal',
+            schema: {
+                grid: {
+                    columns: '1.35fr 1fr 1fr',
+                    rows: '1fr 1fr',
+                    areas: ['content v h1', 'content v h2'],
+                    gap: 16,
+                },
+                slots: [
+                    { id: 'slot_content', area: 'content', allowedBlockTypes: anyBlock },
+                    { id: 'slot_img_vertical', area: 'v', allowedBlockTypes: imageOnly },
+                    { id: 'slot_img_h1', area: 'h1', allowedBlockTypes: imageOnly },
+                    { id: 'slot_img_h2', area: 'h2', allowedBlockTypes: imageOnly },
+                ],
+            },
+        },
     ];
 
     const upsertPreset = db.prepare(`

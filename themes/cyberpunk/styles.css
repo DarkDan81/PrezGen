@@ -380,6 +380,17 @@ body.viewer-mode {
     object-fit: contain;
 }
 
+.image-block .image-container {
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.image-block .image-container img {
+    transform-origin: center center;
+}
+
 .slide-body.layout-grid {
     align-items: stretch;
 }
@@ -444,19 +455,7 @@ body.viewer-mode {
     font-size: 14px;
 }
 
-/* Image cluster defaults: full image visible (no crop), consistent framing */
-.slide-body.layout-grid .layout-slot[class*="slot-slot_img"] {
-    background: rgba(0, 255, 255, 0.05);
-    border: 1px solid rgba(0, 255, 255, 0.2);
-    border-radius: 10px;
-}
-
-.slide-body.layout-grid .layout-slot[class*="slot-slot_img"] .image-container {
-    padding: 8px;
-    box-sizing: border-box;
-}
-
 .slide-body.layout-grid .layout-slot[class*="slot-slot_img"] .image-container img {
-    object-fit: contain !important;
-    object-position: center center !important;
+    object-fit: contain;
+    object-position: center center;
 }
