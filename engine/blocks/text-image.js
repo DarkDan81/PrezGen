@@ -30,12 +30,14 @@ function parseFocalToken(token, axis) {
     return 50;
 }
 
-function resolveObjectPosition(basePosition, offsetX, offsetY) {
+function resolveObjectPosition(basePosition, offsetX, offsetY, zoom) {
     const parts = String(basePosition || 'center center').split(/\s+/).filter(Boolean);
     const xToken = parts[0] || 'center';
     const yToken = parts[1] || 'center';
-    const x = clamp(parseFocalToken(xToken, 'x') + offsetX, 0, 100);
-    const y = clamp(parseFocalToken(yToken, 'y') + offsetY, 0, 100);
+    const zoomFactor = Math.max(1, Number(zoom || 100) / 100);
+    const overflow = (zoomFactor - 1) * 50;
+    const x = clamp(parseFocalToken(xToken, 'x') + offsetX, -overflow, 100 + overflow);
+    const y = clamp(parseFocalToken(yToken, 'y') + offsetY, -overflow, 100 + overflow);
     return `${x}% ${y}%`;
 }
 
@@ -58,7 +60,7 @@ module.exports = (block) => {
         const safeZoom = Number.isFinite(zoom) ? Math.max(100, zoom) : 100;
         const isCover = String(block.imageFit || '').toLowerCase() === 'cover';
         const position = isCover
-            ? resolveObjectPosition(basePosition, safeOffsetX, safeOffsetY)
+            ? resolveObjectPosition(basePosition, safeOffsetX, safeOffsetY, safeZoom)
             : String(basePosition || 'center center');
         const transform = isCover ? `scale(${safeZoom / 100})` : 'scale(1)';
         return `
