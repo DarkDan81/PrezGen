@@ -33,6 +33,12 @@ function defaultTokens(): ThemeTokens {
       headerBg: '#e2e8f0',
       headerText: '#0f172a',
     },
+    decor: {
+      intensity: 2,
+      safeZoneAlpha: 0.08,
+      titleMultiplier: 1.25,
+      contentMultiplier: 1,
+    },
   };
 }
 
@@ -61,6 +67,10 @@ function normalizeTokens(input?: ThemeTokens): ThemeTokens {
     table: {
       ...base.table,
       ...(next.table || {}),
+    },
+    decor: {
+      ...(base.decor || {}),
+      ...((next.decor as ThemeTokens['decor']) || {}),
     },
   };
 }
@@ -242,6 +252,54 @@ export function ThemesPage() {
                 value={tokens.typography.bodySize}
                 onChange={(e) =>
                   setTokens((prev) => ({ ...prev, typography: { ...prev.typography, bodySize: Number(e.target.value || 0) } }))
+                }
+              />
+            </Field>
+            <Field label={t('themes.decorIntensity')}>
+              <input
+                className="ui-input"
+                type="number"
+                min={1}
+                max={3}
+                step={0.1}
+                value={typeof tokens.decor?.intensity === 'number' ? tokens.decor.intensity : 2}
+                onChange={(e) =>
+                  setTokens((prev) => ({
+                    ...prev,
+                    decor: { ...(prev.decor || {}), intensity: Number(e.target.value || 2) },
+                  }))
+                }
+              />
+            </Field>
+            <Field label={t('themes.safeZoneAlpha')}>
+              <input
+                className="ui-input"
+                type="number"
+                min={0}
+                max={0.35}
+                step={0.01}
+                value={typeof tokens.decor?.safeZoneAlpha === 'number' ? tokens.decor.safeZoneAlpha : 0.08}
+                onChange={(e) =>
+                  setTokens((prev) => ({
+                    ...prev,
+                    decor: { ...(prev.decor || {}), safeZoneAlpha: Number(e.target.value || 0) },
+                  }))
+                }
+              />
+            </Field>
+            <Field label={t('themes.titleDecorBoost')}>
+              <input
+                className="ui-input"
+                type="number"
+                min={0.8}
+                max={2}
+                step={0.05}
+                value={typeof tokens.decor?.titleMultiplier === 'number' ? tokens.decor.titleMultiplier : 1.25}
+                onChange={(e) =>
+                  setTokens((prev) => ({
+                    ...prev,
+                    decor: { ...(prev.decor || {}), titleMultiplier: Number(e.target.value || 1) },
+                  }))
                 }
               />
             </Field>

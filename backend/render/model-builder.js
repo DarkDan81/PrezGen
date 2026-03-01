@@ -3,7 +3,7 @@ const { listSlidesByPresentation } = require('../repositories/slide-repository')
 const { listBlocksBySlide } = require('../repositories/block-repository');
 const { listDatasetsByPresentation } = require('../repositories/dataset-repository');
 const { getLayoutPresetById } = require('../repositories/layout-preset-repository');
-const { normalizeThemeId } = require('../services/themes-service');
+const { getThemeById, normalizeThemeId } = require('../services/themes-service');
 const { chartAdapter } = require('./adapters/chart-adapter');
 const { tableAdapter } = require('./adapters/table-adapter');
 const { kpiAdapter } = require('./adapters/kpi-adapter');
@@ -70,6 +70,9 @@ function renderBlock(block, datasetsById) {
 function buildRenderModelByPresentationId(presentationId) {
     const presentation = getPresentationById(presentationId);
     if (!presentation) return null;
+    const selectedTheme = getThemeById(presentation.themeId);
+    const baseThemeId = selectedTheme?.baseThemeId || presentation.themeId;
+    const resolvedThemeSlug = normalizeThemeId(baseThemeId) || normalizeThemeId(presentation.themeId) || 'eurofoods';
 
     const slides = listSlidesByPresentation(presentationId);
     const datasets = listDatasetsByPresentation(presentationId);
@@ -105,7 +108,9 @@ function buildRenderModelByPresentationId(presentationId) {
 
     return {
         meta: {
-            theme: normalizeThemeId(presentation.themeId) || 'eurofoods',
+            theme: resolvedThemeSlug,
+            themeId: presentation.themeId,
+            themeTokens: selectedTheme?.tokens || {},
             characters: {},
         },
         slides: renderSlides,

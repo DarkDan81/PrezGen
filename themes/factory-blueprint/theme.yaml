@@ -19,3 +19,8 @@ chart:
 table:
   headerBg: "#152135"
   headerText: "#f2f7ff"
+decor:
+  intensity: 2
+  safeZoneAlpha: 0.08
+  titleMultiplier: 1.25
+  contentMultiplier: 1

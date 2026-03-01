@@ -152,12 +152,67 @@ function loadStructureCss() {
     }
 }
 
+function isHexColor(value) {
+    return typeof value === 'string' && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(value.trim());
+}
+
+function asFiniteNumber(value, fallback) {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : fallback;
+}
+
+function buildThemeVarsCss(tokens) {
+    if (!tokens || typeof tokens !== 'object') return '';
+
+    const color = (tokens.color && typeof tokens.color === 'object') ? tokens.color : {};
+    const typography = (tokens.typography && typeof tokens.typography === 'object') ? tokens.typography : {};
+    const spacing = (tokens.spacing && typeof tokens.spacing === 'object') ? tokens.spacing : {};
+    const chart = (tokens.chart && typeof tokens.chart === 'object') ? tokens.chart : {};
+    const table = (tokens.table && typeof tokens.table === 'object') ? tokens.table : {};
+    const decor = (tokens.decor && typeof tokens.decor === 'object') ? tokens.decor : {};
+
+    const vars = [];
+    const push = (name, value) => {
+        if (value === undefined || value === null || value === '') return;
+        vars.push(`${name}:${value};`);
+    };
+
+    if (isHexColor(color.bgCanvas)) push('--pg-bg-canvas', String(color.bgCanvas).trim());
+    if (isHexColor(color.textPrimary)) push('--pg-text-primary', String(color.textPrimary).trim());
+    if (isHexColor(color.accent)) push('--pg-accent', String(color.accent).trim());
+
+    push('--pg-title-size', `${asFiniteNumber(typography.titleSize, 64)}px`);
+    push('--pg-subtitle-size', `${asFiniteNumber(typography.subtitleSize, 30)}px`);
+    push('--pg-body-size', `${asFiniteNumber(typography.bodySize, 28)}px`);
+    push('--pg-line-height', String(asFiniteNumber(typography.lineHeight, 1.38)));
+
+    push('--pg-radius', `${asFiniteNumber(spacing.radius, 8)}px`);
+    push('--pg-border-width', `${asFiniteNumber(spacing.borderWidth, 1)}px`);
+
+    const palette = Array.isArray(chart.palette) ? chart.palette : [];
+    palette.slice(0, 4).forEach((entry, index) => {
+        if (isHexColor(entry)) push(`--pg-chart-${index + 1}`, String(entry).trim());
+    });
+    if (isHexColor(palette[0])) push('--pg-accent-alt', String(palette[0]).trim());
+
+    if (isHexColor(table.headerBg)) push('--pg-table-header-bg', String(table.headerBg).trim());
+    if (isHexColor(table.headerText)) push('--pg-table-header-text', String(table.headerText).trim());
+
+    push('--pg-decor-intensity', String(asFiniteNumber(decor.intensity, 2)));
+    push('--pg-decor-safe-zone-alpha', String(asFiniteNumber(decor.safeZoneAlpha, 0.08)));
+    push('--pg-decor-title-mult', String(asFiniteNumber(decor.titleMultiplier, 1.25)));
+    push('--pg-decor-content-mult', String(asFiniteNumber(decor.contentMultiplier, 1)));
+
+    return vars.length ? `:root{${vars.join('')}}` : '';
+}
+
 function buildSlides(data) {
     const themeName = data.meta.theme;
     const logoPath = data.meta.logoPath || '';
     const charactersMap = data.meta.characters || {};
     const themeCss = loadThemeCss(themeName);
     const structureCss = loadStructureCss();
+    const themeVarsCss = buildThemeVarsCss(data.meta.themeTokens);
 
     const slidesHtml = data.slides.map((slide, index) => {
         const isTitle = slide.type === 'title';
@@ -201,6 +256,7 @@ function buildSlides(data) {
         <link rel="stylesheet" href="/themes/${themeName}/styles.css">
         ${themeCss ? `<style>${themeCss}</style>` : ''}
         ${structureCss ? `<style>${structureCss}</style>` : ''}
+        ${themeVarsCss ? `<style>${themeVarsCss}</style>` : ''}
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     </head>

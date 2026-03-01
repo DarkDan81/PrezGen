@@ -85,6 +85,13 @@ export type ThemeTokens = {
   table?: {
     [key: string]: unknown;
   };
+  decor?: {
+    intensity?: number;
+    safeZoneAlpha?: number;
+    titleMultiplier?: number;
+    contentMultiplier?: number;
+    [key: string]: unknown;
+  };
   [key: string]: unknown;
 };
 

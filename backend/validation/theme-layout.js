@@ -46,6 +46,7 @@ function validateThemeTokens(tokens) {
     const spacing = isPlainObject(tokens.spacing) ? tokens.spacing : {};
     const chart = isPlainObject(tokens.chart) ? tokens.chart : {};
     const table = isPlainObject(tokens.table) ? tokens.table : {};
+    const decor = isPlainObject(tokens.decor) ? tokens.decor : {};
 
     ['bgCanvas', 'textPrimary', 'accent'].forEach((key) => {
         if (!isHexColor(color[key] || '')) {
@@ -80,6 +81,10 @@ function validateThemeTokens(tokens) {
     }
     addRangeDetails(details, 'tokens.spacing.radius', spacing.radius, 0, 48);
     addRangeDetails(details, 'tokens.spacing.borderWidth', spacing.borderWidth, 0, 12);
+    addRangeDetails(details, 'tokens.decor.intensity', decor.intensity, 1, 3);
+    addRangeDetails(details, 'tokens.decor.safeZoneAlpha', decor.safeZoneAlpha, 0, 0.35);
+    addRangeDetails(details, 'tokens.decor.titleMultiplier', decor.titleMultiplier, 0.8, 2);
+    addRangeDetails(details, 'tokens.decor.contentMultiplier', decor.contentMultiplier, 0.6, 1.6);
 
     if (Array.isArray(chart.palette) && chart.palette.length) {
         chart.palette.forEach((value, index) => {

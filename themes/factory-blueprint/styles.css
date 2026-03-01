@@ -1,12 +1,12 @@
 :root {
-    --fd-bg: #05080d;
+    --fd-bg: var(--pg-bg-canvas, #05080d);
     --fd-bg-soft: #0a1019;
     --fd-surface: #0d1522;
     --fd-surface-2: #111c2d;
-    --fd-text: #e7edf6;
+    --fd-text: var(--pg-text-primary, #e7edf6);
     --fd-text-muted: #8f9db4;
-    --fd-blue: #39a8ff;
-    --fd-orange: #ff7b1f;
+    --fd-blue: var(--pg-accent-alt, #39a8ff);
+    --fd-orange: var(--pg-accent, #ff7b1f);
     --fd-grid: rgba(57, 168, 255, 0.12);
     --fd-divider: rgba(143, 157, 180, 0.24);
     --pg-chart-1: #39a8ff;
@@ -15,6 +15,10 @@
     --pg-chart-4: #ff9a4d;
     --pg-chart-axis: #e8effa;
     --pg-chart-label: #ffffff;
+    --fd-decor-intensity: var(--pg-decor-intensity, 2);
+    --fd-decor-safe-alpha: var(--pg-decor-safe-zone-alpha, 0.08);
+    --fd-decor-title-mult: var(--pg-decor-title-mult, 1.25);
+    --fd-decor-content-mult: var(--pg-decor-content-mult, 1);
 }
 
 *, *::before, *::after {
@@ -30,6 +34,7 @@ body.viewer-mode {
 }
 
 .slide {
+    --fd-decor-mult: var(--fd-decor-content-mult);
     background: radial-gradient(circle at 84% 10%, rgba(57, 168, 255, 0.1), transparent 45%),
         radial-gradient(circle at 10% 84%, rgba(255, 123, 31, 0.08), transparent 45%),
         var(--fd-bg);
@@ -46,7 +51,7 @@ body.viewer-mode {
         linear-gradient(var(--fd-grid) 1px, transparent 1px),
         linear-gradient(90deg, var(--fd-grid) 1px, transparent 1px);
     background-size: 64px 64px;
-    opacity: 0.7;
+    opacity: calc((0.28 + (var(--fd-decor-intensity) * 0.16)) * var(--fd-decor-mult));
 }
 
 .slide::after {
@@ -82,7 +87,7 @@ body.viewer-mode {
     background:
         radial-gradient(circle, rgba(57, 168, 255, 0.12) 0%, transparent 64%),
         radial-gradient(circle at 35% 65%, rgba(255, 123, 31, 0.06) 0%, transparent 60%);
-    opacity: 0.6;
+    opacity: calc((0.12 + (var(--fd-decor-intensity) * 0.2)) * var(--fd-decor-mult));
 }
 
 .decor-line-left {
@@ -91,7 +96,7 @@ body.viewer-mode {
     width: 3px;
     height: 56%;
     background: linear-gradient(to bottom, rgba(57, 168, 255, 0.85), rgba(255, 123, 31, 0.7));
-    opacity: 0.45;
+    opacity: calc((0.1 + (var(--fd-decor-intensity) * 0.12)) * var(--fd-decor-mult));
 }
 
 .slide-decor-line {
@@ -101,7 +106,7 @@ body.viewer-mode {
     height: 34%;
     background: linear-gradient(135deg, rgba(57, 168, 255, 0.08), rgba(255, 123, 31, 0.12));
     clip-path: polygon(100% 0, 100% 100%, 0 100%);
-    opacity: 0.9;
+    opacity: calc((0.18 + (var(--fd-decor-intensity) * 0.18)) * var(--fd-decor-mult));
 }
 
 .slide-header h2 {
@@ -116,7 +121,7 @@ body.viewer-mode {
 }
 
 .slide-subtitle {
-    font-size: 30px;
+    font-size: var(--pg-subtitle-size, 30px);
     font-weight: 700;
     color: var(--fd-blue);
     letter-spacing: 1px;
@@ -127,8 +132,8 @@ body.viewer-mode {
 
 .block-text {
     color: var(--fd-text);
-    font-size: 28px;
-    line-height: 1.38;
+    font-size: var(--pg-body-size, 28px);
+    line-height: var(--pg-line-height, 1.38);
 }
 
 .block-text h3 {
@@ -164,6 +169,11 @@ body.viewer-mode {
     padding: 0;
 }
 
+.slide-body {
+    background: rgba(2, 8, 14, var(--fd-decor-safe-alpha));
+    border-radius: 10px;
+}
+
 .ef-table {
     width: 100%;
     border-collapse: separate;
@@ -177,8 +187,8 @@ body.viewer-mode {
 }
 
 .ef-table th {
-    background: rgba(21, 33, 53, 0.92);
-    color: #f2f7ff;
+    background: var(--pg-table-header-bg, rgba(21, 33, 53, 0.92));
+    color: var(--pg-table-header-text, #f2f7ff);
     border-bottom: 2px solid rgba(57, 168, 255, 0.7);
     text-transform: uppercase;
     letter-spacing: 0.2px;
@@ -281,6 +291,7 @@ body.viewer-mode {
 }
 
 .title-slide {
+    --fd-decor-mult: var(--fd-decor-title-mult);
     background: radial-gradient(circle at 80% 22%, rgba(57, 168, 255, 0.16), transparent 42%),
         radial-gradient(circle at 24% 86%, rgba(255, 123, 31, 0.12), transparent 44%),
         var(--fd-bg);
@@ -292,7 +303,7 @@ body.viewer-mode {
 
 .title-slide h1 {
     margin: 0;
-    font-size: 110px;
+    font-size: calc(var(--pg-title-size, 64px) * 1.72);
     font-weight: 900;
     text-transform: uppercase;
     color: #f5f9ff;
