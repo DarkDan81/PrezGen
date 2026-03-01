@@ -32,6 +32,111 @@ function addRangeDetails(details, path, value, min, max) {
     }
 }
 
+function clamp(value, min, max, fallback) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return fallback;
+    return Math.max(min, Math.min(max, n));
+}
+
+const THEME_TOKEN_DEFAULTS = {
+    color: {
+        bgCanvas: '#05080d',
+        textPrimary: '#e7edf6',
+        accent: '#ff7b1f',
+    },
+    typography: {
+        titleSize: 64,
+        subtitleSize: 30,
+        bodySize: 28,
+        lineHeight: 1.38,
+    },
+    spacing: {
+        radius: 8,
+        borderWidth: 1,
+    },
+    chart: {
+        palette: ['#39a8ff', '#ff7b1f', '#69bcff', '#ff9a4d'],
+    },
+    table: {
+        headerBg: '#152135',
+        headerText: '#f2f7ff',
+    },
+    decor: {
+        intensity: 2,
+        safeZoneAlpha: 0.08,
+        titleMultiplier: 1.25,
+        contentMultiplier: 1,
+        logoEnabled: true,
+        logoText: 'DARKDAN',
+        logoAnchor: 'top-right',
+        logoSize: 14,
+        logoOpacity: 0.95,
+        shapePreset: 'both',
+    },
+};
+
+const ALLOWED_TOP_LEVEL = new Set(['color', 'typography', 'spacing', 'chart', 'table', 'decor']);
+const ALLOWED_GROUP_KEYS = {
+    color: new Set(['bgCanvas', 'textPrimary', 'accent']),
+    typography: new Set(['titleSize', 'subtitleSize', 'bodySize', 'lineHeight']),
+    spacing: new Set(['radius', 'borderWidth']),
+    chart: new Set(['palette']),
+    table: new Set(['headerBg', 'headerText']),
+    decor: new Set([
+        'intensity',
+        'safeZoneAlpha',
+        'titleMultiplier',
+        'contentMultiplier',
+        'logoEnabled',
+        'logoText',
+        'logoAnchor',
+        'logoSize',
+        'logoOpacity',
+        'shapePreset',
+    ]),
+};
+
+const ALLOWED_DECOR_ANCHORS = new Set(['top-right', 'top-left', 'bottom-right', 'bottom-left']);
+const ALLOWED_SHAPE_PRESETS = new Set(['none', 'left-line', 'triangle', 'blob', 'both']);
+
+function findUnknownTokenKeys(tokens) {
+    const details = [];
+
+    Object.keys(tokens).forEach((key) => {
+        if (!ALLOWED_TOP_LEVEL.has(key)) {
+            details.push({
+                path: `tokens.${key}`,
+                rule: 'unknown',
+                message: `tokens.${key} is not supported by PPTX-safe theme schema`,
+            });
+        }
+    });
+
+    Object.entries(ALLOWED_GROUP_KEYS).forEach(([group, keys]) => {
+        const value = tokens[group];
+        if (value === undefined) return;
+        if (!isPlainObject(value)) {
+            details.push({
+                path: `tokens.${group}`,
+                rule: 'object',
+                message: `tokens.${group} must be an object`,
+            });
+            return;
+        }
+        Object.keys(value).forEach((childKey) => {
+            if (!keys.has(childKey)) {
+                details.push({
+                    path: `tokens.${group}.${childKey}`,
+                    rule: 'unknown',
+                    message: `tokens.${group}.${childKey} is not supported by PPTX-safe theme schema`,
+                });
+            }
+        });
+    });
+
+    return details;
+}
+
 function validateThemeTokens(tokens) {
     const details = [];
     const warnings = [];
@@ -41,6 +146,8 @@ function validateThemeTokens(tokens) {
         return { details, warnings };
     }
 
+    details.push(...findUnknownTokenKeys(tokens));
+
     const color = isPlainObject(tokens.color) ? tokens.color : {};
     const typography = isPlainObject(tokens.typography) ? tokens.typography : {};
     const spacing = isPlainObject(tokens.spacing) ? tokens.spacing : {};
@@ -49,7 +156,7 @@ function validateThemeTokens(tokens) {
     const decor = isPlainObject(tokens.decor) ? tokens.decor : {};
 
     ['bgCanvas', 'textPrimary', 'accent'].forEach((key) => {
-        if (!isHexColor(color[key] || '')) {
+        if (color[key] !== undefined && !isHexColor(color[key] || '')) {
             details.push({ path: `tokens.color.${key}`, rule: 'hexColor', message: `${key} must be a hex color` });
         }
     });
@@ -58,6 +165,7 @@ function validateThemeTokens(tokens) {
     addRangeDetails(details, 'tokens.typography.subtitleSize', typography.subtitleSize, 12, 72);
     addRangeDetails(details, 'tokens.typography.bodySize', typography.bodySize, 10, 48);
     addRangeDetails(details, 'tokens.typography.lineHeight', typography.lineHeight, 1, 2.2);
+
     if (spacing.slidePadding !== undefined) {
         details.push({
             path: 'tokens.spacing.slidePadding',
@@ -81,10 +189,42 @@ function validateThemeTokens(tokens) {
     }
     addRangeDetails(details, 'tokens.spacing.radius', spacing.radius, 0, 48);
     addRangeDetails(details, 'tokens.spacing.borderWidth', spacing.borderWidth, 0, 12);
+
     addRangeDetails(details, 'tokens.decor.intensity', decor.intensity, 1, 3);
     addRangeDetails(details, 'tokens.decor.safeZoneAlpha', decor.safeZoneAlpha, 0, 0.35);
     addRangeDetails(details, 'tokens.decor.titleMultiplier', decor.titleMultiplier, 0.8, 2);
     addRangeDetails(details, 'tokens.decor.contentMultiplier', decor.contentMultiplier, 0.6, 1.6);
+    addRangeDetails(details, 'tokens.decor.logoSize', decor.logoSize, 10, 36);
+    addRangeDetails(details, 'tokens.decor.logoOpacity', decor.logoOpacity, 0.2, 1);
+
+    if (decor.logoEnabled !== undefined && typeof decor.logoEnabled !== 'boolean') {
+        details.push({
+            path: 'tokens.decor.logoEnabled',
+            rule: 'boolean',
+            message: 'logoEnabled must be a boolean',
+        });
+    }
+    if (decor.logoText !== undefined && (typeof decor.logoText !== 'string' || decor.logoText.trim().length === 0)) {
+        details.push({
+            path: 'tokens.decor.logoText',
+            rule: 'string',
+            message: 'logoText must be a non-empty string',
+        });
+    }
+    if (decor.logoAnchor !== undefined && !ALLOWED_DECOR_ANCHORS.has(String(decor.logoAnchor))) {
+        details.push({
+            path: 'tokens.decor.logoAnchor',
+            rule: 'enum',
+            message: 'logoAnchor must be one of top-right, top-left, bottom-right, bottom-left',
+        });
+    }
+    if (decor.shapePreset !== undefined && !ALLOWED_SHAPE_PRESETS.has(String(decor.shapePreset))) {
+        details.push({
+            path: 'tokens.decor.shapePreset',
+            rule: 'enum',
+            message: 'shapePreset must be one of none, left-line, triangle, blob, both',
+        });
+    }
 
     if (Array.isArray(chart.palette) && chart.palette.length) {
         chart.palette.forEach((value, index) => {
@@ -105,28 +245,111 @@ function validateThemeTokens(tokens) {
         details.push({ path: 'tokens.table.headerText', rule: 'hexColor', message: 'table.headerText must be a hex color' });
     }
 
-    if (isHexColor(color.textPrimary) && isHexColor(color.bgCanvas)) {
-        const ratio = contrastRatio(color.textPrimary, color.bgCanvas);
-        if (ratio < 4.5) {
-            warnings.push({
-                path: 'tokens.color',
-                rule: 'contrast',
-                message: `textPrimary/bgCanvas contrast ratio is ${ratio.toFixed(2)} (< 4.5)`,
-            });
-        }
+    const effectiveText = isHexColor(color.textPrimary) ? color.textPrimary : THEME_TOKEN_DEFAULTS.color.textPrimary;
+    const effectiveBg = isHexColor(color.bgCanvas) ? color.bgCanvas : THEME_TOKEN_DEFAULTS.color.bgCanvas;
+    const ratio = contrastRatio(effectiveText, effectiveBg);
+    if (ratio < 4.5) {
+        warnings.push({
+            path: 'tokens.color',
+            rule: 'contrast',
+            message: `textPrimary/bgCanvas contrast ratio is ${ratio.toFixed(2)} (< 4.5)`,
+        });
     }
-    if (isHexColor(table.headerText || '') && isHexColor(table.headerBg || '')) {
-        const ratio = contrastRatio(table.headerText, table.headerBg);
-        if (ratio < 4.5) {
-            warnings.push({
-                path: 'tokens.table',
-                rule: 'contrast',
-                message: `table header text/background contrast ratio is ${ratio.toFixed(2)} (< 4.5)`,
-            });
-        }
+
+    const tableHeaderText = isHexColor(table.headerText || '') ? table.headerText : THEME_TOKEN_DEFAULTS.table.headerText;
+    const tableHeaderBg = isHexColor(table.headerBg || '') ? table.headerBg : THEME_TOKEN_DEFAULTS.table.headerBg;
+    const tableRatio = contrastRatio(tableHeaderText, tableHeaderBg);
+    if (tableRatio < 4.5) {
+        warnings.push({
+            path: 'tokens.table',
+            rule: 'contrast',
+            message: `table header text/background contrast ratio is ${tableRatio.toFixed(2)} (< 4.5)`,
+        });
     }
 
     return { details, warnings };
+}
+
+function normalizeThemeTokens(tokens, options = {}) {
+    const warnings = [];
+    const source = isPlainObject(tokens) ? tokens : {};
+    const baseTokens = isPlainObject(options.baseTokens) ? options.baseTokens : {};
+    const merged = {
+        ...THEME_TOKEN_DEFAULTS,
+        ...baseTokens,
+        ...source,
+        color: { ...THEME_TOKEN_DEFAULTS.color, ...(baseTokens.color || {}), ...(source.color || {}) },
+        typography: { ...THEME_TOKEN_DEFAULTS.typography, ...(baseTokens.typography || {}), ...(source.typography || {}) },
+        spacing: { ...THEME_TOKEN_DEFAULTS.spacing, ...(baseTokens.spacing || {}), ...(source.spacing || {}) },
+        chart: { ...THEME_TOKEN_DEFAULTS.chart, ...(baseTokens.chart || {}), ...(source.chart || {}) },
+        table: { ...THEME_TOKEN_DEFAULTS.table, ...(baseTokens.table || {}), ...(source.table || {}) },
+        decor: { ...THEME_TOKEN_DEFAULTS.decor, ...(baseTokens.decor || {}), ...(source.decor || {}) },
+    };
+
+    const normalized = {
+        color: {
+            bgCanvas: isHexColor(merged.color.bgCanvas) ? merged.color.bgCanvas : THEME_TOKEN_DEFAULTS.color.bgCanvas,
+            textPrimary: isHexColor(merged.color.textPrimary) ? merged.color.textPrimary : THEME_TOKEN_DEFAULTS.color.textPrimary,
+            accent: isHexColor(merged.color.accent) ? merged.color.accent : THEME_TOKEN_DEFAULTS.color.accent,
+        },
+        typography: {
+            titleSize: clamp(merged.typography.titleSize, 18, 96, THEME_TOKEN_DEFAULTS.typography.titleSize),
+            subtitleSize: clamp(merged.typography.subtitleSize, 12, 72, THEME_TOKEN_DEFAULTS.typography.subtitleSize),
+            bodySize: clamp(merged.typography.bodySize, 10, 48, THEME_TOKEN_DEFAULTS.typography.bodySize),
+            lineHeight: clamp(merged.typography.lineHeight, 1, 2.2, THEME_TOKEN_DEFAULTS.typography.lineHeight),
+        },
+        spacing: {
+            radius: clamp(merged.spacing.radius, 0, 48, THEME_TOKEN_DEFAULTS.spacing.radius),
+            borderWidth: clamp(merged.spacing.borderWidth, 0, 12, THEME_TOKEN_DEFAULTS.spacing.borderWidth),
+        },
+        chart: {
+            palette: Array.isArray(merged.chart.palette)
+                ? merged.chart.palette.filter(isHexColor).slice(0, 4)
+                : THEME_TOKEN_DEFAULTS.chart.palette.slice(),
+        },
+        table: {
+            headerBg: isHexColor(merged.table.headerBg) ? merged.table.headerBg : THEME_TOKEN_DEFAULTS.table.headerBg,
+            headerText: isHexColor(merged.table.headerText) ? merged.table.headerText : THEME_TOKEN_DEFAULTS.table.headerText,
+        },
+        decor: {
+            intensity: clamp(merged.decor.intensity, 1, 3, THEME_TOKEN_DEFAULTS.decor.intensity),
+            safeZoneAlpha: clamp(merged.decor.safeZoneAlpha, 0, 0.35, THEME_TOKEN_DEFAULTS.decor.safeZoneAlpha),
+            titleMultiplier: clamp(merged.decor.titleMultiplier, 0.8, 2, THEME_TOKEN_DEFAULTS.decor.titleMultiplier),
+            contentMultiplier: clamp(merged.decor.contentMultiplier, 0.6, 1.6, THEME_TOKEN_DEFAULTS.decor.contentMultiplier),
+            logoEnabled: Boolean(merged.decor.logoEnabled),
+            logoText: String(merged.decor.logoText || THEME_TOKEN_DEFAULTS.decor.logoText).trim().slice(0, 32) || THEME_TOKEN_DEFAULTS.decor.logoText,
+            logoAnchor: ALLOWED_DECOR_ANCHORS.has(String(merged.decor.logoAnchor))
+                ? String(merged.decor.logoAnchor)
+                : THEME_TOKEN_DEFAULTS.decor.logoAnchor,
+            logoSize: clamp(merged.decor.logoSize, 10, 36, THEME_TOKEN_DEFAULTS.decor.logoSize),
+            logoOpacity: clamp(merged.decor.logoOpacity, 0.2, 1, THEME_TOKEN_DEFAULTS.decor.logoOpacity),
+            shapePreset: ALLOWED_SHAPE_PRESETS.has(String(merged.decor.shapePreset))
+                ? String(merged.decor.shapePreset)
+                : THEME_TOKEN_DEFAULTS.decor.shapePreset,
+        },
+    };
+
+    const unknowns = findUnknownTokenKeys(source);
+    if (unknowns.length) {
+        unknowns.forEach((unknown) => {
+            warnings.push({
+                path: unknown.path,
+                rule: 'ignored',
+                message: `${unknown.path} was ignored by normalization`,
+            });
+        });
+    }
+
+    if (!normalized.chart.palette.length) {
+        normalized.chart.palette = THEME_TOKEN_DEFAULTS.chart.palette.slice();
+        warnings.push({
+            path: 'tokens.chart.palette',
+            rule: 'default',
+            message: 'chart.palette was empty after normalization and default palette was applied',
+        });
+    }
+
+    return { tokens: normalized, warnings };
 }
 
 function validateLayoutBindingPayload(payload) {
@@ -231,6 +454,8 @@ function validateSlotAssignmentsAgainstLayout(layoutPreset, slotAssignments, sli
 }
 
 module.exports = {
+    THEME_TOKEN_DEFAULTS,
+    normalizeThemeTokens,
     validateLayoutBindingPayload,
     validateSlotAssignmentsAgainstLayout,
     validateThemeTokens,

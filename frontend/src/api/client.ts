@@ -1,5 +1,16 @@
 import { apiDelete, apiGet, apiPatch, apiPost, apiPostForm } from './http';
-import type { Block, Dataset, LayoutPreset, Presentation, RenderJob, Slide, Theme, ThemeTokens, ValidationWarning } from './types';
+import type {
+  Block,
+  Dataset,
+  LayoutPreset,
+  Presentation,
+  RenderJob,
+  Slide,
+  Theme,
+  ThemePreviewResponse,
+  ThemeTokens,
+  ValidationWarning,
+} from './types';
 
 export const client = {
   listPresentations: () => apiGet<Presentation[]>('/api/v1/presentations'),
@@ -47,6 +58,8 @@ export const client = {
     apiGet<{ schemaVersion: number; theme: Theme }>(`/api/v1/themes/${themeId}/export`),
   importTheme: (payload: { schemaVersion: number; theme: { name: string; tokens: ThemeTokens; baseThemeId?: string } }) =>
     apiPost<Theme & { warnings?: ValidationWarning[] }, typeof payload>('/api/v1/themes/import', payload),
+  previewTheme: (payload: { themeId?: string; baseThemeId?: string; tokens: ThemeTokens }) =>
+    apiPost<ThemePreviewResponse, typeof payload>('/api/v1/themes/preview', payload),
 
   listLayoutPresets: () => apiGet<LayoutPreset[]>('/api/v1/layout-presets'),
   getLayoutPreset: (layoutPresetId: string) => apiGet<LayoutPreset>(`/api/v1/layout-presets/${layoutPresetId}`),

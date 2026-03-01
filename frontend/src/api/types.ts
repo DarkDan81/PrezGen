@@ -90,9 +90,22 @@ export type ThemeTokens = {
     safeZoneAlpha?: number;
     titleMultiplier?: number;
     contentMultiplier?: number;
+    logoEnabled?: boolean;
+    logoText?: string;
+    logoAnchor?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
+    logoSize?: number;
+    logoOpacity?: number;
+    shapePreset?: 'none' | 'left-line' | 'triangle' | 'blob' | 'both';
     [key: string]: unknown;
   };
   [key: string]: unknown;
+};
+
+export type ThemePreviewResponse = {
+  html: string;
+  warnings?: ValidationWarning[];
+  mode: string;
+  sceneIds: string[];
 };
 
 export type LayoutPreset = {

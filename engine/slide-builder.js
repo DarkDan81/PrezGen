@@ -202,6 +202,43 @@ function buildThemeVarsCss(tokens) {
     push('--pg-decor-safe-zone-alpha', String(asFiniteNumber(decor.safeZoneAlpha, 0.08)));
     push('--pg-decor-title-mult', String(asFiniteNumber(decor.titleMultiplier, 1.25)));
     push('--pg-decor-content-mult', String(asFiniteNumber(decor.contentMultiplier, 1)));
+    push('--pg-logo-enabled', decor.logoEnabled === false ? '0' : '1');
+    push('--pg-logo-size', `${asFiniteNumber(decor.logoSize, 14)}px`);
+    push('--pg-logo-opacity', String(asFiniteNumber(decor.logoOpacity, 0.95)));
+
+    const safeLogo = String(decor.logoText || 'DARKDAN').replace(/\\/g, '\\\\').replace(/"/g, '\\"').slice(0, 32);
+    push('--pg-logo-text', `"${safeLogo}"`);
+
+    const anchor = String(decor.logoAnchor || 'top-right');
+    if (anchor === 'top-left') {
+        push('--pg-logo-top', '28px');
+        push('--pg-logo-right', 'auto');
+        push('--pg-logo-left', '38px');
+        push('--pg-logo-bottom', 'auto');
+    } else if (anchor === 'bottom-right') {
+        push('--pg-logo-top', 'auto');
+        push('--pg-logo-right', '38px');
+        push('--pg-logo-left', 'auto');
+        push('--pg-logo-bottom', '28px');
+    } else if (anchor === 'bottom-left') {
+        push('--pg-logo-top', 'auto');
+        push('--pg-logo-right', 'auto');
+        push('--pg-logo-left', '38px');
+        push('--pg-logo-bottom', '28px');
+    } else {
+        push('--pg-logo-top', '28px');
+        push('--pg-logo-right', '38px');
+        push('--pg-logo-left', 'auto');
+        push('--pg-logo-bottom', 'auto');
+    }
+
+    const shapePreset = String(decor.shapePreset || 'both');
+    const showLeftLine = shapePreset === 'both' || shapePreset === 'left-line' ? 1 : 0;
+    const showTriangle = shapePreset === 'both' || shapePreset === 'triangle' ? 1 : 0;
+    const showBlob = shapePreset === 'both' || shapePreset === 'blob' ? 1 : 0;
+    push('--pg-shape-left-line', String(showLeftLine));
+    push('--pg-shape-triangle', String(showTriangle));
+    push('--pg-shape-blob', String(showBlob));
 
     return vars.length ? `:root{${vars.join('')}}` : '';
 }

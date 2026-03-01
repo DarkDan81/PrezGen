@@ -43,8 +43,8 @@ const {
     updateThemeById,
 } = require('../repositories/theme-repository');
 const { getLayoutPresetById, listLayoutPresets } = require('../repositories/layout-preset-repository');
-const { getThemeById, listThemes } = require('../services/themes-service');
-const { buildPreviewHtml } = require('../services/preview-service');
+const { getThemeById, listThemes, normalizeThemeId } = require('../services/themes-service');
+const { buildPreviewHtml, buildThemePreviewHtml } = require('../services/preview-service');
 const { createRenderJob, getRenderJobById } = require('../repositories/render-job-repository');
 const { queuePdfJob } = require('../services/render-service');
 const { parseCsvToDatasetShape } = require('../services/csv-service');
@@ -53,6 +53,7 @@ const { validateBlockConfig } = require('../validation/block-config');
 const {
     validateLayoutBindingPayload,
     validateSlotAssignmentsAgainstLayout,
+    normalizeThemeTokens,
     validateThemeTokens,
 } = require('../validation/theme-layout');
 const { validationError, notFound } = require('../utils/errors');
@@ -591,6 +592,7 @@ router.post('/themes', (req, res, next) => {
         const tokenValidation = validateThemeTokens(tokens);
         details.push(...tokenValidation.details);
         if (details.length) throw validationError(details);
+        const normalized = normalizeThemeTokens(tokens);
 
         const now = new Date().toISOString();
         const created = createTheme({
@@ -600,12 +602,12 @@ router.post('/themes', (req, res, next) => {
             isSystem: false,
             baseThemeId: typeof baseThemeId === 'string' ? baseThemeId : null,
             baseCssPath: null,
-            tokens,
+            tokens: normalized.tokens,
             createdAt: now,
             updatedAt: now,
         });
 
-        return sendData(req, res, { ...created, warnings: tokenValidation.warnings }, 201);
+        return sendData(req, res, { ...created, warnings: [...tokenValidation.warnings, ...normalized.warnings] }, 201);
     } catch (error) {
         return next(error);
     }
@@ -632,14 +634,15 @@ router.patch('/themes/:themeId', (req, res, next) => {
             details.push(...tokenValidation.details);
         }
         if (details.length) throw validationError(details);
+        const normalized = tokens !== undefined ? normalizeThemeTokens(tokens, { baseTokens: existing.tokens || {} }) : null;
 
         const updated = updateThemeById(themeId, {
             name: name !== undefined ? name.trim() : undefined,
-            tokens,
+            tokens: normalized ? normalized.tokens : undefined,
             updatedAt: new Date().toISOString(),
         });
 
-        return sendData(req, res, { ...updated, warnings: tokenValidation.warnings });
+        return sendData(req, res, { ...updated, warnings: [...tokenValidation.warnings, ...(normalized?.warnings || [])] });
     } catch (error) {
         return next(error);
     }
@@ -692,7 +695,7 @@ router.get('/themes/:themeId/export', (req, res, next) => {
         if (!theme) throw notFound('Theme not found');
 
         const exported = {
-            schemaVersion: 1,
+            schemaVersion: 2,
             theme: {
                 id: theme.id,
                 name: theme.name,
@@ -715,8 +718,8 @@ router.post('/themes/import', (req, res, next) => {
         const schemaVersion = payload.schemaVersion;
         const importedTheme = payload.theme;
 
-        if (schemaVersion !== 1) {
-            details.push({ path: 'schemaVersion', rule: 'version', message: 'schemaVersion must be 1' });
+        if (schemaVersion !== 1 && schemaVersion !== 2) {
+            details.push({ path: 'schemaVersion', rule: 'version', message: 'schemaVersion must be 1 or 2' });
         }
         if (!importedTheme || typeof importedTheme !== 'object') {
             details.push({ path: 'theme', rule: 'object', message: 'theme object is required' });
@@ -725,6 +728,7 @@ router.post('/themes/import', (req, res, next) => {
 
         const tokenValidation = validateThemeTokens(importedTheme.tokens);
         if (tokenValidation.details.length) throw validationError(tokenValidation.details);
+        const normalized = normalizeThemeTokens(importedTheme.tokens);
 
         const now = new Date().toISOString();
         const created = createTheme({
@@ -736,12 +740,62 @@ router.post('/themes/import', (req, res, next) => {
             isSystem: false,
             baseThemeId: typeof importedTheme.baseThemeId === 'string' ? importedTheme.baseThemeId : null,
             baseCssPath: null,
-            tokens: importedTheme.tokens || {},
+            tokens: normalized.tokens,
             createdAt: now,
             updatedAt: now,
         });
 
-        return sendData(req, res, { ...created, warnings: tokenValidation.warnings }, 201);
+        return sendData(req, res, { ...created, warnings: [...tokenValidation.warnings, ...normalized.warnings] }, 201);
+    } catch (error) {
+        return next(error);
+    }
+});
+
+router.post('/themes/preview', (req, res, next) => {
+    try {
+        const { themeId, baseThemeId, tokens } = req.body || {};
+        const details = [];
+        if (themeId !== undefined && typeof themeId !== 'string') {
+            details.push({ path: 'themeId', rule: 'string', message: 'themeId must be a string' });
+        }
+        if (baseThemeId !== undefined && typeof baseThemeId !== 'string') {
+            details.push({ path: 'baseThemeId', rule: 'string', message: 'baseThemeId must be a string' });
+        }
+        if (tokens !== undefined && !isPlainObject(tokens)) {
+            details.push({ path: 'tokens', rule: 'object', message: 'tokens must be an object' });
+        }
+
+        const baseTheme = typeof baseThemeId === 'string' && baseThemeId
+            ? getThemeById(baseThemeId)
+            : (typeof themeId === 'string' && themeId ? getThemeById(themeId) : null);
+        if (tokens !== undefined) {
+            const inputValidation = validateThemeTokens(tokens);
+            details.push(...inputValidation.details);
+        }
+        if (details.length) throw validationError(details);
+        const normalized = normalizeThemeTokens(tokens || (baseTheme?.tokens || {}), { baseTokens: baseTheme?.tokens || {} });
+        const tokenValidation = validateThemeTokens(normalized.tokens);
+
+        if (tokenValidation.details.length) throw validationError(tokenValidation.details);
+
+        const resolvedBaseThemeId = (() => {
+            if (typeof baseThemeId === 'string' && baseThemeId) return baseThemeId;
+            if (baseTheme?.baseThemeId) return baseTheme.baseThemeId;
+            if (baseTheme?.isSystem) return baseTheme.id;
+            return 'theme-factory-blueprint';
+        })();
+
+        const html = buildThemePreviewHtml({
+            themeSlug: normalizeThemeId(resolvedBaseThemeId),
+            tokens: normalized.tokens,
+        });
+
+        return sendData(req, res, {
+            html,
+            warnings: [...tokenValidation.warnings, ...normalized.warnings],
+            mode: 'pptx-safe-preview',
+            sceneIds: ['title', 'content', 'table', 'chart', 'cards'],
+        });
     } catch (error) {
         return next(error);
     }
