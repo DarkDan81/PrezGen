@@ -47,12 +47,34 @@ Deliverable:
 - Background shapes (preset library + position + style),
 - Surface presets (card/table/chart simple shadows and borders).
 2. Hide/disable unsafe options with explicit reason tooltip.
-3. Add “PPTX-safe preview mode” badge/indicator.
+3. Add `PPTX-safe preview mode` badge/indicator.
 
 Deliverable:
 - updated UX spec and field list.
 
-## Phase 5. Compatibility and migration
+## Phase 5. Integrated live preview (ideal target)
+
+1. Add built-in live preview panel on `/themes` page with zero-click updates:
+- token change -> immediate visual update (no manual refresh button).
+2. Use fixed "golden scenes" preview set:
+- title slide,
+- dense content slide,
+- table-heavy slide,
+- chart-heavy slide,
+- cards-heavy slide.
+3. Add quick scene switcher to focus on specific token groups.
+4. Add before/after compare mode:
+- split view or toggle baseline/current.
+5. Add safety indicators inside preview:
+- `PPTX-safe` badge for current scene,
+- warning overlays for contrast/range issues.
+6. Ensure preview parity contract:
+- same token pipeline as runtime render (no separate mock styling).
+
+Deliverable:
+- deterministic live preview UX and acceptance checklist.
+
+## Phase 6. Compatibility and migration
 
 1. Provide migration behavior for existing themes:
 - read old themes,
@@ -63,7 +85,7 @@ Deliverable:
 Deliverable:
 - migration notes + compatibility table.
 
-## Phase 6. QA and documentation sync
+## Phase 7. QA and documentation sync
 
 1. Add manual checklist section:
 - PPTX-safe token persistence,
@@ -80,4 +102,5 @@ Deliverable:
 2. `stage8: add theme schema v2 and defaults`
 3. `stage8: enforce backend whitelist validation and normalization`
 4. `stage8: expand theme editor with safe decor controls`
-5. `stage8: add migration handling and docs/checklist updates`
+5. `stage8: add integrated live preview with golden scenes and compare mode`
+6. `stage8: add migration handling and docs/checklist updates`

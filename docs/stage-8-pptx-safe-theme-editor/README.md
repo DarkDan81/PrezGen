@@ -40,10 +40,14 @@ If we allow unsupported effects in theme editor now, future PPTX export will eit
 ## Acceptance criteria
 
 1. Theme editor UI exposes only PPTX-safe visual controls.
-2. Backend validation rejects non-safe/unsupported token payload.
-3. Theme schema documents exact mapping target (native PPTX object vs raster fallback).
-4. Each allowed token has deterministic fallback behavior.
-5. Stage docs include regression checklist for future PPTX exporter implementation.
+2. Theme editor includes integrated live preview with:
+- golden scenes,
+- immediate token updates,
+- before/after compare.
+3. Backend validation rejects non-safe/unsupported token payload.
+4. Theme schema documents exact mapping target (native PPTX object vs raster fallback).
+5. Each allowed token has deterministic fallback behavior.
+6. Stage docs include regression checklist for future PPTX exporter implementation.
 
 ## Out of scope
 
