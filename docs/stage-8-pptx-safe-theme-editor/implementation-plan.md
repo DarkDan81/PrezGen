@@ -104,3 +104,94 @@ Deliverable:
 4. `stage8: expand theme editor with safe decor controls`
 5. `stage8: add integrated live preview with golden scenes and compare mode`
 6. `stage8: add migration handling and docs/checklist updates`
+
+## Next roadmap: 3 reference themes (light/dark/neon)
+
+Goal:
+- bring `eurofoods` (light), `factory-blueprint` (dark), and `cyberpunk` (neon) to одинаково зрелый эталонный уровень;
+- расширить редактор тем так, чтобы результат был визуально сильнее стандартного PPT workflow, но оставался `PPTX-safe`.
+
+### Phase A. Semantic token layer
+
+1. Extend color tokens:
+- `accentPrimary`, `accentSecondary`,
+- `success`, `warn`, `info`,
+- optional neutral ramps for table/chart readability.
+2. Map semantic accents to:
+- KPI/cards states,
+- chart labels and highlights,
+- list markers and callouts,
+- table emphasis rows/cells.
+
+Deliverable:
+- schema + UI fields + deterministic fallback mapping.
+
+### Phase B. Decor system v2 (still PPTX-safe)
+
+1. Replace coarse `shapePreset` with controlled primitive settings:
+- per-shape visibility,
+- anchor,
+- size,
+- opacity,
+- intensity multiplier.
+2. Keep strict safe-zone model so decor never impacts layout geometry.
+3. Add title/content layer overrides for decor weights.
+
+Deliverable:
+- richer visual signature without structural regressions.
+
+### Phase C. Brand badge and slide meta
+
+1. Expand logo/badge block:
+- logo text,
+- service tag (e.g., `SYSTEM v1.3`),
+- anchor and visibility per slide type (`title/content`).
+2. Add compact presets for badge style:
+- `minimal`,
+- `outlined`,
+- `signal`.
+
+Deliverable:
+- stronger brand identity controlled purely by theme tokens.
+
+### Phase D. Typography profiles
+
+1. Add theme typography presets:
+- `executive`,
+- `technical`,
+- `sales`.
+2. Each preset controls:
+- H1/H2/body sizes,
+- line-height,
+- uppercase/letter spacing for titles.
+
+Deliverable:
+- quick “tone” switch for the same layout set.
+
+### Phase E. Table and chart style modes
+
+1. Table modes:
+- `dense`,
+- `normal`,
+- `boardroom`.
+2. Chart modes:
+- `contrast`,
+- `minimal`,
+- `dashboard`.
+3. Bind modes to tokenized values only (no ad-hoc CSS overrides).
+
+Deliverable:
+- presentation-grade readability options faster than manual PPT styling.
+
+### Phase F. Theme UX completion
+
+1. Add import/export UX to `/themes` page.
+2. Add “PPTX-safe contract” hints near advanced controls:
+- native mapping vs raster fallback.
+3. Add `preset packs` on top of tokens:
+- `compact`,
+- `balanced`,
+- `bold`.
+
+Deliverable:
+- production-ready theme workflow for non-technical users.

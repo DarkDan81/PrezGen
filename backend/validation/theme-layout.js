@@ -43,12 +43,17 @@ const THEME_TOKEN_DEFAULTS = {
         bgCanvas: '#05080d',
         textPrimary: '#e7edf6',
         accent: '#ff7b1f',
+        accentSecondary: '#39a8ff',
+        success: '#37d67a',
+        warn: '#ff626f',
+        info: '#55b8ff',
     },
     typography: {
         titleSize: 64,
         subtitleSize: 30,
         bodySize: 28,
         lineHeight: 1.38,
+        profile: 'technical',
     },
     spacing: {
         radius: 8,
@@ -56,48 +61,89 @@ const THEME_TOKEN_DEFAULTS = {
     },
     chart: {
         palette: ['#39a8ff', '#ff7b1f', '#69bcff', '#ff9a4d'],
+        mode: 'contrast',
     },
     table: {
         headerBg: '#152135',
         headerText: '#f2f7ff',
+        mode: 'normal',
     },
     decor: {
+        presetPack: 'balanced',
         intensity: 2,
         safeZoneAlpha: 0.08,
         titleMultiplier: 1.25,
         contentMultiplier: 1,
         logoEnabled: true,
         logoText: 'DARKDAN',
+        serviceTag: 'SYSTEM v1.0',
         logoAnchor: 'top-right',
         logoSize: 14,
         logoOpacity: 0.95,
-        shapePreset: 'both',
+        badgeVariant: 'outlined',
+        badgeOnTitle: true,
+        badgeOnContent: true,
+        shapeLeftLineEnabled: true,
+        shapeLeftLineAnchor: 'left',
+        shapeLeftLineSize: 1,
+        shapeLeftLineOpacity: 1,
+        shapeTriangleEnabled: true,
+        shapeTriangleAnchor: 'bottom-right',
+        shapeTriangleSize: 1,
+        shapeTriangleOpacity: 1,
+        shapeBlobEnabled: true,
+        shapeBlobAnchor: 'top-right',
+        shapeBlobSize: 1,
+        shapeBlobOpacity: 1,
     },
 };
 
 const ALLOWED_TOP_LEVEL = new Set(['color', 'typography', 'spacing', 'chart', 'table', 'decor']);
 const ALLOWED_GROUP_KEYS = {
-    color: new Set(['bgCanvas', 'textPrimary', 'accent']),
-    typography: new Set(['titleSize', 'subtitleSize', 'bodySize', 'lineHeight']),
+    color: new Set(['bgCanvas', 'textPrimary', 'accent', 'accentSecondary', 'success', 'warn', 'info']),
+    typography: new Set(['titleSize', 'subtitleSize', 'bodySize', 'lineHeight', 'profile']),
     spacing: new Set(['radius', 'borderWidth']),
-    chart: new Set(['palette']),
-    table: new Set(['headerBg', 'headerText']),
+    chart: new Set(['palette', 'mode']),
+    table: new Set(['headerBg', 'headerText', 'mode']),
     decor: new Set([
+        'presetPack',
         'intensity',
         'safeZoneAlpha',
         'titleMultiplier',
         'contentMultiplier',
         'logoEnabled',
         'logoText',
+        'serviceTag',
         'logoAnchor',
         'logoSize',
         'logoOpacity',
-        'shapePreset',
+        'badgeVariant',
+        'badgeOnTitle',
+        'badgeOnContent',
+        'shapeLeftLineEnabled',
+        'shapeLeftLineAnchor',
+        'shapeLeftLineSize',
+        'shapeLeftLineOpacity',
+        'shapeTriangleEnabled',
+        'shapeTriangleAnchor',
+        'shapeTriangleSize',
+        'shapeTriangleOpacity',
+        'shapeBlobEnabled',
+        'shapeBlobAnchor',
+        'shapeBlobSize',
+        'shapeBlobOpacity',
     ]),
 };
 
 const ALLOWED_DECOR_ANCHORS = new Set(['top-right', 'top-left', 'bottom-right', 'bottom-left']);
-const ALLOWED_SHAPE_PRESETS = new Set(['none', 'left-line', 'triangle', 'blob', 'both']);
+const ALLOWED_LEFT_LINE_ANCHORS = new Set(['left', 'right']);
+const ALLOWED_TRIANGLE_ANCHORS = new Set(['top-right', 'top-left', 'bottom-right', 'bottom-left']);
+const ALLOWED_BLOB_ANCHORS = new Set(['top-right', 'top-left', 'bottom-right', 'bottom-left']);
+const ALLOWED_BADGE_VARIANTS = new Set(['minimal', 'outlined', 'signal']);
+const ALLOWED_PRESET_PACKS = new Set(['compact', 'balanced', 'bold']);
+const ALLOWED_TYPO_PROFILES = new Set(['executive', 'technical', 'sales']);
+const ALLOWED_CHART_MODES = new Set(['contrast', 'minimal', 'dashboard']);
+const ALLOWED_TABLE_MODES = new Set(['dense', 'normal', 'boardroom']);
 
 function findUnknownTokenKeys(tokens) {
     const details = [];
@@ -155,7 +201,7 @@ function validateThemeTokens(tokens) {
     const table = isPlainObject(tokens.table) ? tokens.table : {};
     const decor = isPlainObject(tokens.decor) ? tokens.decor : {};
 
-    ['bgCanvas', 'textPrimary', 'accent'].forEach((key) => {
+    ['bgCanvas', 'textPrimary', 'accent', 'accentSecondary', 'success', 'warn', 'info'].forEach((key) => {
         if (color[key] !== undefined && !isHexColor(color[key] || '')) {
             details.push({ path: `tokens.color.${key}`, rule: 'hexColor', message: `${key} must be a hex color` });
         }
@@ -165,6 +211,13 @@ function validateThemeTokens(tokens) {
     addRangeDetails(details, 'tokens.typography.subtitleSize', typography.subtitleSize, 12, 72);
     addRangeDetails(details, 'tokens.typography.bodySize', typography.bodySize, 10, 48);
     addRangeDetails(details, 'tokens.typography.lineHeight', typography.lineHeight, 1, 2.2);
+    if (typography.profile !== undefined && !ALLOWED_TYPO_PROFILES.has(String(typography.profile))) {
+        details.push({
+            path: 'tokens.typography.profile',
+            rule: 'enum',
+            message: 'profile must be one of executive, technical, sales',
+        });
+    }
 
     if (spacing.slidePadding !== undefined) {
         details.push({
@@ -190,42 +243,6 @@ function validateThemeTokens(tokens) {
     addRangeDetails(details, 'tokens.spacing.radius', spacing.radius, 0, 48);
     addRangeDetails(details, 'tokens.spacing.borderWidth', spacing.borderWidth, 0, 12);
 
-    addRangeDetails(details, 'tokens.decor.intensity', decor.intensity, 1, 3);
-    addRangeDetails(details, 'tokens.decor.safeZoneAlpha', decor.safeZoneAlpha, 0, 0.35);
-    addRangeDetails(details, 'tokens.decor.titleMultiplier', decor.titleMultiplier, 0.8, 2);
-    addRangeDetails(details, 'tokens.decor.contentMultiplier', decor.contentMultiplier, 0.6, 1.6);
-    addRangeDetails(details, 'tokens.decor.logoSize', decor.logoSize, 10, 36);
-    addRangeDetails(details, 'tokens.decor.logoOpacity', decor.logoOpacity, 0.2, 1);
-
-    if (decor.logoEnabled !== undefined && typeof decor.logoEnabled !== 'boolean') {
-        details.push({
-            path: 'tokens.decor.logoEnabled',
-            rule: 'boolean',
-            message: 'logoEnabled must be a boolean',
-        });
-    }
-    if (decor.logoText !== undefined && (typeof decor.logoText !== 'string' || decor.logoText.trim().length === 0)) {
-        details.push({
-            path: 'tokens.decor.logoText',
-            rule: 'string',
-            message: 'logoText must be a non-empty string',
-        });
-    }
-    if (decor.logoAnchor !== undefined && !ALLOWED_DECOR_ANCHORS.has(String(decor.logoAnchor))) {
-        details.push({
-            path: 'tokens.decor.logoAnchor',
-            rule: 'enum',
-            message: 'logoAnchor must be one of top-right, top-left, bottom-right, bottom-left',
-        });
-    }
-    if (decor.shapePreset !== undefined && !ALLOWED_SHAPE_PRESETS.has(String(decor.shapePreset))) {
-        details.push({
-            path: 'tokens.decor.shapePreset',
-            rule: 'enum',
-            message: 'shapePreset must be one of none, left-line, triangle, blob, both',
-        });
-    }
-
     if (Array.isArray(chart.palette) && chart.palette.length) {
         chart.palette.forEach((value, index) => {
             if (!isHexColor(value)) {
@@ -237,12 +254,107 @@ function validateThemeTokens(tokens) {
             }
         });
     }
+    if (chart.mode !== undefined && !ALLOWED_CHART_MODES.has(String(chart.mode))) {
+        details.push({
+            path: 'tokens.chart.mode',
+            rule: 'enum',
+            message: 'chart.mode must be one of contrast, minimal, dashboard',
+        });
+    }
 
     if (table.headerBg && !isHexColor(table.headerBg)) {
         details.push({ path: 'tokens.table.headerBg', rule: 'hexColor', message: 'table.headerBg must be a hex color' });
     }
     if (table.headerText && !isHexColor(table.headerText)) {
         details.push({ path: 'tokens.table.headerText', rule: 'hexColor', message: 'table.headerText must be a hex color' });
+    }
+    if (table.mode !== undefined && !ALLOWED_TABLE_MODES.has(String(table.mode))) {
+        details.push({
+            path: 'tokens.table.mode',
+            rule: 'enum',
+            message: 'table.mode must be one of dense, normal, boardroom',
+        });
+    }
+
+    addRangeDetails(details, 'tokens.decor.intensity', decor.intensity, 1, 3);
+    addRangeDetails(details, 'tokens.decor.safeZoneAlpha', decor.safeZoneAlpha, 0, 0.35);
+    addRangeDetails(details, 'tokens.decor.titleMultiplier', decor.titleMultiplier, 0.8, 2);
+    addRangeDetails(details, 'tokens.decor.contentMultiplier', decor.contentMultiplier, 0.6, 1.6);
+    addRangeDetails(details, 'tokens.decor.logoSize', decor.logoSize, 10, 36);
+    addRangeDetails(details, 'tokens.decor.logoOpacity', decor.logoOpacity, 0.2, 1);
+    addRangeDetails(details, 'tokens.decor.shapeLeftLineSize', decor.shapeLeftLineSize, 0.4, 1.8);
+    addRangeDetails(details, 'tokens.decor.shapeLeftLineOpacity', decor.shapeLeftLineOpacity, 0, 1);
+    addRangeDetails(details, 'tokens.decor.shapeTriangleSize', decor.shapeTriangleSize, 0.4, 1.8);
+    addRangeDetails(details, 'tokens.decor.shapeTriangleOpacity', decor.shapeTriangleOpacity, 0, 1);
+    addRangeDetails(details, 'tokens.decor.shapeBlobSize', decor.shapeBlobSize, 0.4, 1.8);
+    addRangeDetails(details, 'tokens.decor.shapeBlobOpacity', decor.shapeBlobOpacity, 0, 1);
+
+    if (decor.presetPack !== undefined && !ALLOWED_PRESET_PACKS.has(String(decor.presetPack))) {
+        details.push({
+            path: 'tokens.decor.presetPack',
+            rule: 'enum',
+            message: 'presetPack must be one of compact, balanced, bold',
+        });
+    }
+    if (decor.badgeVariant !== undefined && !ALLOWED_BADGE_VARIANTS.has(String(decor.badgeVariant))) {
+        details.push({
+            path: 'tokens.decor.badgeVariant',
+            rule: 'enum',
+            message: 'badgeVariant must be one of minimal, outlined, signal',
+        });
+    }
+    if (decor.logoAnchor !== undefined && !ALLOWED_DECOR_ANCHORS.has(String(decor.logoAnchor))) {
+        details.push({
+            path: 'tokens.decor.logoAnchor',
+            rule: 'enum',
+            message: 'logoAnchor must be one of top-right, top-left, bottom-right, bottom-left',
+        });
+    }
+    if (decor.shapeLeftLineAnchor !== undefined && !ALLOWED_LEFT_LINE_ANCHORS.has(String(decor.shapeLeftLineAnchor))) {
+        details.push({
+            path: 'tokens.decor.shapeLeftLineAnchor',
+            rule: 'enum',
+            message: 'shapeLeftLineAnchor must be one of left, right',
+        });
+    }
+    if (decor.shapeTriangleAnchor !== undefined && !ALLOWED_TRIANGLE_ANCHORS.has(String(decor.shapeTriangleAnchor))) {
+        details.push({
+            path: 'tokens.decor.shapeTriangleAnchor',
+            rule: 'enum',
+            message: 'shapeTriangleAnchor must be one of top-right, top-left, bottom-right, bottom-left',
+        });
+    }
+    if (decor.shapeBlobAnchor !== undefined && !ALLOWED_BLOB_ANCHORS.has(String(decor.shapeBlobAnchor))) {
+        details.push({
+            path: 'tokens.decor.shapeBlobAnchor',
+            rule: 'enum',
+            message: 'shapeBlobAnchor must be one of top-right, top-left, bottom-right, bottom-left',
+        });
+    }
+
+    ['logoEnabled', 'badgeOnTitle', 'badgeOnContent', 'shapeLeftLineEnabled', 'shapeTriangleEnabled', 'shapeBlobEnabled'].forEach((key) => {
+        if (decor[key] !== undefined && typeof decor[key] !== 'boolean') {
+            details.push({
+                path: `tokens.decor.${key}`,
+                rule: 'boolean',
+                message: `${key} must be a boolean`,
+            });
+        }
+    });
+
+    if (decor.logoText !== undefined && (typeof decor.logoText !== 'string' || decor.logoText.trim().length === 0)) {
+        details.push({
+            path: 'tokens.decor.logoText',
+            rule: 'string',
+            message: 'logoText must be a non-empty string',
+        });
+    }
+    if (decor.serviceTag !== undefined && typeof decor.serviceTag !== 'string') {
+        details.push({
+            path: 'tokens.decor.serviceTag',
+            rule: 'string',
+            message: 'serviceTag must be a string',
+        });
     }
 
     const effectiveText = isHexColor(color.textPrimary) ? color.textPrimary : THEME_TOKEN_DEFAULTS.color.textPrimary;
@@ -270,6 +382,32 @@ function validateThemeTokens(tokens) {
     return { details, warnings };
 }
 
+function resolvePresetAdjustedDecor(decor) {
+    const preset = String(decor.presetPack || 'balanced');
+    if (preset === 'compact') {
+        return {
+            ...decor,
+            intensity: clamp(decor.intensity, 1, 2.2, 1.5),
+            titleMultiplier: clamp(decor.titleMultiplier, 0.8, 1.4, 1.05),
+            contentMultiplier: clamp(decor.contentMultiplier, 0.6, 1.3, 0.9),
+        };
+    }
+    if (preset === 'bold') {
+        return {
+            ...decor,
+            intensity: clamp(decor.intensity, 1.8, 3, 2.6),
+            titleMultiplier: clamp(decor.titleMultiplier, 1.1, 2, 1.45),
+            contentMultiplier: clamp(decor.contentMultiplier, 0.9, 1.6, 1.15),
+        };
+    }
+    return {
+        ...decor,
+        intensity: clamp(decor.intensity, 1, 3, THEME_TOKEN_DEFAULTS.decor.intensity),
+        titleMultiplier: clamp(decor.titleMultiplier, 0.8, 2, THEME_TOKEN_DEFAULTS.decor.titleMultiplier),
+        contentMultiplier: clamp(decor.contentMultiplier, 0.6, 1.6, THEME_TOKEN_DEFAULTS.decor.contentMultiplier),
+    };
+}
+
 function normalizeThemeTokens(tokens, options = {}) {
     const warnings = [];
     const source = isPlainObject(tokens) ? tokens : {};
@@ -286,17 +424,66 @@ function normalizeThemeTokens(tokens, options = {}) {
         decor: { ...THEME_TOKEN_DEFAULTS.decor, ...(baseTokens.decor || {}), ...(source.decor || {}) },
     };
 
+    const normalizedDecorRaw = {
+        presetPack: ALLOWED_PRESET_PACKS.has(String(merged.decor.presetPack))
+            ? String(merged.decor.presetPack)
+            : THEME_TOKEN_DEFAULTS.decor.presetPack,
+        intensity: clamp(merged.decor.intensity, 1, 3, THEME_TOKEN_DEFAULTS.decor.intensity),
+        safeZoneAlpha: clamp(merged.decor.safeZoneAlpha, 0, 0.35, THEME_TOKEN_DEFAULTS.decor.safeZoneAlpha),
+        titleMultiplier: clamp(merged.decor.titleMultiplier, 0.8, 2, THEME_TOKEN_DEFAULTS.decor.titleMultiplier),
+        contentMultiplier: clamp(merged.decor.contentMultiplier, 0.6, 1.6, THEME_TOKEN_DEFAULTS.decor.contentMultiplier),
+        logoEnabled: merged.decor.logoEnabled !== false,
+        logoText: String(merged.decor.logoText || THEME_TOKEN_DEFAULTS.decor.logoText).trim().slice(0, 32) || THEME_TOKEN_DEFAULTS.decor.logoText,
+        serviceTag: String(merged.decor.serviceTag || THEME_TOKEN_DEFAULTS.decor.serviceTag).trim().slice(0, 42),
+        logoAnchor: ALLOWED_DECOR_ANCHORS.has(String(merged.decor.logoAnchor))
+            ? String(merged.decor.logoAnchor)
+            : THEME_TOKEN_DEFAULTS.decor.logoAnchor,
+        logoSize: clamp(merged.decor.logoSize, 10, 36, THEME_TOKEN_DEFAULTS.decor.logoSize),
+        logoOpacity: clamp(merged.decor.logoOpacity, 0.2, 1, THEME_TOKEN_DEFAULTS.decor.logoOpacity),
+        badgeVariant: ALLOWED_BADGE_VARIANTS.has(String(merged.decor.badgeVariant))
+            ? String(merged.decor.badgeVariant)
+            : THEME_TOKEN_DEFAULTS.decor.badgeVariant,
+        badgeOnTitle: merged.decor.badgeOnTitle !== false,
+        badgeOnContent: merged.decor.badgeOnContent !== false,
+        shapeLeftLineEnabled: merged.decor.shapeLeftLineEnabled !== false,
+        shapeLeftLineAnchor: ALLOWED_LEFT_LINE_ANCHORS.has(String(merged.decor.shapeLeftLineAnchor))
+            ? String(merged.decor.shapeLeftLineAnchor)
+            : THEME_TOKEN_DEFAULTS.decor.shapeLeftLineAnchor,
+        shapeLeftLineSize: clamp(merged.decor.shapeLeftLineSize, 0.4, 1.8, THEME_TOKEN_DEFAULTS.decor.shapeLeftLineSize),
+        shapeLeftLineOpacity: clamp(merged.decor.shapeLeftLineOpacity, 0, 1, THEME_TOKEN_DEFAULTS.decor.shapeLeftLineOpacity),
+        shapeTriangleEnabled: merged.decor.shapeTriangleEnabled !== false,
+        shapeTriangleAnchor: ALLOWED_TRIANGLE_ANCHORS.has(String(merged.decor.shapeTriangleAnchor))
+            ? String(merged.decor.shapeTriangleAnchor)
+            : THEME_TOKEN_DEFAULTS.decor.shapeTriangleAnchor,
+        shapeTriangleSize: clamp(merged.decor.shapeTriangleSize, 0.4, 1.8, THEME_TOKEN_DEFAULTS.decor.shapeTriangleSize),
+        shapeTriangleOpacity: clamp(merged.decor.shapeTriangleOpacity, 0, 1, THEME_TOKEN_DEFAULTS.decor.shapeTriangleOpacity),
+        shapeBlobEnabled: merged.decor.shapeBlobEnabled !== false,
+        shapeBlobAnchor: ALLOWED_BLOB_ANCHORS.has(String(merged.decor.shapeBlobAnchor))
+            ? String(merged.decor.shapeBlobAnchor)
+            : THEME_TOKEN_DEFAULTS.decor.shapeBlobAnchor,
+        shapeBlobSize: clamp(merged.decor.shapeBlobSize, 0.4, 1.8, THEME_TOKEN_DEFAULTS.decor.shapeBlobSize),
+        shapeBlobOpacity: clamp(merged.decor.shapeBlobOpacity, 0, 1, THEME_TOKEN_DEFAULTS.decor.shapeBlobOpacity),
+    };
+    const adjustedDecor = resolvePresetAdjustedDecor(normalizedDecorRaw);
+
     const normalized = {
         color: {
             bgCanvas: isHexColor(merged.color.bgCanvas) ? merged.color.bgCanvas : THEME_TOKEN_DEFAULTS.color.bgCanvas,
             textPrimary: isHexColor(merged.color.textPrimary) ? merged.color.textPrimary : THEME_TOKEN_DEFAULTS.color.textPrimary,
             accent: isHexColor(merged.color.accent) ? merged.color.accent : THEME_TOKEN_DEFAULTS.color.accent,
+            accentSecondary: isHexColor(merged.color.accentSecondary) ? merged.color.accentSecondary : THEME_TOKEN_DEFAULTS.color.accentSecondary,
+            success: isHexColor(merged.color.success) ? merged.color.success : THEME_TOKEN_DEFAULTS.color.success,
+            warn: isHexColor(merged.color.warn) ? merged.color.warn : THEME_TOKEN_DEFAULTS.color.warn,
+            info: isHexColor(merged.color.info) ? merged.color.info : THEME_TOKEN_DEFAULTS.color.info,
         },
         typography: {
             titleSize: clamp(merged.typography.titleSize, 18, 96, THEME_TOKEN_DEFAULTS.typography.titleSize),
             subtitleSize: clamp(merged.typography.subtitleSize, 12, 72, THEME_TOKEN_DEFAULTS.typography.subtitleSize),
             bodySize: clamp(merged.typography.bodySize, 10, 48, THEME_TOKEN_DEFAULTS.typography.bodySize),
             lineHeight: clamp(merged.typography.lineHeight, 1, 2.2, THEME_TOKEN_DEFAULTS.typography.lineHeight),
+            profile: ALLOWED_TYPO_PROFILES.has(String(merged.typography.profile))
+                ? String(merged.typography.profile)
+                : THEME_TOKEN_DEFAULTS.typography.profile,
         },
         spacing: {
             radius: clamp(merged.spacing.radius, 0, 48, THEME_TOKEN_DEFAULTS.spacing.radius),
@@ -306,27 +493,18 @@ function normalizeThemeTokens(tokens, options = {}) {
             palette: Array.isArray(merged.chart.palette)
                 ? merged.chart.palette.filter(isHexColor).slice(0, 4)
                 : THEME_TOKEN_DEFAULTS.chart.palette.slice(),
+            mode: ALLOWED_CHART_MODES.has(String(merged.chart.mode))
+                ? String(merged.chart.mode)
+                : THEME_TOKEN_DEFAULTS.chart.mode,
         },
         table: {
             headerBg: isHexColor(merged.table.headerBg) ? merged.table.headerBg : THEME_TOKEN_DEFAULTS.table.headerBg,
             headerText: isHexColor(merged.table.headerText) ? merged.table.headerText : THEME_TOKEN_DEFAULTS.table.headerText,
+            mode: ALLOWED_TABLE_MODES.has(String(merged.table.mode))
+                ? String(merged.table.mode)
+                : THEME_TOKEN_DEFAULTS.table.mode,
         },
-        decor: {
-            intensity: clamp(merged.decor.intensity, 1, 3, THEME_TOKEN_DEFAULTS.decor.intensity),
-            safeZoneAlpha: clamp(merged.decor.safeZoneAlpha, 0, 0.35, THEME_TOKEN_DEFAULTS.decor.safeZoneAlpha),
-            titleMultiplier: clamp(merged.decor.titleMultiplier, 0.8, 2, THEME_TOKEN_DEFAULTS.decor.titleMultiplier),
-            contentMultiplier: clamp(merged.decor.contentMultiplier, 0.6, 1.6, THEME_TOKEN_DEFAULTS.decor.contentMultiplier),
-            logoEnabled: Boolean(merged.decor.logoEnabled),
-            logoText: String(merged.decor.logoText || THEME_TOKEN_DEFAULTS.decor.logoText).trim().slice(0, 32) || THEME_TOKEN_DEFAULTS.decor.logoText,
-            logoAnchor: ALLOWED_DECOR_ANCHORS.has(String(merged.decor.logoAnchor))
-                ? String(merged.decor.logoAnchor)
-                : THEME_TOKEN_DEFAULTS.decor.logoAnchor,
-            logoSize: clamp(merged.decor.logoSize, 10, 36, THEME_TOKEN_DEFAULTS.decor.logoSize),
-            logoOpacity: clamp(merged.decor.logoOpacity, 0.2, 1, THEME_TOKEN_DEFAULTS.decor.logoOpacity),
-            shapePreset: ALLOWED_SHAPE_PRESETS.has(String(merged.decor.shapePreset))
-                ? String(merged.decor.shapePreset)
-                : THEME_TOKEN_DEFAULTS.decor.shapePreset,
-        },
+        decor: adjustedDecor,
     };
 
     const unknowns = findUnknownTokenKeys(source);

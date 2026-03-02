@@ -8,7 +8,15 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': 'http://localhost:3100',
-      '/themes': 'http://localhost:3100',
+      '/themes': {
+        target: 'http://localhost:3100',
+        bypass: (req) => {
+          if (req.url === '/themes' || req.url === '/themes/') {
+            return req.url;
+          }
+          return undefined;
+        },
+      },
       '/dist': 'http://localhost:3100',
       '/content': 'http://localhost:3100',
     },

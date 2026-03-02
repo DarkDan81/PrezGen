@@ -71,6 +71,10 @@
   gap: 8px;
 }
 
+.themes-file-input-hidden {
+  display: none;
+}
+
 .token-grid {
   display: grid;
   gap: 8px;
@@ -78,6 +82,22 @@
 
 .token-grid-single {
   grid-template-columns: 1fr;
+}
+
+.color-input-row {
+  display: grid;
+  grid-template-columns: 46px 1fr;
+  gap: 8px;
+}
+
+.ui-color-picker {
+  width: 46px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  padding: 2px;
+  cursor: pointer;
 }
 
 .apply-row {

@@ -1,0 +1,55 @@
+color:
+  bgCanvas: "#0a0f1e"
+  textPrimary: "#e6f1ff"
+  accent: "#ff2fd2"
+  accentSecondary: "#00ffff"
+  success: "#39ff14"
+  warn: "#ff5a8c"
+  info: "#7f5cff"
+typography:
+  titleSize: 66
+  subtitleSize: 32
+  bodySize: 28
+  lineHeight: 1.44
+  profile: "sales"
+spacing:
+  radius: 10
+  borderWidth: 1
+chart:
+  palette:
+    - "#00ffff"
+    - "#ff2fd2"
+    - "#39ff14"
+    - "#7f5cff"
+  mode: "contrast"
+table:
+  headerBg: "#12253c"
+  headerText: "#dcf8ff"
+  mode: "dense"
+decor:
+  presetPack: "bold"
+  intensity: 2.6
+  safeZoneAlpha: 0.08
+  titleMultiplier: 1.45
+  contentMultiplier: 1.1
+  logoEnabled: true
+  logoText: "CYBERPUNK"
+  serviceTag: "NEON MODE"
+  logoAnchor: "top-right"
+  logoSize: 14
+  logoOpacity: 0.96
+  badgeVariant: "signal"
+  badgeOnTitle: true
+  badgeOnContent: true
+  shapeLeftLineEnabled: true
+  shapeLeftLineAnchor: "left"
+  shapeLeftLineSize: 1.15
+  shapeLeftLineOpacity: 1
+  shapeTriangleEnabled: true
+  shapeTriangleAnchor: "bottom-right"
+  shapeTriangleSize: 1.05
+  shapeTriangleOpacity: 1
+  shapeBlobEnabled: true
+  shapeBlobAnchor: "top-right"
+  shapeBlobSize: 1.1
+  shapeBlobOpacity: 1

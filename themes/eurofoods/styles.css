@@ -1,432 +1,261 @@
-/* ============================================================
-   1. ПЕРЕМЕННЫЕ И ОСНОВНЫЕ НАСТРОЙКИ
-   ============================================================ */
-   :root {
-    --ef-red: #E32B22;
-    --ef-green: #8CC63F;
-    --ef-dark-green: #528220; 
-    --ef-grey: #A7A9AC;       
-    --ef-dark: #545359;
-    --ef-light: #F4F4F4;
-    --font-main: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-}
-*, *::before, *::after {
-    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+:root {
+    --ef-bg: var(--pg-bg-canvas, #f8faf6);
+    --ef-text: var(--pg-text-primary, #545359);
+    --ef-accent: var(--pg-accent, #e32b22);
+    --ef-accent-2: var(--pg-accent-secondary, #8cc63f);
+    --ef-surface: rgba(255, 255, 255, 0.92);
+    --ef-border: rgba(84, 83, 89, 0.16);
+    --ef-grid: rgba(140, 198, 63, 0.12);
 }
 
+*, *::before, *::after {
+    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+}
 
 body.viewer-mode {
-    margin: 0;
-    padding: 0;
-    overflow-x: hidden; /* Убираем горизонтальный скролл */
-    background: #1a1a1a; /* Цвет фона за пределами слайда */
+    background: #e9ece8;
 }
 
 .slide {
-    background: white;
-    color: var(--ef-dark);
+    --ef-decor-mult: var(--pg-decor-content-mult, 1);
+    color: var(--ef-text);
+    background:
+        radial-gradient(circle at 86% 8%, rgba(140, 198, 63, 0.16), transparent 42%),
+        radial-gradient(circle at 8% 90%, rgba(227, 43, 34, 0.1), transparent 44%),
+        var(--ef-bg);
 }
 
-.slide-subtitle {
-    font-size: 32px;
-    color: var(--ef-green); /* Или var(--ef-grey), если хочешь поспокойнее */
-    font-weight: 700;
-    margin-top: 10px;
-    padding-left: 30px; /* Чтобы был на одной линии с заголовком */
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-/* ============================================================
-   3. ДЕКОРАТИВНЫЕ ЭЛЕМЕНТЫ (НИЖНИЙ СЛОЙ - Z-INDEX: 1)
-   ============================================================ */
-.decor-blob, 
-.decor-line-left, 
-.slide-decor-line, 
-.slide::before, 
-.slide::after {
-    z-index: 1 !important;
-    pointer-events: none;
-}
-
-/* 1. Точечный паттерн */
 .slide::before {
     content: "";
     position: absolute;
-    top: 40px; left: 40px;
-    width: 200px; height: 200px;
-    background-image: radial-gradient(var(--ef-light) 2px, transparent 2px);
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image: radial-gradient(var(--ef-grid) 1.6px, transparent 1.6px);
     background-size: 20px 20px;
-    opacity: 0.8;
+    opacity: calc((0.16 + (var(--pg-decor-intensity, 2) * 0.08)) * var(--ef-decor-mult));
 }
 
-/* 2. Мягкое зеленое свечение */
-.decor-blob {
-    position: absolute; top: -200px; right: -100px; width: 600px; height: 600px;
-    background: radial-gradient(circle, rgba(140, 198, 63, 0.08) 0%, transparent 70%);
-}
-
-/* 3. Красная линия слева */
-.decor-line-left {
+.theme-badge {
     position: absolute;
-    left: 0; top: 20%;
-    width: 6px; height: 40%;
-    background: var(--ef-red);
-    opacity: 0.3;
+    z-index: 9;
+    display: inline-flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 7px 12px;
+    opacity: calc(var(--pg-logo-opacity, 0.95) * var(--pg-logo-enabled, 1));
+    font-size: var(--pg-logo-size, 14px);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #4f4e54;
 }
 
-/* 4. Серый фрактал снизу справа (Подложка под таблицы) */
+.theme-badge .badge-main { font-weight: 800; }
+.theme-badge .badge-tag { font-size: 0.7em; opacity: 0.78; }
+
+.theme-badge.anchor-top-right { top: var(--pg-logo-top, 30px); right: var(--pg-logo-right, 42px); left: auto; bottom: auto; }
+.theme-badge.anchor-top-left { top: var(--pg-logo-top, 30px); left: var(--pg-logo-left, 42px); right: auto; bottom: auto; }
+.theme-badge.anchor-bottom-right { bottom: var(--pg-logo-bottom, 30px); right: var(--pg-logo-right, 42px); left: auto; top: auto; }
+.theme-badge.anchor-bottom-left { bottom: var(--pg-logo-bottom, 30px); left: var(--pg-logo-left, 42px); right: auto; top: auto; }
+
+.theme-badge.variant-outlined {
+    border: 1px solid rgba(84, 83, 89, 0.28);
+    border-left-color: rgba(140, 198, 63, 0.72);
+}
+.theme-badge.variant-signal {
+    border: 1px solid rgba(227, 43, 34, 0.5);
+    box-shadow: 0 8px 22px rgba(84, 83, 89, 0.14);
+}
+.theme-badge.variant-minimal {
+    border: 1px solid rgba(84, 83, 89, 0.16);
+}
+
+.decor-blob,
+.decor-line-left,
 .slide-decor-line {
     position: absolute;
-    bottom: 0; right: 0;
-    width: 35%; height: 35%;
-    background: var(--ef-light);
-    clip-path: polygon(100% 0, 100% 100%, 0 100%);
-    opacity: 0.6;
+    z-index: 1;
+    pointer-events: none;
 }
 
-/* 5. Маленький красный треугольник в самом углу */
-.slide::after {
-    content: "";
-    position: absolute;
-    bottom: 0; right: 0;
-    width: 60px; height: 60px;
-    background: var(--ef-red);
-    clip-path: polygon(100% 0, 100% 100%, 0 100%);
+.decor-blob {
+    width: calc(560px * var(--pg-shape-blob-scale, 1));
+    height: calc(560px * var(--pg-shape-blob-scale, 1));
+    top: var(--pg-blob-top, -220px);
+    right: var(--pg-blob-right, -220px);
+    left: var(--pg-blob-left, auto);
+    bottom: var(--pg-blob-bottom, auto);
+    background: radial-gradient(circle, rgba(140, 198, 63, 0.18) 0%, transparent 68%);
+    opacity: calc((0.18 + (var(--pg-decor-intensity, 2) * 0.12)) * var(--ef-decor-mult) * var(--pg-shape-blob-opacity, 1) * var(--pg-shape-blob-enabled, 1));
 }
 
-/* ============================================================
-   4. ЗАГОЛОВКИ И ЛОГОТИПЫ (Z-INDEX: 10)
-   ============================================================ */
-.corner-logo {
-    position: absolute;
-    top: 40px; right: 60px;
-    height: 50px;
-    z-index: 10;
+.decor-line-left {
+    top: 20%;
+    left: var(--pg-left-line-left, 0);
+    right: var(--pg-left-line-right, auto);
+    width: 6px;
+    height: calc(40% * var(--pg-shape-left-line-scale, 1));
+    background: var(--ef-accent);
+    opacity: calc((0.2 + (var(--pg-decor-intensity, 2) * 0.08)) * var(--ef-decor-mult) * var(--pg-shape-left-line-opacity, 1) * var(--pg-shape-left-line-enabled, 1));
+}
+
+.slide-decor-line {
+    width: calc(35% * var(--pg-shape-triangle-scale, 1));
+    height: calc(35% * var(--pg-shape-triangle-scale, 1));
+    top: var(--pg-triangle-top, auto);
+    right: var(--pg-triangle-right, 0);
+    left: var(--pg-triangle-left, auto);
+    bottom: var(--pg-triangle-bottom, 0);
+    background: rgba(167, 169, 172, 0.26);
+    clip-path: var(--pg-triangle-clip, polygon(100% 0, 100% 100%, 0 100%));
+    opacity: calc((0.48 + (var(--pg-decor-intensity, 2) * 0.08)) * var(--ef-decor-mult) * var(--pg-shape-triangle-opacity, 1) * var(--pg-shape-triangle-enabled, 1));
 }
 
 .slide-header h2 {
-    font-size: 64px;
-    font-weight: 900;
     margin: 0;
+    font-size: var(--pg-title-size, 64px);
+    font-weight: 900;
     text-transform: uppercase;
-    letter-spacing: -1px;
-    border-left: 15px solid var(--ef-green);
-    padding-left: 30px;
+    letter-spacing: -0.6px;
+    border-left: 14px solid var(--ef-accent-2);
+    padding-left: 28px;
+    color: #505159;
 }
 
-/* ============================================================
-   5. ТАБЛИЦЫ
-   ============================================================ */
-.table-block {
-    background: white; /* Чтобы подложка-декор не мешала читать текст */
-    border-radius: 4px;
+.slide-subtitle {
+    margin-top: 10px;
+    padding-left: 30px;
+    font-size: var(--pg-subtitle-size, 30px);
+    color: var(--ef-accent-2);
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
 }
+
+.slide-body {
+    background: rgba(255, 255, 255, calc(0.7 + var(--pg-decor-safe-zone-alpha, 0.08)));
+    border-radius: calc(var(--pg-radius, 8px) + 2px);
+}
+
+.block-text {
+    color: var(--ef-text);
+    font-size: var(--pg-body-size, 28px);
+    line-height: var(--pg-line-height, 1.4);
+}
+
+.block-text h3 {
+    color: #4f4f54;
+    font-size: 38px;
+    margin: 0 0 14px;
+}
+
+.block-text b { color: var(--ef-accent); }
+.block-text li::marker { color: var(--ef-accent-2); }
+
+.table-block { background: transparent; border: none; padding: 0; }
 
 .ef-table {
     width: 100%;
-    border-collapse: collapse;
-    font-size: 24px;
-    line-height: 1.1;
+    border-collapse: separate;
+    border-spacing: 0;
+    color: var(--ef-text);
+    background: #ffffff;
+    border: 1px solid var(--ef-border);
+    border-radius: var(--pg-radius, 8px);
+    overflow: hidden;
+    font-size: 22px;
 }
 
 .ef-table th {
-    text-align: left;
-    padding: 15px 20px;
-    background: var(--ef-light);
-    color: var(--ef-dark);
-    border-bottom: 5px solid var(--ef-green);
-    font-weight: 800;
+    background: var(--pg-table-header-bg, #f4f4f4);
+    color: var(--pg-table-header-text, #545359);
+    border-bottom: 4px solid var(--ef-accent-2);
     text-transform: uppercase;
+    font-weight: 800;
 }
 
 .ef-table td {
-    padding: 12px 20px;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid rgba(84, 83, 89, 0.12);
 }
 
-.ef-table tr:nth-child(even) { background: #fcfcfc; }
-.ef-table tr:hover { background: rgba(140, 198, 63, 0.05); }
+.ef-table tr:nth-child(even) {
+    background: rgba(244, 244, 244, 0.5);
+}
 
-/* ============================================================
-   6. KPI КАРТОЧКИ
-   ============================================================ */
+.chart-block {
+    background: #ffffff;
+    border: 1px solid var(--ef-border);
+    border-radius: var(--pg-radius, 8px);
+}
 
 .kpi-card {
-    background: white;
-    border: 1px solid #eee;
-    border-top: 10px solid var(--ef-red);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-    border-radius: 8px;
+    background: #ffffff;
+    border: 1px solid rgba(84, 83, 89, 0.12);
+    border-top: 8px solid var(--ef-accent);
+    border-radius: var(--pg-radius, 8px);
+    box-shadow: 0 8px 20px rgba(84, 83, 89, 0.08);
 }
 
-/* КОМПАКТНЫЙ РЕЖИМ (когда карточек > 2) */
+.kpi-card:nth-child(even) {
+    border-top-color: var(--ef-accent-2);
+}
+
+.kpi-card .label {
+    color: #8d8f95;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
 .kpi-card .value {
-    font-size: 54px;
+    color: #4f4f54;
     font-weight: 900;
-    line-height: 1;
-    color: var(--ef-dark);
-    white-space: nowrap;
-    display: inline-block;
 }
 
-/* ============================================================
-   8. ТЕКСТОВЫЕ БЛОКИ И ВНУТРЕННЯЯ СЕТКА
-   ============================================================ */
-.block-text {
-    font-size: 28px;
-    line-height: 1.4;
-    color: var(--ef-dark);
+.kpi-card .unit {
+    color: #8f9197;
 }
 
-.text-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 30px;
-    width: 100%;
+.image-container img {
+    border-radius: var(--pg-radius, 8px);
+    border: none;
+    box-shadow: none;
 }
 
-.text-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 40px;
-    width: 100%;
-    min-height: 0;
-}
-
-.col-text {
-    flex: 2; /* Текст занимает больше места */
-}
-
-.col-img {
-    flex: 1;
-    display: flex;
-    justify-content: flex-end;
-}
-
-.col-img img {
-    max-width: 100%;
-    max-height: 320px; /* КРИТИЧНО: ограничение картинки по высоте */
-    object-fit: contain;
-    border-radius: 8px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-}
-
-.text-section { margin-bottom: 40px; }
-
-.text-section h3, .col-text h3 {
-    color: var(--ef-green);
-    font-size: 36px;
-    margin: 0 0 15px 0;
-    display: flex;
-    align-items: center;
-}
-
-/* Иконка треугольника перед заголовками */
-.text-section h3::before, .col-text h3::before {
-    content: "▶";
-    font-size: 24px;
-    margin-right: 15px;
-}
-
-.block-text b { color: var(--ef-red); }
-
-/* Списки с треугольниками */
-.block-text .bullet {
-    list-style: none;
-    padding-left: 35px;
-    position: relative;
-    margin-bottom: 12px;
-}
-
-.block-text .bullet::before {
-    content: "▶";
-    color: var(--ef-green);
-    position: absolute;
-    left: 0;
-    font-size: 18px;
-    top: 8px;
-}
-
-/* ============================================================
-   9. ТИТУЛЬНЫЙ СЛАЙД
-   ============================================================ */
 .title-slide {
-    background: white;
-}
-
-.title-logo {
-    width: 650px;
-    margin-bottom: 60px;
-    position: relative;
-    z-index: 10;
+    --ef-decor-mult: var(--pg-decor-title-mult, 1.25);
 }
 
 .title-slide h1 {
-    font-size: 110px;
-    font-weight: 900;
-    color: var(--ef-dark);
     margin: 0;
+    font-size: calc(var(--pg-title-size, 64px) * 1.64);
     text-transform: uppercase;
-    line-height: 1;
+    color: #505159;
+    font-weight: 900;
 }
 
 .title-slide p {
-    font-size: 44px;
-    color: var(--ef-green);
-    font-weight: 700;
-    margin-top: 30px;
-    letter-spacing: 3px;
+    margin-top: 20px;
+    font-size: 40px;
     text-transform: uppercase;
-}
-
-/* Фрактал титульника */
-.title-slide::after {
-    content: "";
-    position: absolute;
-    bottom: 0; left: 0;
-    width: 450px; height: 450px;
-    background: var(--ef-red);
-    clip-path: polygon(0 0, 0 100%, 100% 100%);
-    opacity: 0.1;
-    z-index: 1;
-}
-
-/* ============================================================
-   10. КАРТИНКИ
-   ============================================================ */
-.image-container img {
-    border-radius: 10px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.1);
-}
-
-.plans-calendar {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 25px;
-  margin-top: 40px;
-}
-
-.plan-cell {
-  position: relative;
-  background: white;
-  border: 1px solid #eee;
-  border-top: 6px solid var(--ef-green);
-  padding: 20px 20px 25px;
-  border-radius: 8px;
-  min-height: 160px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-}
-
-.plan-cell.highlight {
-  border-top-color: var(--ef-red);
-}
-
-.plan-cell.wide {
-  grid-column: span 2;
-}
-
-.plan-cell .month {
-  position: absolute;
-  top: 12px;
-  right: 15px;
-  font-size: 14px;
-  color: #999;
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-.plan-cell ul {
-  margin: 25px 0 0;
-  padding-left: 18px;
-}
-
-.plan-cell li {
-  margin-bottom: 8px;
-  font-size: 22px;
-  line-height: 1.3;
-}
-
-/* Календарь */
-
-.plans-calendar {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 25px;
-    margin-top: 40px;
-  }
-  
-.plan-cell {
-    position: relative;
-    background: white;
-    border: 1px solid #eee;
-    border-top: 6px solid var(--ef-green);
-    padding: 20px 20px 25px;
-    border-radius: 8px;
-    min-height: 160px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-  }
-  
-  .plan-cell.highlight {
-    border-top-color: var(--ef-red);
-  }
-  
-  .plan-cell.wide {
-    grid-column: span 2;
-  }
-  
-  .plan-cell .month {
-    position: absolute;
-    top: 12px;
-    right: 15px;
-    font-size: 14px;
-    color: #999;
+    color: var(--ef-accent-2);
+    letter-spacing: 2px;
     font-weight: 700;
-    text-transform: uppercase;
-  }
-  
-  .plan-cell ul {
-    margin: 25px 0 0;
-    padding-left: 18px;
-  }
-  
-  .plan-cell li {
-    margin-bottom: 8px;
-    font-size: 22px;
-    line-height: 1.3;
-  }
+}
+
+.theme-table-dense .ef-table { font-size: 19px; }
+.theme-table-dense .ef-table th, .theme-table-dense .ef-table td { padding-top: 8px; padding-bottom: 8px; }
+.theme-table-boardroom .ef-table { font-size: 26px; }
+.theme-table-boardroom .ef-table th, .theme-table-boardroom .ef-table td { padding-top: 14px; padding-bottom: 14px; }
+
+.theme-chart-minimal .chart-block { background: #fcfcfc; border-color: rgba(84, 83, 89, 0.12); }
+.theme-chart-dashboard .chart-block { background: #ffffff; border-color: rgba(84, 83, 89, 0.2); }
+
+.theme-pack-compact .kpi-card { box-shadow: 0 4px 12px rgba(84, 83, 89, 0.08); border-top-width: 6px; }
+.theme-pack-bold .kpi-card { box-shadow: 0 14px 30px rgba(84, 83, 89, 0.18); border-top-width: 10px; }
 
 @media print {
-    /* Важно продублировать шрифт здесь */
     html, body, .slide, .slide * {
-        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
-    }
-
-    body {
-        background: none !important;
-        -webkit-print-color-adjust: exact; /* Чтобы цвета и фоны не бледнели */
-        print-color-adjust: exact;
-    }
-
-    .slide {
-        transform: none !important;
-        /* Убедимся, что фон слайда (черный/темный) остается */
-        background-color: #0a0f1e !important; 
+        font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
     }
 }
-
-/* ============================================================
-   ПЕРСОНАЖ (ОБНОВЛЕННЫЙ КОРП СТИЛЬ)
-   ============================================================ */
-.slide-character {
-    /* УБРАЛИ: циановое свечение */
-    /* ДОБАВИЛИ: мягкую естественную тень для объема */
-    filter: drop-shadow(0 15px 30px rgba(0, 0, 0, 0.15)); 
-    transition: all 0.3s ease;
-}
-
-/* Если хочешь добавить легкий брендовый акцент (например, легкое зеленое свечение вместо тени), 
-   используй этот вариант вместо фильтра выше:
-   filter: drop-shadow(0 0 15px rgba(140, 198, 63, 0.3)); 
-*/
-

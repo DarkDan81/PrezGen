@@ -19,29 +19,41 @@ Completed.
 
 3. Decor token expansion (PPTX-safe):
 - `logoEnabled`, `logoText`, `logoAnchor`, `logoSize`, `logoOpacity`;
-- `shapePreset` (`none|left-line|triangle|blob|both`);
+- `serviceTag`, `badgeVariant`, `badgeOnTitle`, `badgeOnContent`;
+- per-shape controls (`enabled`, `anchor`, `size`, `opacity`) for left-line / triangle / blob;
 - intensity/safe-zone/title/content decor multipliers.
 
-4. Runtime token pipeline:
-- render model passes selected theme tokens into preview render;
-- token-to-CSS variable bridge extended for full Stage 8 decor contract.
+4. Semantic style controls:
+- semantic colors (`accentSecondary`, `success`, `warn`, `info`);
+- typography profile (`executive|technical|sales`);
+- chart mode (`contrast|minimal|dashboard`);
+- table mode (`dense|normal|boardroom`);
+- preset pack (`compact|balanced|bold`).
 
-5. Theme preview API:
+5. Runtime token pipeline:
+- render model passes selected theme tokens into preview render;
+- token-to-CSS variable bridge extended for semantic + decor v2 contract;
+- body receives mode/profile/pack classes for deterministic style switching.
+
+6. Theme preview API:
 - new `POST /api/v1/themes/preview`;
 - returns deterministic golden-scenes HTML + warnings;
 - uses same render engine pipeline as runtime presentation preview.
 
-6. `/themes` editor upgrade:
+7. `/themes` editor upgrade:
 - expanded PPTX-safe token controls (colors, typography, spacing, chart, table, decor/logo/shapes);
 - base-theme selection for custom theme creation;
 - integrated live preview (debounced, no manual refresh);
 - before/after compare mode;
 - scene switcher for golden scenes (`title|content|table|chart|cards`);
 - safety badge and warning list.
+- import/export UX from `/themes` page (JSON theme files).
 
-7. Factory theme tokenization:
-- logo text/anchor/size/opacity controlled via theme variables;
-- decor primitive visibility controlled via `shapePreset` variables.
+8. Three reference themes aligned:
+- `factory-blueprint` (dark),
+- `eurofoods` (light),
+- `cyberpunk` (neon),
+- all migrated to the same token contract and badge/decor v2 behavior.
 
 ## Verification run
 

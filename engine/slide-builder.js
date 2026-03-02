@@ -77,6 +77,43 @@ function sanitizeClassToken(value) {
         .replace(/^-+|-+$/g, '');
 }
 
+function buildThemeBodyClasses(tokens) {
+    const chartMode = sanitizeClassToken(tokens?.chart?.mode || 'contrast');
+    const tableMode = sanitizeClassToken(tokens?.table?.mode || 'normal');
+    const typeProfile = sanitizeClassToken(tokens?.typography?.profile || 'technical');
+    const presetPack = sanitizeClassToken(tokens?.decor?.presetPack || 'balanced');
+    return `theme-chart-${chartMode} theme-table-${tableMode} theme-type-${typeProfile} theme-pack-${presetPack}`.trim();
+}
+
+function resolveAnchorPositions(anchor, defaults) {
+    const byAnchor = {
+        'top-left': { top: defaults.top, right: 'auto', left: defaults.left, bottom: 'auto' },
+        'top-right': { top: defaults.top, right: defaults.right, left: 'auto', bottom: 'auto' },
+        'bottom-left': { top: 'auto', right: 'auto', left: defaults.left, bottom: defaults.bottom },
+        'bottom-right': { top: 'auto', right: defaults.right, left: 'auto', bottom: defaults.bottom },
+    };
+    return byAnchor[String(anchor || '')] || byAnchor['top-right'];
+}
+
+function renderThemeBadge(tokens, options = {}) {
+    const decor = (tokens && typeof tokens === 'object' && tokens.decor && typeof tokens.decor === 'object') ? tokens.decor : {};
+    const isTitle = options.isTitle === true;
+    const show = decor.logoEnabled !== false
+        && ((isTitle && decor.badgeOnTitle !== false) || (!isTitle && decor.badgeOnContent !== false));
+    if (!show) return '';
+
+    const main = escapeHtml(decor.logoText || 'DARKDAN');
+    const tag = escapeHtml(decor.serviceTag || '');
+    const variant = sanitizeClassToken(decor.badgeVariant || 'outlined');
+    const anchor = sanitizeClassToken(decor.logoAnchor || 'top-right');
+    return `
+        <div class="theme-badge variant-${variant} anchor-${anchor}">
+            <span class="badge-main">${main}</span>
+            ${tag ? `<span class="badge-tag">${tag}</span>` : ''}
+        </div>
+    `;
+}
+
 function renderBlocksWithLayout(slide) {
     const preset = resolveLayoutPreset(slide);
     if (!preset) {
@@ -180,6 +217,10 @@ function buildThemeVarsCss(tokens) {
     if (isHexColor(color.bgCanvas)) push('--pg-bg-canvas', String(color.bgCanvas).trim());
     if (isHexColor(color.textPrimary)) push('--pg-text-primary', String(color.textPrimary).trim());
     if (isHexColor(color.accent)) push('--pg-accent', String(color.accent).trim());
+    if (isHexColor(color.accentSecondary)) push('--pg-accent-secondary', String(color.accentSecondary).trim());
+    if (isHexColor(color.success)) push('--pg-success', String(color.success).trim());
+    if (isHexColor(color.warn)) push('--pg-warn', String(color.warn).trim());
+    if (isHexColor(color.info)) push('--pg-info', String(color.info).trim());
 
     push('--pg-title-size', `${asFiniteNumber(typography.titleSize, 64)}px`);
     push('--pg-subtitle-size', `${asFiniteNumber(typography.subtitleSize, 30)}px`);
@@ -198,6 +239,18 @@ function buildThemeVarsCss(tokens) {
     if (isHexColor(table.headerBg)) push('--pg-table-header-bg', String(table.headerBg).trim());
     if (isHexColor(table.headerText)) push('--pg-table-header-text', String(table.headerText).trim());
 
+    const chartMode = String(chart.mode || 'contrast');
+    if (chartMode === 'minimal') {
+        push('--pg-chart-axis', '#b8c7de');
+        push('--pg-chart-label', '#d9e4f4');
+    } else if (chartMode === 'dashboard') {
+        push('--pg-chart-axis', '#e7eefb');
+        push('--pg-chart-label', '#f8fbff');
+    } else {
+        push('--pg-chart-axis', '#f4f8ff');
+        push('--pg-chart-label', '#ffffff');
+    }
+
     push('--pg-decor-intensity', String(asFiniteNumber(decor.intensity, 2)));
     push('--pg-decor-safe-zone-alpha', String(asFiniteNumber(decor.safeZoneAlpha, 0.08)));
     push('--pg-decor-title-mult', String(asFiniteNumber(decor.titleMultiplier, 1.25)));
@@ -205,9 +258,6 @@ function buildThemeVarsCss(tokens) {
     push('--pg-logo-enabled', decor.logoEnabled === false ? '0' : '1');
     push('--pg-logo-size', `${asFiniteNumber(decor.logoSize, 14)}px`);
     push('--pg-logo-opacity', String(asFiniteNumber(decor.logoOpacity, 0.95)));
-
-    const safeLogo = String(decor.logoText || 'DARKDAN').replace(/\\/g, '\\\\').replace(/"/g, '\\"').slice(0, 32);
-    push('--pg-logo-text', `"${safeLogo}"`);
 
     const anchor = String(decor.logoAnchor || 'top-right');
     if (anchor === 'top-left') {
@@ -231,14 +281,51 @@ function buildThemeVarsCss(tokens) {
         push('--pg-logo-left', 'auto');
         push('--pg-logo-bottom', 'auto');
     }
+    push('--pg-badge-on-title', decor.badgeOnTitle === false ? '0' : '1');
+    push('--pg-badge-on-content', decor.badgeOnContent === false ? '0' : '1');
+    push('--pg-shape-left-line-enabled', decor.shapeLeftLineEnabled === false ? '0' : '1');
+    push('--pg-shape-left-line-scale', String(asFiniteNumber(decor.shapeLeftLineSize, 1)));
+    push('--pg-shape-left-line-opacity', String(asFiniteNumber(decor.shapeLeftLineOpacity, 1)));
+    push('--pg-shape-triangle-enabled', decor.shapeTriangleEnabled === false ? '0' : '1');
+    push('--pg-shape-triangle-scale', String(asFiniteNumber(decor.shapeTriangleSize, 1)));
+    push('--pg-shape-triangle-opacity', String(asFiniteNumber(decor.shapeTriangleOpacity, 1)));
+    push('--pg-shape-blob-enabled', decor.shapeBlobEnabled === false ? '0' : '1');
+    push('--pg-shape-blob-scale', String(asFiniteNumber(decor.shapeBlobSize, 1)));
+    push('--pg-shape-blob-opacity', String(asFiniteNumber(decor.shapeBlobOpacity, 1)));
 
-    const shapePreset = String(decor.shapePreset || 'both');
-    const showLeftLine = shapePreset === 'both' || shapePreset === 'left-line' ? 1 : 0;
-    const showTriangle = shapePreset === 'both' || shapePreset === 'triangle' ? 1 : 0;
-    const showBlob = shapePreset === 'both' || shapePreset === 'blob' ? 1 : 0;
-    push('--pg-shape-left-line', String(showLeftLine));
-    push('--pg-shape-triangle', String(showTriangle));
-    push('--pg-shape-blob', String(showBlob));
+    const leftLineAnchor = String(decor.shapeLeftLineAnchor || 'left');
+    if (leftLineAnchor === 'right') {
+        push('--pg-left-line-left', 'auto');
+        push('--pg-left-line-right', '0');
+    } else {
+        push('--pg-left-line-left', '0');
+        push('--pg-left-line-right', 'auto');
+    }
+
+    const tri = resolveAnchorPositions(String(decor.shapeTriangleAnchor || 'bottom-right'), {
+        top: '0',
+        right: '0',
+        left: '0',
+        bottom: '0',
+    });
+    push('--pg-triangle-top', tri.top);
+    push('--pg-triangle-right', tri.right);
+    push('--pg-triangle-left', tri.left);
+    push('--pg-triangle-bottom', tri.bottom);
+    push('--pg-triangle-clip', String(decor.shapeTriangleAnchor || 'bottom-right').startsWith('top')
+        ? 'polygon(0 0, 100% 0, 100% 100%)'
+        : 'polygon(100% 0, 100% 100%, 0 100%)');
+
+    const blob = resolveAnchorPositions(String(decor.shapeBlobAnchor || 'top-right'), {
+        top: '-220px',
+        right: '-240px',
+        left: '-240px',
+        bottom: '-220px',
+    });
+    push('--pg-blob-top', blob.top);
+    push('--pg-blob-right', blob.right);
+    push('--pg-blob-left', blob.left);
+    push('--pg-blob-bottom', blob.bottom);
 
     return vars.length ? `:root{${vars.join('')}}` : '';
 }
@@ -251,15 +338,23 @@ function buildSlides(data) {
     const structureCss = loadStructureCss();
     const themeVarsCss = buildThemeVarsCss(data.meta.themeTokens);
 
+    const themeTokens = data.meta.themeTokens || {};
+    const decorTokens = (themeTokens.decor && typeof themeTokens.decor === 'object') ? themeTokens.decor : {};
+
     const slidesHtml = data.slides.map((slide, index) => {
         const isTitle = slide.type === 'title';
         const characterHtml = renderCharacter(slide, charactersMap);
         const layoutRender = renderBlocksWithLayout(slide);
+        const leftLineAnchorClass = `anchor-${sanitizeClassToken(decorTokens.shapeLeftLineAnchor || 'left')}`;
+        const triangleAnchorClass = `anchor-${sanitizeClassToken(decorTokens.shapeTriangleAnchor || 'bottom-right')}`;
+        const blobAnchorClass = `anchor-${sanitizeClassToken(decorTokens.shapeBlobAnchor || 'top-right')}`;
 
         const slideContent = isTitle
             ? `
-                <div class="decor-blob"></div>
-                <div class="decor-line-left"></div>
+                <div class="decor-blob ${blobAnchorClass}"></div>
+                <div class="decor-line-left ${leftLineAnchorClass}"></div>
+                <div class="slide-decor-line ${triangleAnchorClass}"></div>
+                ${renderThemeBadge(themeTokens, { isTitle: true })}
                 ${logoPath ? `<img src="${logoPath}" class="title-logo" alt="logo">` : ''}
                 <div class="title-content">
                     <h1>${escapeHtml(slide.title || '')}</h1>
@@ -268,9 +363,10 @@ function buildSlides(data) {
                 ${characterHtml}`
             : `
                 ${logoPath ? `<img src="${logoPath}" class="corner-logo" alt="logo">` : ''}
-                <div class="decor-blob"></div>
-                <div class="decor-line-left"></div>
-                <div class="slide-decor-line"></div>
+                ${renderThemeBadge(themeTokens, { isTitle: false })}
+                <div class="decor-blob ${blobAnchorClass}"></div>
+                <div class="decor-line-left ${leftLineAnchorClass}"></div>
+                <div class="slide-decor-line ${triangleAnchorClass}"></div>
                 <div class="slide-header">
                     <h2>${escapeHtml(slide.title || '')}</h2>
                     ${slide.subtitle ? `<div class="slide-subtitle">${escapeHtml(slide.subtitle)}</div>` : ''}
@@ -285,6 +381,7 @@ function buildSlides(data) {
         </div>`;
     }).join('');
 
+    const bodyThemeClasses = buildThemeBodyClasses(themeTokens);
     return `
     <!DOCTYPE html>
     <html lang="ru">
@@ -297,7 +394,7 @@ function buildSlides(data) {
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     </head>
-    <body class="viewer-mode">
+    <body class="viewer-mode ${bodyThemeClasses}">
         <div id="presentation-viewport">${slidesHtml}</div>
 
         <script>

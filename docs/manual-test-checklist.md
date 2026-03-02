@@ -210,3 +210,11 @@
 - [ ] Ввести невалидные значения токенов (например, слишком маленький/большой range) и проверить предупреждения/валидацию API
 - [ ] Сохранить пользовательскую тему, перезагрузить страницу и проверить сохранение всех Stage 8 токенов
 - [ ] Дублировать системную тему, изменить токены и сохранить как пользовательскую
+- [ ] Проверить semantic-цвета (`accentSecondary/success/warn/info`) на карточках, подписях и акцентах текста
+- [ ] Проверить `Typography profile` (`Executive/Technical/Sales`) и убедиться, что меняются характер/плотность заголовков
+- [ ] Проверить `Chart mode` (`Contrast/Minimal/Dashboard`) на readability осей/подписей
+- [ ] Проверить `Table mode` (`Dense/Normal/Boardroom`) на плотность и читаемость таблиц
+- [ ] Проверить `Preset pack` (`Compact/Balanced/Bold`) на интенсивность визуального характера карточек/декора
+- [ ] Проверить badge-параметры (`serviceTag`, `badgeVariant`, `badgeOnTitle`, `badgeOnContent`)
+- [ ] Проверить per-shape controls для `left-line`, `triangle`, `blob` (enabled/anchor/size/opacity)
+- [ ] Выполнить `Экспорт темы` (JSON), затем `Импорт темы` и убедиться, что токены восстановились корректно

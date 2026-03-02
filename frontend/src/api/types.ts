@@ -64,14 +64,19 @@ export type ThemeTokens = {
     bgCanvas: string;
     textPrimary: string;
     accent: string;
-    [key: string]: string;
+    accentSecondary?: string;
+    success?: string;
+    warn?: string;
+    info?: string;
+    [key: string]: string | undefined;
   };
   typography: {
     titleSize: number;
     subtitleSize: number;
     bodySize: number;
     lineHeight: number;
-    [key: string]: number | string;
+    profile?: 'executive' | 'technical' | 'sales';
+    [key: string]: number | string | undefined;
   };
   spacing: {
     radius: number;
@@ -80,22 +85,42 @@ export type ThemeTokens = {
   };
   chart?: {
     palette?: string[];
+    mode?: 'contrast' | 'minimal' | 'dashboard';
     [key: string]: unknown;
   };
   table?: {
+    headerBg?: string;
+    headerText?: string;
+    mode?: 'dense' | 'normal' | 'boardroom';
     [key: string]: unknown;
   };
   decor?: {
+    presetPack?: 'compact' | 'balanced' | 'bold';
     intensity?: number;
     safeZoneAlpha?: number;
     titleMultiplier?: number;
     contentMultiplier?: number;
     logoEnabled?: boolean;
     logoText?: string;
+    serviceTag?: string;
     logoAnchor?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
     logoSize?: number;
     logoOpacity?: number;
-    shapePreset?: 'none' | 'left-line' | 'triangle' | 'blob' | 'both';
+    badgeVariant?: 'minimal' | 'outlined' | 'signal';
+    badgeOnTitle?: boolean;
+    badgeOnContent?: boolean;
+    shapeLeftLineEnabled?: boolean;
+    shapeLeftLineAnchor?: 'left' | 'right';
+    shapeLeftLineSize?: number;
+    shapeLeftLineOpacity?: number;
+    shapeTriangleEnabled?: boolean;
+    shapeTriangleAnchor?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
+    shapeTriangleSize?: number;
+    shapeTriangleOpacity?: number;
+    shapeBlobEnabled?: boolean;
+    shapeBlobAnchor?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
+    shapeBlobSize?: number;
+    shapeBlobOpacity?: number;
     [key: string]: unknown;
   };
   [key: string]: unknown;

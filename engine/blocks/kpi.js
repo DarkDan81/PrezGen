@@ -103,7 +103,7 @@ module.exports = (block) => {
         const unit = escapeHtml(kpi?.unit || '');
         const growthRaw = String(kpi?.growth || '').trim();
         const isNegative = growthRaw.startsWith('-');
-        const growthColor = isNegative ? 'var(--ef-red)' : 'var(--ef-green)';
+        const growthColor = isNegative ? 'var(--pg-warn, #ff626f)' : 'var(--pg-success, #37d67a)';
         const arrow = isNegative ? 'v' : '^';
         const valueFontSize = pickValueFontSize(normalizedValue);
 
