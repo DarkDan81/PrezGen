@@ -195,3 +195,16 @@ Deliverable:
 
 Deliverable:
 - production-ready theme workflow for non-technical users.
+
+## UX refinement addendum
+
+1. Move theme selection into top toolbar dropdown to reduce pointer travel.
+2. Move create/import actions into top toolbar near theme selector.
+3. Use accordion sections in editor:
+- `core settings` (always rendered in slides),
+- `optional decor` (toggleable visual layer).
+4. Group decor controls by shape entity (left line / triangle / blob) in framed blocks.
+5. Keep compare preview side-by-side (`before | after`) on desktop with responsive fallback to single column.
+6. Constrain each preview pane to a 16:9 viewport wrapper (no stretched strip previews).
+7. Keep top toolbar compact and single-line where screen width allows.
+8. Ensure triangle orientation changes correctly when anchor is moved to left corners.

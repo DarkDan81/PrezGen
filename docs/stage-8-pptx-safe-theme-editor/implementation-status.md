@@ -48,8 +48,23 @@ Completed.
 - scene switcher for golden scenes (`title|content|table|chart|cards`);
 - safety badge and warning list.
 - import/export UX from `/themes` page (JSON theme files).
+- UX restructuring for faster workflow:
+  - top toolbar theme selector (dropdown) instead of left list navigation;
+  - `Create from scratch` and `Import` actions moved to top toolbar;
+  - editor controls split into accordion sections (`core` vs `optional decor`);
+  - decor controls grouped by object (left line, triangle, blob) inside framed groups;
+  - compact top toolbar aligned to single-line controls;
+  - preview panes shown side-by-side (`before | after`) on desktop with responsive single-column fallback;
+  - each preview pane uses a 16:9 viewport wrapper for stable scene framing.
+  - fixed two-column workspace: left column is settings, right column is preview;
+  - editor card consumes remaining screen height without artificial empty gaps.
 
-8. Three reference themes aligned:
+8. Decor orientation bugfix:
+- triangle anchor behavior corrected for left-side anchors;
+- left-side anchors now use corner-specific clip polygons (not only vertical mirroring),
+- ensuring consistent orientation for `top-left` / `bottom-left`.
+
+9. Three reference themes aligned:
 - `factory-blueprint` (dark),
 - `eurofoods` (light),
 - `cyberpunk` (neon),

@@ -235,7 +235,11 @@ function PreviewPane({ title, preview, isLoading, sceneId, paneClassName }: Prev
       {isLoading ? (
         <div className="themes-preview-loading">Loading preview...</div>
       ) : (
-        <iframe ref={iframeRef} className="themes-preview-iframe" srcDoc={html} title={title} />
+        <div className="themes-preview-viewport">
+          <div className="themes-preview-canvas">
+            <iframe ref={iframeRef} className="themes-preview-iframe" srcDoc={html} title={title} />
+          </div>
+        </div>
       )}
     </div>
   );
@@ -243,6 +247,7 @@ function PreviewPane({ title, preview, isLoading, sceneId, paneClassName }: Prev
 
 export function ThemesPage() {
   const { locale, setLocale, t } = useI18n();
+  const isRu = locale === 'ru';
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedThemeId, setSelectedThemeId] = useState('');
@@ -254,7 +259,6 @@ export function ThemesPage() {
   const [warnings, setWarnings] = useState<Array<{ path: string; message: string }>>([]);
   const [error, setError] = useState('');
   const [selectedSceneId, setSelectedSceneId] = useState('title');
-  const [compareMode, setCompareMode] = useState(true);
 
   const previewDebounceRef = useRef<number | null>(null);
   const [previewDraft, setPreviewDraft] = useState<ThemePreviewResponse | null>(null);
@@ -270,6 +274,27 @@ export function ThemesPage() {
     [selectedThemeId, themesQuery.data],
   );
   const systemThemes = useMemo(() => (themesQuery.data || []).filter((theme) => theme.isSystem), [themesQuery.data]);
+
+  const loadThemeToEditor = (themeId: string) => {
+    const theme = (themesQuery.data || []).find((item) => item.id === themeId);
+    if (!theme) return;
+    const normalized = normalizeTokens(theme.tokens as ThemeTokens);
+    setSelectedThemeId(theme.id);
+    setName(theme.name);
+    setTokens(normalized);
+    setBaselineTokens(normalized);
+    setBaseThemeId(theme.baseThemeId || (theme.isSystem ? theme.id : 'theme-factory-blueprint'));
+    setWarnings([]);
+    setError('');
+  };
+
+  useEffect(() => {
+    if (selectedThemeId) return;
+    const first = themesQuery.data?.[0];
+    if (first) {
+      loadThemeToEditor(first.id);
+    }
+  }, [selectedThemeId, themesQuery.data]);
 
   const refreshThemes = async () => {
     await queryClient.invalidateQueries({ queryKey: ['themes'] });
@@ -431,82 +456,67 @@ export function ThemesPage() {
   return (
     <div className="themes-page">
       <header className="themes-header">
-        <div className="themes-header-row">
+        <div className="themes-header-row themes-header-row-main">
           <Button variant="ghost" onClick={() => navigate('/')}>
             {t('themes.backToList')}
           </Button>
           <h1>{t('themes.title')}</h1>
         </div>
-        <select
-          className="ui-select lang-select-inline"
-          value={locale}
-          aria-label={t('lang.label')}
-          onChange={(e) => setLocale(e.target.value as 'ru' | 'en')}
-        >
-          <option value="ru">RU {t('lang.ru')}</option>
-          <option value="en">EN {t('lang.en')}</option>
-        </select>
+        <div className="themes-header-row">
+          <select
+            className="ui-select themes-select-inline"
+            value={selectedThemeId}
+            aria-label={t('themes.listTitle')}
+            onChange={(e) => loadThemeToEditor(e.target.value)}
+          >
+            {(themesQuery.data || []).map((theme) => (
+              <option key={theme.id} value={theme.id}>
+                {theme.name} {theme.isSystem ? `(${t('themes.system')})` : `(${t('themes.custom')})`}
+              </option>
+            ))}
+          </select>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setSelectedThemeId('');
+              setName('Custom Theme');
+              setBaseThemeId('theme-factory-blueprint');
+              const base = defaultTokens();
+              setTokens(base);
+              setBaselineTokens(base);
+              setWarnings([]);
+              setError('');
+            }}
+          >
+            {t('themes.createFromScratch')}
+          </Button>
+          <Button variant="secondary" onClick={() => importInputRef.current?.click()}>
+            {t('themes.importTheme')}
+          </Button>
+          <input
+            ref={importInputRef}
+            type="file"
+            accept="application/json,.json"
+            className="themes-file-input-hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleImportThemeFile(file);
+              e.currentTarget.value = '';
+            }}
+          />
+          <select
+            className="ui-select lang-select-inline"
+            value={locale}
+            aria-label={t('lang.label')}
+            onChange={(e) => setLocale(e.target.value as 'ru' | 'en')}
+          >
+            <option value="ru">RU {t('lang.ru')}</option>
+            <option value="en">EN {t('lang.en')}</option>
+          </select>
+        </div>
       </header>
 
       <div className="themes-grid">
-        <SectionCard title={t('themes.listTitle')}>
-          <div className="themes-actions">
-            <Button
-              variant="primary"
-              onClick={() => {
-                setSelectedThemeId('');
-                setName('Custom Theme');
-                setBaseThemeId('theme-factory-blueprint');
-                const base = defaultTokens();
-                setTokens(base);
-                setBaselineTokens(base);
-                setWarnings([]);
-                setError('');
-              }}
-            >
-              {t('themes.createFromScratch')}
-            </Button>
-            <Button variant="secondary" onClick={() => importInputRef.current?.click()}>
-              {t('themes.importTheme')}
-            </Button>
-            <input
-              ref={importInputRef}
-              type="file"
-              accept="application/json,.json"
-              className="themes-file-input-hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) handleImportThemeFile(file);
-                e.currentTarget.value = '';
-              }}
-            />
-          </div>
-
-          <ul className="themes-list">
-            {(themesQuery.data || []).map((theme) => (
-              <li key={theme.id}>
-                <Button
-                  variant={selectedThemeId === theme.id ? 'primary' : 'ghost'}
-                  className="theme-row"
-                  onClick={() => {
-                    const normalized = normalizeTokens(theme.tokens as ThemeTokens);
-                    setSelectedThemeId(theme.id);
-                    setName(theme.name);
-                    setTokens(normalized);
-                    setBaselineTokens(normalized);
-                    setBaseThemeId(theme.baseThemeId || (theme.isSystem ? theme.id : 'theme-factory-blueprint'));
-                    setWarnings([]);
-                    setError('');
-                  }}
-                >
-                  <span>{theme.name}</span>
-                  <small>{theme.isSystem ? t('themes.system') : t('themes.custom')}</small>
-                </Button>
-              </li>
-            ))}
-          </ul>
-        </SectionCard>
-
         <SectionCard title={t('themes.editorTitle')} className="themes-editor-card">
           <div className="themes-editor-grid">
             <div className="themes-editor-controls">
@@ -526,7 +536,9 @@ export function ThemesPage() {
                 </Field>
               ) : null}
 
-              <div className="token-grid token-grid-single">
+              <details className="theme-accordion">
+                <summary>{isRu ? 'Основные настройки (всегда на слайде)' : 'Core settings (always visible)'}</summary>
+                <div className="token-grid token-grid-single">
                 <ColorField
                   label={t('themes.canvasBg')}
                   value={tokens.color.bgCanvas}
@@ -746,6 +758,12 @@ export function ThemesPage() {
                     <option value="boardroom">{t('themes.tableModeBoardroom')}</option>
                   </select>
                 </Field>
+                </div>
+              </details>
+
+              <details className="theme-accordion">
+                <summary>{isRu ? 'Опциональный декор (можно отключать)' : 'Optional decor (toggleable)'}</summary>
+                <div className="token-grid token-grid-single">
                 <Field label={t('themes.presetPack')}>
                   <select
                     className="ui-select"
@@ -965,6 +983,8 @@ export function ThemesPage() {
                     <option value="0">{t('themes.no')}</option>
                   </select>
                 </Field>
+                <div className="theme-token-group">
+                  <h3>{isRu ? 'Левая линия' : 'Left line'}</h3>
                 <Field label={t('themes.shapeLeftLineEnabled')}>
                   <select
                     className="ui-select"
@@ -1027,6 +1047,10 @@ export function ThemesPage() {
                     }
                   />
                 </Field>
+                </div>
+
+                <div className="theme-token-group">
+                  <h3>{isRu ? 'Треугольник' : 'Triangle'}</h3>
                 <Field label={t('themes.shapeTriangleEnabled')}>
                   <select
                     className="ui-select"
@@ -1094,6 +1118,10 @@ export function ThemesPage() {
                     }
                   />
                 </Field>
+                </div>
+
+                <div className="theme-token-group">
+                  <h3>{isRu ? 'Пятно' : 'Blob'}</h3>
                 <Field label={t('themes.shapeBlobEnabled')}>
                   <select
                     className="ui-select"
@@ -1161,7 +1189,9 @@ export function ThemesPage() {
                     }
                   />
                 </Field>
-              </div>
+                </div>
+                </div>
+              </details>
 
               <div className="themes-actions">
                 {!selectedTheme || selectedTheme.isSystem ? (
@@ -1235,14 +1265,6 @@ export function ThemesPage() {
             <div className="themes-preview-panel">
               <div className="themes-preview-toolbar">
                 <span className={`themes-safe-badge ${warnings.length ? 'is-warning' : 'is-safe'}`}>{safeState}</span>
-                <label className="themes-compare-toggle">
-                  <input
-                    type="checkbox"
-                    checked={compareMode}
-                    onChange={(e) => setCompareMode(e.target.checked)}
-                  />
-                  <span>{t('themes.compareMode')}</span>
-                </label>
               </div>
 
               <div className="themes-scenes">
@@ -1258,31 +1280,19 @@ export function ThemesPage() {
                 ))}
               </div>
 
-              <div className={`themes-preview-stack ${compareMode ? 'is-compare' : ''}`.trim()}>
-                {compareMode ? (
-                  <>
-                    <PreviewPane
-                      title={t('themes.previewBefore')}
-                      preview={previewBaseline}
-                      isLoading={previewLoading}
-                      sceneId={selectedSceneId}
-                    />
-                    <PreviewPane
-                      title={t('themes.previewAfter')}
-                      preview={previewDraft}
-                      isLoading={previewLoading}
-                      sceneId={selectedSceneId}
-                    />
-                  </>
-                ) : (
-                  <PreviewPane
-                    title={t('themes.previewAfter')}
-                    preview={previewDraft}
-                    isLoading={previewLoading}
-                    sceneId={selectedSceneId}
-                    paneClassName="is-single"
-                  />
-                )}
+              <div className="themes-preview-stack is-row">
+                <PreviewPane
+                  title={t('themes.previewBefore')}
+                  preview={previewBaseline}
+                  isLoading={previewLoading}
+                  sceneId={selectedSceneId}
+                />
+                <PreviewPane
+                  title={t('themes.previewAfter')}
+                  preview={previewDraft}
+                  isLoading={previewLoading}
+                  sceneId={selectedSceneId}
+                />
               </div>
             </div>
           </div>

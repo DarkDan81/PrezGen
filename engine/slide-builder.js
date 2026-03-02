@@ -312,9 +312,12 @@ function buildThemeVarsCss(tokens) {
     push('--pg-triangle-right', tri.right);
     push('--pg-triangle-left', tri.left);
     push('--pg-triangle-bottom', tri.bottom);
-    push('--pg-triangle-clip', String(decor.shapeTriangleAnchor || 'bottom-right').startsWith('top')
-        ? 'polygon(0 0, 100% 0, 100% 100%)'
-        : 'polygon(100% 0, 100% 100%, 0 100%)');
+    const triAnchor = String(decor.shapeTriangleAnchor || 'bottom-right');
+    let triClip = 'polygon(100% 0, 100% 100%, 0 100%)';
+    if (triAnchor === 'top-left') triClip = 'polygon(0 0, 100% 0, 0 100%)';
+    if (triAnchor === 'top-right') triClip = 'polygon(100% 0, 100% 100%, 0 0)';
+    if (triAnchor === 'bottom-left') triClip = 'polygon(0 0, 100% 100%, 0 100%)';
+    push('--pg-triangle-clip', triClip);
 
     const blob = resolveAnchorPositions(String(decor.shapeBlobAnchor || 'top-right'), {
         top: '-220px',
