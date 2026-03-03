@@ -91,13 +91,27 @@ Completed.
   - table/chart keep local readability surfaces,
   - cyberpunk KPI cards keep internal neon fill (card-level surface) while slide-wide underlay stays disabled.
 
+12. Additional safe tokenization (theme power-up):
+- typography font family preset token added:
+  - `tokens.typography.fontPreset` (`sans|modern|industrial`);
+- chart geometry tokens added:
+  - `tokens.chart.axisLabelSize`,
+  - `tokens.chart.dataLabelSize`,
+  - `tokens.chart.lineWidth`,
+  - `tokens.chart.pointRadius`;
+- decor style token added:
+  - `tokens.decor.shapeStyle` (`soft|crisp|glow`);
+- all new tokens wired end-to-end:
+  - backend validation + normalization,
+  - live editor controls (grouped by category),
+  - runtime CSS vars / body classes,
+  - preview + export render path.
+
 ## Not yet tokenized (remaining hardcoded layer)
 
-1. Base font family stacks per theme (currently fixed in CSS).
-2. Exact gradient formulas and blend curves for decor primitives.
-3. Theme-specific micro-typography details (some letter-spacing/text-transform constants).
-4. Advanced chart geometry defaults (line thickness/point radius) outside theme tokens.
-5. Theme preview panel chrome styling on `/themes` page (editor UI skin, not slide theme contract).
+1. Exact gradient formulas and blend curves for decor primitives (we expose safe style presets, not raw formula editing).
+2. Theme-specific micro-typography details (some letter-spacing/text-transform constants remain CSS-level).
+3. Theme preview panel chrome styling on `/themes` page (editor UI skin, not slide theme contract).
 
 ## Verification run
 

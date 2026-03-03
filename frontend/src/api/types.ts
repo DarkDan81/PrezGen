@@ -76,6 +76,7 @@ export type ThemeTokens = {
     bodySize: number;
     lineHeight: number;
     profile?: 'executive' | 'technical' | 'sales';
+    fontPreset?: 'sans' | 'modern' | 'industrial';
     [key: string]: number | string | undefined;
   };
   spacing: {
@@ -86,6 +87,10 @@ export type ThemeTokens = {
   chart?: {
     palette?: string[];
     mode?: 'contrast' | 'minimal' | 'dashboard';
+    axisLabelSize?: number;
+    dataLabelSize?: number;
+    lineWidth?: number;
+    pointRadius?: number;
     [key: string]: unknown;
   };
   table?: {
@@ -128,6 +133,7 @@ export type ThemeTokens = {
     shapeBlobAnchor?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
     shapeBlobSize?: number;
     shapeBlobOpacity?: number;
+    shapeStyle?: 'soft' | 'crisp' | 'glow';
     [key: string]: unknown;
   };
   [key: string]: unknown;

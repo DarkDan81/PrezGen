@@ -81,7 +81,9 @@ function buildThemeBodyClasses(tokens) {
     const chartMode = sanitizeClassToken(tokens?.chart?.mode || 'contrast');
     const tableMode = sanitizeClassToken(tokens?.table?.mode || 'normal');
     const typeProfile = sanitizeClassToken(tokens?.typography?.profile || 'technical');
+    const fontPreset = sanitizeClassToken(tokens?.typography?.fontPreset || 'sans');
     const presetPack = sanitizeClassToken(tokens?.decor?.presetPack || 'balanced');
+    const shapeStyle = sanitizeClassToken(tokens?.decor?.shapeStyle || 'soft');
     const decor = (tokens && typeof tokens === 'object' && tokens.decor && typeof tokens.decor === 'object') ? tokens.decor : {};
     const toggles = [
         decor.gridEnabled === false ? 'theme-grid-off' : 'theme-grid-on',
@@ -91,7 +93,7 @@ function buildThemeBodyClasses(tokens) {
         decor.chartShadowEnabled === false ? 'theme-fx-chart-shadow-off' : 'theme-fx-chart-shadow-on',
         decor.imageShadowEnabled === false ? 'theme-fx-image-shadow-off' : 'theme-fx-image-shadow-on',
     ];
-    return `theme-chart-${chartMode} theme-table-${tableMode} theme-type-${typeProfile} theme-pack-${presetPack} ${toggles.join(' ')}`.trim();
+    return `theme-chart-${chartMode} theme-table-${tableMode} theme-type-${typeProfile} theme-font-${fontPreset} theme-pack-${presetPack} theme-shape-style-${shapeStyle} ${toggles.join(' ')}`.trim();
 }
 
 function resolveAnchorPositions(anchor, defaults) {
@@ -238,6 +240,14 @@ function buildThemeVarsCss(tokens) {
     push('--pg-subtitle-size', `${asFiniteNumber(typography.subtitleSize, 30)}px`);
     push('--pg-body-size', `${asFiniteNumber(typography.bodySize, 28)}px`);
     push('--pg-line-height', String(asFiniteNumber(typography.lineHeight, 1.38)));
+    const fontPreset = String(typography.fontPreset || 'sans');
+    if (fontPreset === 'modern') {
+        push('--pg-font-family', '"Trebuchet MS", "Segoe UI", Roboto, Helvetica, Arial, sans-serif');
+    } else if (fontPreset === 'industrial') {
+        push('--pg-font-family', '"Bahnschrift", "Segoe UI", Tahoma, Arial, sans-serif');
+    } else {
+        push('--pg-font-family', '"Segoe UI", Roboto, Helvetica, Arial, sans-serif');
+    }
 
     push('--pg-radius', `${asFiniteNumber(spacing.radius, 8)}px`);
     push('--pg-border-width', `${asFiniteNumber(spacing.borderWidth, 1)}px`);
@@ -262,6 +272,10 @@ function buildThemeVarsCss(tokens) {
         push('--pg-chart-axis', '#f4f8ff');
         push('--pg-chart-label', '#ffffff');
     }
+    push('--pg-chart-axis-size', `${asFiniteNumber(chart.axisLabelSize, 22)}px`);
+    push('--pg-chart-datalabel-size', `${asFiniteNumber(chart.dataLabelSize, 20)}px`);
+    push('--pg-chart-line-width', String(asFiniteNumber(chart.lineWidth, 8)));
+    push('--pg-chart-point-radius', String(asFiniteNumber(chart.pointRadius, 6)));
 
     push('--pg-decor-intensity', String(asFiniteNumber(decor.intensity, 2)));
     push('--pg-decor-safe-zone-alpha', String(asFiniteNumber(decor.safeZoneAlpha, 0.08)));
@@ -440,6 +454,11 @@ function buildSlides(data) {
                 const rootStyles = getComputedStyle(document.documentElement);
                 const axisColor = rootStyles.getPropertyValue('--pg-chart-axis').trim() || '#f4f8ff';
                 const labelColor = rootStyles.getPropertyValue('--pg-chart-label').trim() || '#ffffff';
+                const baseAxisSize = Number.parseFloat(rootStyles.getPropertyValue('--pg-chart-axis-size')) || 22;
+                const baseDataLabelSize = Number.parseFloat(rootStyles.getPropertyValue('--pg-chart-datalabel-size')) || 20;
+                const axisTickSize = denseLabels ? Math.max(12, baseAxisSize - 3) : baseAxisSize;
+                const yTickSize = denseLabels ? Math.max(12, baseAxisSize - 5) : Math.max(12, baseAxisSize - 2);
+                const dataLabelSize = denseLabels ? Math.max(12, baseDataLabelSize - 3) : baseDataLabelSize;
                 return {
                     indexAxis: isHorizontal ? 'y' : 'x',
                     responsive: true,
@@ -451,7 +470,7 @@ function buildSlides(data) {
                             grid: { display: false },
                             ticks: {
                                 color: axisColor,
-                                font: { size: denseLabels ? 18 : 22, weight: 'bold' },
+                                font: { size: axisTickSize, weight: 'bold' },
                                 maxRotation: isHorizontal ? 0 : 35,
                                 minRotation: isHorizontal ? 0 : 35,
                             },
@@ -459,7 +478,7 @@ function buildSlides(data) {
                         y: {
                             ticks: {
                                 color: axisColor,
-                                font: { size: denseLabels ? 16 : 20, weight: 'bold' },
+                                font: { size: yTickSize, weight: 'bold' },
                             },
                         },
                     },
@@ -478,7 +497,7 @@ function buildSlides(data) {
                             },
                             offset: 8,
                             color: labelColor,
-                            font: { size: denseLabels ? 16 : 20, weight: '700' },
+                            font: { size: dataLabelSize, weight: '700' },
                             formatter: (v) => {
                                 if (v === null || v === undefined) return '';
                                 if (config.shorten && Math.abs(v) >= 1000000) {
@@ -499,6 +518,8 @@ function buildSlides(data) {
                     rootStyles.getPropertyValue('--pg-chart-3').trim(),
                     rootStyles.getPropertyValue('--pg-chart-4').trim(),
                 ].filter(Boolean);
+                const chartLineWidth = Number.parseFloat(rootStyles.getPropertyValue('--pg-chart-line-width')) || 8;
+                const chartPointRadius = Number.parseFloat(rootStyles.getPropertyValue('--pg-chart-point-radius')) || 6;
                 function applyThemePalette(config) {
                     if (!palette.length) return;
                     const datasets = Array.isArray(config?.data?.datasets) ? config.data.datasets : [];
@@ -521,6 +542,10 @@ function buildSlides(data) {
                         } else {
                             dataset.borderColor = dataset.borderColor ? baseColor : (dataset.backgroundColor || altColor);
                         }
+                        if (dataset.type === 'line' || config.type === 'line') {
+                            dataset.borderWidth = chartLineWidth;
+                            dataset.pointRadius = chartPointRadius;
+                        }
                     });
                 }
 
@@ -528,6 +553,7 @@ function buildSlides(data) {
                     try {
                         const ctx = canvas.getContext('2d');
                         const config = JSON.parse(canvas.dataset.config);
+                        config.type = canvas.dataset.type;
                         applyThemePalette(config);
                         new Chart(ctx, {
                             type: canvas.dataset.type,

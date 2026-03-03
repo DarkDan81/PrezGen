@@ -221,3 +221,10 @@ Deliverable:
 - `imageShadowEnabled`.
 2. Bind toggles into runtime class contract so all three reference themes react uniformly.
 3. Group editor controls by semantics (palette, typography/surfaces, chart, table, decor core, grid/effects, badge/logo, shapes) for faster navigation.
+4. Promote previously hardcoded but safe controls into token contract:
+- `typography.fontPreset` (`sans|modern|industrial`),
+- `chart.axisLabelSize`,
+- `chart.dataLabelSize`,
+- `chart.lineWidth`,
+- `chart.pointRadius`,
+- `decor.shapeStyle` (`soft|crisp|glow`).

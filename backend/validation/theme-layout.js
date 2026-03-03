@@ -54,6 +54,7 @@ const THEME_TOKEN_DEFAULTS = {
         bodySize: 28,
         lineHeight: 1.38,
         profile: 'technical',
+        fontPreset: 'sans',
     },
     spacing: {
         radius: 8,
@@ -62,6 +63,10 @@ const THEME_TOKEN_DEFAULTS = {
     chart: {
         palette: ['#39a8ff', '#ff7b1f', '#69bcff', '#ff9a4d'],
         mode: 'contrast',
+        axisLabelSize: 22,
+        dataLabelSize: 20,
+        lineWidth: 8,
+        pointRadius: 6,
     },
     table: {
         headerBg: '#152135',
@@ -102,15 +107,16 @@ const THEME_TOKEN_DEFAULTS = {
         shapeBlobAnchor: 'top-right',
         shapeBlobSize: 1,
         shapeBlobOpacity: 1,
+        shapeStyle: 'soft',
     },
 };
 
 const ALLOWED_TOP_LEVEL = new Set(['color', 'typography', 'spacing', 'chart', 'table', 'decor']);
 const ALLOWED_GROUP_KEYS = {
     color: new Set(['bgCanvas', 'textPrimary', 'accent', 'accentSecondary', 'success', 'warn', 'info']),
-    typography: new Set(['titleSize', 'subtitleSize', 'bodySize', 'lineHeight', 'profile']),
+    typography: new Set(['titleSize', 'subtitleSize', 'bodySize', 'lineHeight', 'profile', 'fontPreset']),
     spacing: new Set(['radius', 'borderWidth']),
-    chart: new Set(['palette', 'mode']),
+    chart: new Set(['palette', 'mode', 'axisLabelSize', 'dataLabelSize', 'lineWidth', 'pointRadius']),
     table: new Set(['headerBg', 'headerText', 'mode']),
     decor: new Set([
         'presetPack',
@@ -146,6 +152,7 @@ const ALLOWED_GROUP_KEYS = {
         'shapeBlobAnchor',
         'shapeBlobSize',
         'shapeBlobOpacity',
+        'shapeStyle',
     ]),
 };
 
@@ -156,8 +163,10 @@ const ALLOWED_BLOB_ANCHORS = new Set(['top-right', 'top-left', 'bottom-right', '
 const ALLOWED_BADGE_VARIANTS = new Set(['minimal', 'outlined', 'signal']);
 const ALLOWED_PRESET_PACKS = new Set(['compact', 'balanced', 'bold']);
 const ALLOWED_TYPO_PROFILES = new Set(['executive', 'technical', 'sales']);
+const ALLOWED_FONT_PRESETS = new Set(['sans', 'modern', 'industrial']);
 const ALLOWED_CHART_MODES = new Set(['contrast', 'minimal', 'dashboard']);
 const ALLOWED_TABLE_MODES = new Set(['dense', 'normal', 'boardroom']);
+const ALLOWED_SHAPE_STYLES = new Set(['soft', 'crisp', 'glow']);
 const MAX_LOGO_IMAGE_URL_LENGTH = 30_000_000;
 
 function findUnknownTokenKeys(tokens) {
@@ -233,6 +242,13 @@ function validateThemeTokens(tokens) {
             message: 'profile must be one of executive, technical, sales',
         });
     }
+    if (typography.fontPreset !== undefined && !ALLOWED_FONT_PRESETS.has(String(typography.fontPreset))) {
+        details.push({
+            path: 'tokens.typography.fontPreset',
+            rule: 'enum',
+            message: 'fontPreset must be one of sans, modern, industrial',
+        });
+    }
 
     if (spacing.slidePadding !== undefined) {
         details.push({
@@ -276,6 +292,10 @@ function validateThemeTokens(tokens) {
             message: 'chart.mode must be one of contrast, minimal, dashboard',
         });
     }
+    addRangeDetails(details, 'tokens.chart.axisLabelSize', chart.axisLabelSize, 12, 32);
+    addRangeDetails(details, 'tokens.chart.dataLabelSize', chart.dataLabelSize, 12, 32);
+    addRangeDetails(details, 'tokens.chart.lineWidth', chart.lineWidth, 1, 16);
+    addRangeDetails(details, 'tokens.chart.pointRadius', chart.pointRadius, 0, 16);
 
     if (table.headerBg && !isHexColor(table.headerBg)) {
         details.push({ path: 'tokens.table.headerBg', rule: 'hexColor', message: 'table.headerBg must be a hex color' });
@@ -344,6 +364,13 @@ function validateThemeTokens(tokens) {
             path: 'tokens.decor.shapeBlobAnchor',
             rule: 'enum',
             message: 'shapeBlobAnchor must be one of top-right, top-left, bottom-right, bottom-left',
+        });
+    }
+    if (decor.shapeStyle !== undefined && !ALLOWED_SHAPE_STYLES.has(String(decor.shapeStyle))) {
+        details.push({
+            path: 'tokens.decor.shapeStyle',
+            rule: 'enum',
+            message: 'shapeStyle must be one of soft, crisp, glow',
         });
     }
 
@@ -512,6 +539,9 @@ function normalizeThemeTokens(tokens, options = {}) {
             : THEME_TOKEN_DEFAULTS.decor.shapeBlobAnchor,
         shapeBlobSize: clamp(merged.decor.shapeBlobSize, 0.4, 1.8, THEME_TOKEN_DEFAULTS.decor.shapeBlobSize),
         shapeBlobOpacity: clamp(merged.decor.shapeBlobOpacity, 0, 1, THEME_TOKEN_DEFAULTS.decor.shapeBlobOpacity),
+        shapeStyle: ALLOWED_SHAPE_STYLES.has(String(merged.decor.shapeStyle))
+            ? String(merged.decor.shapeStyle)
+            : THEME_TOKEN_DEFAULTS.decor.shapeStyle,
     };
     const adjustedDecor = resolvePresetAdjustedDecor(normalizedDecorRaw);
 
@@ -533,6 +563,9 @@ function normalizeThemeTokens(tokens, options = {}) {
             profile: ALLOWED_TYPO_PROFILES.has(String(merged.typography.profile))
                 ? String(merged.typography.profile)
                 : THEME_TOKEN_DEFAULTS.typography.profile,
+            fontPreset: ALLOWED_FONT_PRESETS.has(String(merged.typography.fontPreset))
+                ? String(merged.typography.fontPreset)
+                : THEME_TOKEN_DEFAULTS.typography.fontPreset,
         },
         spacing: {
             radius: clamp(merged.spacing.radius, 0, 48, THEME_TOKEN_DEFAULTS.spacing.radius),
@@ -545,6 +578,10 @@ function normalizeThemeTokens(tokens, options = {}) {
             mode: ALLOWED_CHART_MODES.has(String(merged.chart.mode))
                 ? String(merged.chart.mode)
                 : THEME_TOKEN_DEFAULTS.chart.mode,
+            axisLabelSize: clamp(merged.chart.axisLabelSize, 12, 32, THEME_TOKEN_DEFAULTS.chart.axisLabelSize),
+            dataLabelSize: clamp(merged.chart.dataLabelSize, 12, 32, THEME_TOKEN_DEFAULTS.chart.dataLabelSize),
+            lineWidth: clamp(merged.chart.lineWidth, 1, 16, THEME_TOKEN_DEFAULTS.chart.lineWidth),
+            pointRadius: clamp(merged.chart.pointRadius, 0, 16, THEME_TOKEN_DEFAULTS.chart.pointRadius),
         },
         table: {
             headerBg: isHexColor(merged.table.headerBg) ? merged.table.headerBg : THEME_TOKEN_DEFAULTS.table.headerBg,

@@ -10,7 +10,7 @@
 }
 
 *, *::before, *::after {
-    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+    font-family: var(--pg-font-family, "Segoe UI", Roboto, Helvetica, Arial, sans-serif) !important;
 }
 
 body.viewer-mode {
@@ -147,6 +147,19 @@ body.viewer-mode {
     background: linear-gradient(130deg, rgba(0, 255, 255, 0.12), rgba(255, 47, 210, 0.16));
     clip-path: var(--pg-triangle-clip, polygon(100% 0, 100% 100%, 0 100%));
     opacity: calc((0.16 + (var(--pg-decor-intensity, 2) * 0.14)) * var(--cp-decor-mult) * var(--pg-shape-triangle-opacity, 1) * var(--pg-shape-triangle-enabled, 1));
+}
+
+.theme-shape-style-crisp .decor-blob {
+    border-radius: 22%;
+}
+.theme-shape-style-crisp .slide-decor-line {
+    background: linear-gradient(130deg, rgba(0, 255, 255, 0.22), rgba(255, 47, 210, 0.24));
+}
+.theme-shape-style-glow .decor-blob {
+    filter: drop-shadow(0 0 30px rgba(0, 255, 255, 0.22));
+}
+.theme-shape-style-glow .slide-decor-line {
+    box-shadow: 0 0 44px rgba(255, 47, 210, 0.24);
 }
 
 .slide-header h2 {
@@ -324,6 +337,6 @@ body.viewer-mode {
 
 @media print {
     html, body, .slide, .slide * {
-        font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+        font-family: var(--pg-font-family, "Segoe UI", Roboto, Helvetica, Arial, sans-serif) !important;
     }
 }

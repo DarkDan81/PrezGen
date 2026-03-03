@@ -10,7 +10,7 @@
 }
 
 *, *::before, *::after {
-    font-family: "Segoe UI", Tahoma, Arial, sans-serif !important;
+    font-family: var(--pg-font-family, "Segoe UI", Tahoma, Arial, sans-serif) !important;
 }
 
 body.viewer-mode {
@@ -156,6 +156,19 @@ body.viewer-mode {
     background: linear-gradient(135deg, rgba(57, 168, 255, 0.08), rgba(255, 123, 31, 0.13));
     clip-path: var(--pg-triangle-clip, polygon(100% 0, 100% 100%, 0 100%));
     opacity: calc((0.18 + (var(--pg-decor-intensity, 2) * 0.16)) * var(--fd-decor-mult) * var(--pg-shape-triangle-opacity, 1) * var(--pg-shape-triangle-enabled, 1));
+}
+
+.theme-shape-style-crisp .decor-blob {
+    border-radius: 24%;
+}
+.theme-shape-style-crisp .slide-decor-line {
+    background: linear-gradient(135deg, rgba(57, 168, 255, 0.16), rgba(255, 123, 31, 0.2));
+}
+.theme-shape-style-glow .decor-blob {
+    filter: drop-shadow(0 0 22px rgba(57, 168, 255, 0.2));
+}
+.theme-shape-style-glow .slide-decor-line {
+    box-shadow: 0 0 40px rgba(255, 123, 31, 0.22);
 }
 
 .slide-header h2 {
@@ -341,6 +354,6 @@ body.viewer-mode {
 
 @media print {
     html, body, .slide, .slide * {
-        font-family: "Segoe UI", Tahoma, Arial, sans-serif !important;
+        font-family: var(--pg-font-family, "Segoe UI", Tahoma, Arial, sans-serif) !important;
     }
 }

@@ -34,6 +34,7 @@ function defaultTokens(): ThemeTokens {
       bodySize: 28,
       lineHeight: 1.38,
       profile: 'technical',
+      fontPreset: 'sans',
     },
     spacing: {
       radius: 8,
@@ -42,6 +43,10 @@ function defaultTokens(): ThemeTokens {
     chart: {
       palette: ['#39a8ff', '#ff7b1f', '#69bcff', '#ff9a4d'],
       mode: 'contrast',
+      axisLabelSize: 22,
+      dataLabelSize: 20,
+      lineWidth: 8,
+      pointRadius: 6,
     },
     table: {
       headerBg: '#152135',
@@ -82,6 +87,7 @@ function defaultTokens(): ThemeTokens {
       shapeBlobAnchor: 'top-right',
       shapeBlobSize: 1,
       shapeBlobOpacity: 1,
+      shapeStyle: 'soft',
     },
   };
 }
@@ -89,6 +95,7 @@ function defaultTokens(): ThemeTokens {
 function normalizeTokens(input?: ThemeTokens): ThemeTokens {
   type DecorTokens = NonNullable<ThemeTokens['decor']>;
   const base = defaultTokens();
+  const baseChart = base.chart || {};
   const next = input && typeof input === 'object' ? input : ({} as ThemeTokens);
   const baseDecor = (base.decor || {}) as DecorTokens;
   const nextDecor = ((next.decor && typeof next.decor === 'object') ? next.decor : {}) as DecorTokens;
@@ -134,6 +141,7 @@ function normalizeTokens(input?: ThemeTokens): ThemeTokens {
     shapeBlobAnchor: (nextDecor.shapeBlobAnchor as DecorTokens['shapeBlobAnchor']) || baseDecor.shapeBlobAnchor,
     shapeBlobSize: typeof nextDecor.shapeBlobSize === 'number' ? nextDecor.shapeBlobSize : baseDecor.shapeBlobSize,
     shapeBlobOpacity: typeof nextDecor.shapeBlobOpacity === 'number' ? nextDecor.shapeBlobOpacity : baseDecor.shapeBlobOpacity,
+    shapeStyle: (nextDecor.shapeStyle as DecorTokens['shapeStyle']) || baseDecor.shapeStyle,
   };
 
   return {
@@ -146,6 +154,10 @@ function normalizeTokens(input?: ThemeTokens): ThemeTokens {
     typography: {
       ...base.typography,
       ...(next.typography || {}),
+      fontPreset:
+        typeof next.typography?.fontPreset === 'string'
+          ? (next.typography.fontPreset as 'sans' | 'modern' | 'industrial')
+          : base.typography.fontPreset,
     },
     spacing: {
       ...base.spacing,
@@ -154,6 +166,10 @@ function normalizeTokens(input?: ThemeTokens): ThemeTokens {
     chart: {
       ...base.chart,
       ...(next.chart || {}),
+      axisLabelSize: typeof next.chart?.axisLabelSize === 'number' ? next.chart.axisLabelSize : baseChart.axisLabelSize,
+      dataLabelSize: typeof next.chart?.dataLabelSize === 'number' ? next.chart.dataLabelSize : baseChart.dataLabelSize,
+      lineWidth: typeof next.chart?.lineWidth === 'number' ? next.chart.lineWidth : baseChart.lineWidth,
+      pointRadius: typeof next.chart?.pointRadius === 'number' ? next.chart.pointRadius : baseChart.pointRadius,
     },
     table: {
       ...base.table,
@@ -739,6 +755,25 @@ export function ThemesPage() {
                     <option value="sales">{t('themes.profileSales')}</option>
                   </select>
                 </Field>
+                <Field label={t('themes.fontPreset')}>
+                  <select
+                    className="ui-select"
+                    value={tokens.typography.fontPreset || 'sans'}
+                    onChange={(e) =>
+                      setTokens((prev) => ({
+                        ...prev,
+                        typography: {
+                          ...prev.typography,
+                          fontPreset: e.target.value as 'sans' | 'modern' | 'industrial',
+                        },
+                      }))
+                    }
+                  >
+                    <option value="sans">{t('themes.fontPresetSans')}</option>
+                    <option value="modern">{t('themes.fontPresetModern')}</option>
+                    <option value="industrial">{t('themes.fontPresetIndustrial')}</option>
+                  </select>
+                </Field>
                 <Field label={withRange(t('themes.radius'), 0, 48)}>
                   <input
                     className="ui-input"
@@ -828,6 +863,68 @@ export function ThemesPage() {
                     <option value="minimal">{t('themes.chartModeMinimal')}</option>
                     <option value="dashboard">{t('themes.chartModeDashboard')}</option>
                   </select>
+                </Field>
+                <Field label={withRange(t('themes.chartAxisLabelSize'), 12, 32)}>
+                  <input
+                    className="ui-input"
+                    type="number"
+                    min={12}
+                    max={32}
+                    value={typeof tokens.chart?.axisLabelSize === 'number' ? tokens.chart.axisLabelSize : 22}
+                    onChange={(e) =>
+                      setTokens((prev) => ({
+                        ...prev,
+                        chart: { ...prev.chart, axisLabelSize: Number(e.target.value || 22) },
+                      }))
+                    }
+                  />
+                </Field>
+                <Field label={withRange(t('themes.chartDataLabelSize'), 12, 32)}>
+                  <input
+                    className="ui-input"
+                    type="number"
+                    min={12}
+                    max={32}
+                    value={typeof tokens.chart?.dataLabelSize === 'number' ? tokens.chart.dataLabelSize : 20}
+                    onChange={(e) =>
+                      setTokens((prev) => ({
+                        ...prev,
+                        chart: { ...prev.chart, dataLabelSize: Number(e.target.value || 20) },
+                      }))
+                    }
+                  />
+                </Field>
+                <Field label={withRange(t('themes.chartLineWidth'), 1, 16)}>
+                  <input
+                    className="ui-input"
+                    type="number"
+                    min={1}
+                    max={16}
+                    step={0.5}
+                    value={typeof tokens.chart?.lineWidth === 'number' ? tokens.chart.lineWidth : 8}
+                    onChange={(e) =>
+                      setTokens((prev) => ({
+                        ...prev,
+                        chart: { ...prev.chart, lineWidth: Number(e.target.value || 8) },
+                      }))
+                    }
+                  />
+                </Field>
+                <Field label={withRange(t('themes.chartPointRadius'), 0, 16)}>
+                  <input
+                    className="ui-input"
+                    type="number"
+                    min={0}
+                    max={16}
+                    step={0.5}
+                    value={typeof tokens.chart?.pointRadius === 'number' ? tokens.chart.pointRadius : 6}
+                    onChange={(e) =>
+                      setTokens((prev) => ({
+                        ...prev,
+                        chart: { ...prev.chart, pointRadius: Number(e.target.value || 6) },
+                      }))
+                    }
+                  />
                 </Field>
                 </div>
                 <div className="theme-token-group">
@@ -954,6 +1051,25 @@ export function ThemesPage() {
                       }))
                     }
                   />
+                </Field>
+                <Field label={t('themes.shapeStyle')}>
+                  <select
+                    className="ui-select"
+                    value={tokens.decor?.shapeStyle || 'soft'}
+                    onChange={(e) =>
+                      setTokens((prev) => ({
+                        ...prev,
+                        decor: {
+                          ...(prev.decor || {}),
+                          shapeStyle: e.target.value as 'soft' | 'crisp' | 'glow',
+                        },
+                      }))
+                    }
+                  >
+                    <option value="soft">{t('themes.shapeStyleSoft')}</option>
+                    <option value="crisp">{t('themes.shapeStyleCrisp')}</option>
+                    <option value="glow">{t('themes.shapeStyleGlow')}</option>
+                  </select>
                 </Field>
                 </div>
                 <div className="theme-token-group">

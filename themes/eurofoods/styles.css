@@ -9,7 +9,7 @@
 }
 
 *, *::before, *::after {
-    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+    font-family: var(--pg-font-family, "Segoe UI", Roboto, Helvetica, Arial, sans-serif) !important;
 }
 
 body.viewer-mode {
@@ -137,6 +137,19 @@ body.viewer-mode {
     background: rgba(167, 169, 172, 0.26);
     clip-path: var(--pg-triangle-clip, polygon(100% 0, 100% 100%, 0 100%));
     opacity: calc((0.48 + (var(--pg-decor-intensity, 2) * 0.08)) * var(--ef-decor-mult) * var(--pg-shape-triangle-opacity, 1) * var(--pg-shape-triangle-enabled, 1));
+}
+
+.theme-shape-style-crisp .decor-blob {
+    border-radius: 30%;
+}
+.theme-shape-style-crisp .slide-decor-line {
+    background: rgba(167, 169, 172, 0.34);
+}
+.theme-shape-style-glow .decor-blob {
+    filter: drop-shadow(0 0 18px rgba(140, 198, 63, 0.24));
+}
+.theme-shape-style-glow .slide-decor-line {
+    box-shadow: 0 0 30px rgba(84, 83, 89, 0.12);
 }
 
 .slide-header h2 {
@@ -305,6 +318,6 @@ body.viewer-mode {
 
 @media print {
     html, body, .slide, .slide * {
-        font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+        font-family: var(--pg-font-family, "Segoe UI", Roboto, Helvetica, Arial, sans-serif) !important;
     }
 }
