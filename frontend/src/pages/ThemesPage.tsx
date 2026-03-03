@@ -2,6 +2,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { client } from '../api/client';
+import { DemoCoach } from '../demo/DemoCoach';
+import { clearGuidedDemoState, readGuidedDemoState, writeGuidedDemoState } from '../demo/guidedDemoState';
+import { seedGuidedDemo } from '../demo/seedGuidedDemo';
 import type { ThemePreviewResponse, ThemeTokens } from '../api/types';
 import { useI18n } from '../shared/i18n/I18nProvider';
 import { Button } from '../shared/ui/Button';
@@ -322,6 +325,10 @@ export function ThemesPage() {
   const [error, setError] = useState('');
   const [selectedSceneId, setSelectedSceneId] = useState('title');
   const [compareMode, setCompareMode] = useState(true);
+  const [guidedStep, setGuidedStep] = useState(0);
+  const [guidedBusy, setGuidedBusy] = useState(false);
+  const [guidedPaused, setGuidedPaused] = useState(false);
+  const [guidedStatus, setGuidedStatus] = useState('');
 
   const previewDebounceRef = useRef<number | null>(null);
   const [previewDraft, setPreviewDraft] = useState<ThemePreviewResponse | null>(null);
@@ -329,6 +336,8 @@ export function ThemesPage() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const logoImageInputRef = useRef<HTMLInputElement | null>(null);
+  const guidedState = readGuidedDemoState();
+  const guidedActive = Boolean(guidedState?.active && guidedState.phase === 'themes');
 
   const themesQuery = useQuery({ queryKey: ['themes'], queryFn: client.listThemes });
   const presentationsQuery = useQuery({ queryKey: ['presentations'], queryFn: client.listPresentations });
@@ -528,6 +537,284 @@ export function ThemesPage() {
     }
   };
 
+  useEffect(() => {
+    if (!guidedActive || !guidedState) return;
+    setGuidedStep(Number.isFinite(guidedState.stepIndex) ? guidedState.stepIndex : 0);
+    setGuidedPaused(Boolean(guidedState.paused));
+    if (guidedState.themeId) loadThemeToEditor(guidedState.themeId);
+    if (guidedState.presentationId) setSelectedPresentationId(guidedState.presentationId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [guidedActive, guidedState?.themeId, guidedState?.presentationId, guidedState?.paused]);
+
+  const guidedThemeSteps: Array<{
+    selector: string;
+    title: string;
+    description: string;
+    kind: 'info' | 'action';
+    delayMs?: number;
+    run?: () => Promise<void>;
+  }> = [
+    {
+      selector: '[data-demo="themes-theme-select"]',
+      title: 'Добро пожаловать в автодемо',
+      description: 'Сейчас мы шаг за шагом создадим демо-тему и демо-презентацию. Подсказка появляется, объясняет действие и исчезает перед автокликом.',
+      kind: 'info',
+      delayMs: 7000,
+    },
+    {
+      selector: '[data-demo="themes-theme-select"]',
+      title: 'Автосборка демо-данных',
+      description: 'Создаем тему и презентацию прямо в процессе демо. Вы увидите результат без ручных кликов.',
+      kind: 'action',
+      run: async () => {
+        setGuidedStatus('Создаем тему и презентацию...');
+        const seeded = await seedGuidedDemo((msg) => setGuidedStatus(msg));
+        writeGuidedDemoState({
+          active: true,
+          phase: 'themes',
+          stepIndex: 1,
+          presentationId: seeded.presentationId,
+          themeId: seeded.themeId,
+          showcaseThemeIds: seeded.showcaseThemeIds,
+          paused: false,
+        });
+        loadThemeToEditor(seeded.themeId);
+        setSelectedPresentationId(seeded.presentationId);
+      },
+    },
+    {
+      selector: '[data-demo="themes-theme-select"]',
+      title: 'Редактор тем: выбор шаблона',
+      description: 'Здесь выбирается тема, которую мы будем редактировать и применять к презентации.',
+      kind: 'info',
+      delayMs: 6200,
+    },
+    {
+      selector: '[data-demo="themes-core-accordion"]',
+      title: 'Основные настройки темы',
+      description: 'В этом блоке находятся ключевые параметры: палитра, типографика и токены, которые всегда попадают на слайды.',
+      kind: 'info',
+      delayMs: 6200,
+    },
+    {
+      selector: '[data-demo="themes-optional-accordion"]',
+      title: 'Опциональный декор',
+      description: 'Здесь настраиваются декоративные элементы, которые можно включать и выключать без изменения компоновки слайда.',
+      kind: 'info',
+      delayMs: 6200,
+    },
+    {
+      selector: '[data-demo="themes-core-accordion"]',
+      title: 'Сейчас покажем живые изменения',
+      description: 'Сначала изменим базовые цвета и типографику, затем пройдемся по сценам превью, чтобы разница была заметна на глаз.',
+      kind: 'info',
+      delayMs: 6400,
+    },
+    {
+      selector: '[data-demo="themes-core-accordion"]',
+      title: 'Показываем изменения темы в превью',
+      description: 'Сейчас автоматически изменим палитру и переключим сцены, чтобы наглядно увидеть, как тема влияет на слайды.',
+      kind: 'action',
+      run: async () => {
+        const core = document.querySelector('[data-demo="themes-core-accordion"]') as HTMLDetailsElement | null;
+        if (core) core.open = true;
+        setGuidedStatus('Сцена: титульный слайд');
+        setSelectedSceneId('title');
+        await new Promise((resolve) => window.setTimeout(resolve, 1300));
+        setGuidedStatus('Сбрасываем в базовый вид, чтобы разница была очевидной');
+        const base = defaultTokens();
+        setTokens(base);
+        await new Promise((resolve) => window.setTimeout(resolve, 2200));
+        setGuidedStatus('Меняем палитру на контрастный вариант');
+        setTokens((prev) => ({
+          ...prev,
+          color: {
+            ...prev.color,
+            bgCanvas: '#f4f8ff',
+            textPrimary: '#263041',
+            accent: '#2ea7ff',
+            accentSecondary: '#6ad1ff',
+            info: '#2f7fd7',
+          },
+          chart: {
+            ...prev.chart,
+            palette: ['#2f7fd7', '#1f5fb0', '#3d97f3', '#15519b'],
+            mode: 'dashboard',
+          },
+          table: {
+            ...prev.table,
+            headerBg: '#dbe9fb',
+            headerText: '#1f2e44',
+          },
+          typography: { ...prev.typography, subtitleSize: 30, bodySize: 26 },
+        }));
+        await new Promise((resolve) => window.setTimeout(resolve, 2200));
+        setGuidedStatus('Сцена: график');
+        setSelectedSceneId('chart');
+        await new Promise((resolve) => window.setTimeout(resolve, 2000));
+        setGuidedStatus('Возвращаем праздничную палитру');
+        setTokens((prev) => ({
+          ...prev,
+          color: {
+            ...prev.color,
+            bgCanvas: '#fff8f2',
+            textPrimary: '#3f3730',
+            accent: '#d95f18',
+            accentSecondary: '#b3933b',
+          },
+          chart: {
+            ...prev.chart,
+            palette: ['#d95f18', '#b3933b', '#5f8d4a', '#6f93a0'],
+            mode: 'contrast',
+          },
+          table: {
+            ...prev.table,
+            headerBg: '#f2e8dc',
+            headerText: '#3f3730',
+          },
+          typography: { ...prev.typography, subtitleSize: 28, bodySize: 26 },
+        }));
+        await new Promise((resolve) => window.setTimeout(resolve, 1800));
+        setGuidedStatus('Сцена: таблица');
+        setSelectedSceneId('table');
+        await new Promise((resolve) => window.setTimeout(resolve, 2000));
+        setGuidedStatus('Сцена: карточки');
+        setSelectedSceneId('cards');
+        await new Promise((resolve) => window.setTimeout(resolve, 2200));
+      },
+    },
+    {
+      selector: '[data-demo="themes-core-accordion"]',
+      title: 'Декор темы в реальном времени',
+      description: 'Покажем, как включение и выключение опционального декора меняет вид слайда без изменения контента.',
+      kind: 'info',
+      delayMs: 6400,
+    },
+    {
+      selector: '[data-demo="themes-core-accordion"]',
+      title: 'Автонастройка параметров декора',
+      description: 'Меняем сетку и интенсивность декоративных фигур, чтобы увидеть визуальные режимы одной и той же темы.',
+      kind: 'action',
+      run: async () => {
+        const opt = document.querySelector('[data-demo="themes-optional-accordion"]') as HTMLDetailsElement | null;
+        if (opt) opt.open = true;
+        setGuidedStatus('Выключаем сетку');
+        await new Promise((resolve) => window.setTimeout(resolve, 1300));
+        setTokens((prev) => ({
+          ...prev,
+          decor: { ...(prev.decor || {}), gridEnabled: false },
+        }));
+        await new Promise((resolve) => window.setTimeout(resolve, 1700));
+        setGuidedStatus('Возвращаем сетку и усиливаем декор');
+        setTokens((prev) => ({
+          ...prev,
+          decor: { ...(prev.decor || {}), gridEnabled: true, intensity: 2.1, shapeTriangleOpacity: 0.45 },
+        }));
+        await new Promise((resolve) => window.setTimeout(resolve, 1900));
+      },
+    },
+    {
+      selector: '[data-demo="themes-apply-row"]',
+      title: 'Сохраняем результат',
+      description: 'Дальше применим тему к демо-презентации и перейдем в конструктор, где покажем блоки и редактирование.',
+      kind: 'info',
+      delayMs: 6200,
+    },
+    {
+      selector: '[data-demo="themes-apply-row"]',
+      title: 'Применение темы',
+      description: 'Сейчас тема применяется к демо-презентации. После этого откроем редактор и посмотрим результат.',
+      kind: 'action',
+      run: async () => {
+        const state = readGuidedDemoState();
+        if (!state?.presentationId || !selectedThemeId) return;
+        setGuidedStatus('Сохраняем изменения темы...');
+        await patchThemeMutation.mutateAsync(selectedThemeId);
+        setGuidedStatus('Применяем тему к демо-презентации...');
+        await applyThemeMutation.mutateAsync({
+          presentationId: state.presentationId,
+          themeId: selectedThemeId,
+        });
+        await new Promise((resolve) => window.setTimeout(resolve, 1400));
+      },
+    },
+    {
+      selector: '[data-demo="themes-apply-row"]',
+      title: 'Переходим в редактор презентации',
+      description: 'Далее покажем структуру слайдов, блоки, быструю смену тем и кнопки экспорта.',
+      kind: 'action',
+      run: async () => {
+        const state = readGuidedDemoState();
+        if (!state?.presentationId) return;
+        setGuidedStatus('Переходим в редактор презентации...');
+        writeGuidedDemoState({
+          ...state,
+          phase: 'editor',
+          stepIndex: 0,
+          paused: false,
+        });
+        navigate(`/presentations/${state.presentationId}?guidedDemo=1`);
+      },
+    },
+  ];
+
+  const nextGuidedThemeStep = () => {
+    const state = readGuidedDemoState();
+    if (!state) return;
+    const next = Math.min(guidedThemeSteps.length - 1, guidedStep + 1);
+    setGuidedStep(next);
+    writeGuidedDemoState({ ...state, stepIndex: next, paused: guidedPaused });
+  };
+
+  const prevGuidedThemeStep = () => {
+    const state = readGuidedDemoState();
+    if (!state) return;
+    const next = Math.max(0, guidedStep - 1);
+    setGuidedStep(next);
+    writeGuidedDemoState({ ...state, stepIndex: next, paused: guidedPaused });
+  };
+
+  useEffect(() => {
+    if (!guidedActive || guidedPaused) return;
+    const step = guidedThemeSteps[Math.min(guidedStep, guidedThemeSteps.length - 1)];
+    if (!step) return;
+    if (step.kind === 'info') setGuidedStatus('Ознакомьтесь с подсказкой...');
+    let canceled = false;
+    const run = async () => {
+      if (step.kind === 'info') {
+        const timeout = window.setTimeout(() => {
+          if (!canceled) nextGuidedThemeStep();
+        }, step.delayMs || 3800);
+        return () => window.clearTimeout(timeout);
+      }
+      try {
+        setGuidedBusy(true);
+        setGuidedStatus('Выполняем действие...');
+        if (step.run) await step.run();
+        if (!canceled) {
+          const timeout = window.setTimeout(() => {
+            if (!canceled) nextGuidedThemeStep();
+          }, 1200);
+          return () => window.clearTimeout(timeout);
+        }
+      } catch (e) {
+        setError((e as Error).message);
+      } finally {
+        setGuidedBusy(false);
+      }
+      return undefined;
+    };
+    let cleanup: (() => void) | undefined;
+    run().then((fn) => {
+      cleanup = fn;
+    });
+    return () => {
+      canceled = true;
+      if (cleanup) cleanup();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [guidedActive, guidedPaused, guidedStep]);
+
   const handleLogoImageFile = async (file: File) => {
     try {
       const hasImageMime = file.type.startsWith('image/');
@@ -574,6 +861,7 @@ export function ThemesPage() {
           <select
             className="ui-select themes-select-inline"
             value={selectedThemeId}
+            data-demo="themes-theme-select"
             aria-label={t('themes.listTitle')}
             onChange={(e) => loadThemeToEditor(e.target.value)}
           >
@@ -644,7 +932,7 @@ export function ThemesPage() {
                 </Field>
               ) : null}
 
-              <details className="theme-accordion">
+              <details className="theme-accordion" data-demo="themes-core-accordion">
                 <summary>{isRu ? 'Основные настройки (всегда на слайде)' : 'Core settings (always visible)'}</summary>
                 <div className="token-grid token-grid-single">
                 <div className="theme-token-group">
@@ -962,7 +1250,7 @@ export function ThemesPage() {
                 </div>
               </details>
 
-              <details className="theme-accordion">
+              <details className="theme-accordion" data-demo="themes-optional-accordion">
                 <summary>{isRu ? 'Опциональный декор (можно отключать)' : 'Optional decor (toggleable)'}</summary>
                 <div className="token-grid token-grid-single">
                 <div className="theme-token-group">
@@ -1573,7 +1861,7 @@ export function ThemesPage() {
               </div>
 
               <Field label={t('themes.applyToPresentation')}>
-                <div className="apply-row">
+                <div className="apply-row" data-demo="themes-apply-row">
                   <select
                     className="ui-select"
                     value={selectedPresentationId}
@@ -1664,6 +1952,31 @@ export function ThemesPage() {
           </div>
         </SectionCard>
       </div>
+      {guidedActive && guidedState ? (
+        <DemoCoach
+          title={guidedThemeSteps[Math.min(guidedStep, guidedThemeSteps.length - 1)]?.title || 'Гид по темам'}
+          description={guidedThemeSteps[Math.min(guidedStep, guidedThemeSteps.length - 1)]?.description || ''}
+          step={Math.min(guidedStep, guidedThemeSteps.length - 1)}
+          total={guidedThemeSteps.length}
+          selector={guidedThemeSteps[Math.min(guidedStep, guidedThemeSteps.length - 1)]?.selector}
+          busy={guidedBusy}
+          auto
+          paused={guidedPaused}
+          statusText={guidedStatus}
+          hidden={guidedThemeSteps[Math.min(guidedStep, guidedThemeSteps.length - 1)]?.kind === 'action'}
+          onPrev={guidedStep > 0 ? prevGuidedThemeStep : undefined}
+          onNext={() => nextGuidedThemeStep()}
+          onTogglePause={() => {
+            const next = !guidedPaused;
+            setGuidedPaused(next);
+            if (guidedState) writeGuidedDemoState({ ...guidedState, paused: next });
+          }}
+          onSkip={() => {
+            clearGuidedDemoState();
+            navigate('/');
+          }}
+        />
+      ) : null}
     </div>
   );
 }

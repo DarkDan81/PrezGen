@@ -1,0 +1,51 @@
+.demo-coach {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(420px, calc(100vw - 32px));
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--panel-bg) 95%, #000 5%);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
+  padding: 12px;
+  z-index: 1000;
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.demo-coach.is-hidden {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.96);
+  pointer-events: none;
+}
+
+.demo-coach-title {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.demo-coach-step {
+  margin-top: 2px;
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.demo-coach-text {
+  margin: 8px 0 10px;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.demo-coach-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.demo-target-active {
+  position: relative;
+  outline: 2px solid color-mix(in srgb, var(--accent) 70%, #ffffff);
+  outline-offset: 2px;
+  border-radius: 8px;
+  z-index: 998;
+}
