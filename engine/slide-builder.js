@@ -207,6 +207,25 @@ function isHexColor(value) {
     return typeof value === 'string' && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(value.trim());
 }
 
+function hexToRgb(hex) {
+    if (!isHexColor(hex)) return null;
+    const raw = hex.trim().replace('#', '');
+    const normalized = raw.length === 3
+        ? raw.split('').map((c) => c + c).join('')
+        : raw.slice(0, 6);
+    return {
+        r: Number.parseInt(normalized.slice(0, 2), 16),
+        g: Number.parseInt(normalized.slice(2, 4), 16),
+        b: Number.parseInt(normalized.slice(4, 6), 16),
+    };
+}
+
+function rgbaFromHex(hex, alpha, fallback) {
+    const rgb = hexToRgb(hex);
+    if (!rgb) return fallback;
+    return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
+}
+
 function asFiniteNumber(value, fallback) {
     const n = Number(value);
     return Number.isFinite(n) ? n : fallback;
@@ -261,16 +280,23 @@ function buildThemeVarsCss(tokens) {
     if (isHexColor(table.headerBg)) push('--pg-table-header-bg', String(table.headerBg).trim());
     if (isHexColor(table.headerText)) push('--pg-table-header-text', String(table.headerText).trim());
 
+    const textColor = isHexColor(color.textPrimary) ? String(color.textPrimary).trim() : '#e7edf6';
+    const accentSecondary = isHexColor(color.accentSecondary) ? String(color.accentSecondary).trim() : '#39a8ff';
+    const accent = isHexColor(color.accent) ? String(color.accent).trim() : '#ff7b1f';
+    push('--pg-shadow-color', rgbaFromHex(textColor, 0.2, 'rgba(20, 30, 45, 0.2)'));
+    push('--pg-glow-color', rgbaFromHex(accent, 0.34, 'rgba(255, 123, 31, 0.34)'));
+    push('--pg-grid-color', rgbaFromHex(accentSecondary, 0.14, 'rgba(57, 168, 255, 0.14)'));
+
     const chartMode = String(chart.mode || 'contrast');
     if (chartMode === 'minimal') {
-        push('--pg-chart-axis', '#b8c7de');
-        push('--pg-chart-label', '#d9e4f4');
+        push('--pg-chart-axis', rgbaFromHex(textColor, 0.72, '#8798b1'));
+        push('--pg-chart-label', rgbaFromHex(textColor, 0.86, '#b7c6dc'));
     } else if (chartMode === 'dashboard') {
-        push('--pg-chart-axis', '#e7eefb');
-        push('--pg-chart-label', '#f8fbff');
+        push('--pg-chart-axis', rgbaFromHex(textColor, 0.9, '#d4dff0'));
+        push('--pg-chart-label', rgbaFromHex(textColor, 1, '#eef5ff'));
     } else {
-        push('--pg-chart-axis', '#f4f8ff');
-        push('--pg-chart-label', '#ffffff');
+        push('--pg-chart-axis', rgbaFromHex(textColor, 0.82, '#bdcae0'));
+        push('--pg-chart-label', rgbaFromHex(textColor, 0.96, '#e8f0ff'));
     }
     push('--pg-chart-axis-size', `${asFiniteNumber(chart.axisLabelSize, 22)}px`);
     push('--pg-chart-datalabel-size', `${asFiniteNumber(chart.dataLabelSize, 20)}px`);

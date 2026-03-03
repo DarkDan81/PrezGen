@@ -107,6 +107,17 @@ Completed.
   - runtime CSS vars / body classes,
   - preview + export render path.
 
+13. Cross-theme behavior parity fixes:
+- chart axis/value labels now derive from `tokens.color.textPrimary` (mode-adjusted alpha),
+  so light themes no longer render unreadable pale labels on light backgrounds;
+- `gridEnabled` now disables visible grid layer in all three reference themes
+  (including cyberpunk base grid background);
+- shadow/glow visuals in reference themes now use shared runtime vars derived from base tokens:
+  - `--pg-shadow-color` (from `textPrimary`),
+  - `--pg-glow-color` (from `accent`),
+  - `--pg-grid-color` (from `accentSecondary`),
+  making color tuning possible from editor without CSS edits.
+
 ## Not yet tokenized (remaining hardcoded layer)
 
 1. Exact gradient formulas and blend curves for decor primitives (we expose safe style presets, not raw formula editing).
