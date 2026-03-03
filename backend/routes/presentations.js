@@ -46,7 +46,7 @@ const { getLayoutPresetById, listLayoutPresets } = require('../repositories/layo
 const { getThemeById, listThemes, normalizeThemeId } = require('../services/themes-service');
 const { buildPreviewHtml, buildThemePreviewHtml } = require('../services/preview-service');
 const { createRenderJob, getRenderJobById } = require('../repositories/render-job-repository');
-const { queuePdfJob } = require('../services/render-service');
+const { queuePdfJob, queuePptxJob } = require('../services/render-service');
 const { parseCsvToDatasetShape } = require('../services/csv-service');
 const { sanitizeRichHtml } = require('../services/sanitize-service');
 const { validateBlockConfig } = require('../validation/block-config');
@@ -852,6 +852,30 @@ router.post('/presentations/:presentationId/render/pdf', (req, res, next) => {
             updatedAt: now,
         });
         queuePdfJob(job);
+        return sendData(req, res, job, 202);
+    } catch (error) {
+        return next(error);
+    }
+});
+
+router.post('/presentations/:presentationId/render/pptx', (req, res, next) => {
+    try {
+        const { presentationId } = req.params;
+        const presentation = getPresentationById(presentationId);
+        if (!presentation) throw notFound('Presentation not found');
+
+        const now = new Date().toISOString();
+        const job = createRenderJob({
+            id: randomUUID(),
+            presentationId,
+            type: 'export_pptx_future',
+            status: 'queued',
+            result: null,
+            error: null,
+            createdAt: now,
+            updatedAt: now,
+        });
+        queuePptxJob(job);
         return sendData(req, res, job, 202);
     } catch (error) {
         return next(error);

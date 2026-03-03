@@ -32,6 +32,11 @@ In scope:
 4. Validation and warning model for unsupported or degraded features.
 5. Regression suite for preview/PDF parity and PPTX structural fidelity.
 
+Implementation note (current Stage 9 delivery):
+- PPTX output is generated with deterministic full-slide `safe-raster` mapping from preview frames.
+- This guarantees geometry parity with preview/PDF and keeps export pipeline stable.
+- Native editable PPT primitives are postponed to a future stage.
+
 Out of scope:
 
 1. Animation/timeline export.

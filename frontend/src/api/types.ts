@@ -190,8 +190,8 @@ export type Dataset = {
 export type RenderJob = {
   id: string;
   presentationId: string;
-  type: 'export_pdf';
+  type: 'export_pdf' | 'export_pptx_future';
   status: 'queued' | 'running' | 'done' | 'failed';
-  result: { fileName: string; path: string } | null;
+  result: { fileName: string; path: string; warnings?: Array<{ code: string; message: string }> } | null;
   error: { message: string } | null;
 };

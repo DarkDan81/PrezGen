@@ -91,5 +91,7 @@ export const client = {
     }),
   startPdf: (presentationId: string) =>
     apiPost<RenderJob, Record<string, never>>(`/api/v1/presentations/${presentationId}/render/pdf`, {}),
+  startPptx: (presentationId: string) =>
+    apiPost<RenderJob, Record<string, never>>(`/api/v1/presentations/${presentationId}/render/pptx`, {}),
   getRenderJob: (jobId: string) => apiGet<RenderJob>(`/api/v1/render-jobs/${jobId}`),
 };

@@ -491,6 +491,10 @@ export function EditorPage() {
     mutationFn: () => client.startPdf(presentationId),
     onSuccess: (job) => setRenderJobId(job.id),
   });
+  const startPptxMutation = useMutation({
+    mutationFn: () => client.startPptx(presentationId),
+    onSuccess: (job) => setRenderJobId(job.id),
+  });
 
   const renderJobQuery = useQuery({
     queryKey: ['render-job', renderJobId],
@@ -523,7 +527,18 @@ export function EditorPage() {
           ? t('common.error')
           : '';
   const saveStatusClass = saveState === 'error' ? 'error' : saveState === 'saved' ? 'saved' : '';
-  const headerStatusText = [saveStatusText, renderJobQuery.data ? t('editor.pdfStatus', { status: renderJobQuery.data.status }) : '']
+  const headerStatusText = [
+    saveStatusText,
+    renderJobQuery.data
+      ? t('editor.exportStatus', {
+          type: renderJobQuery.data.type === 'export_pptx_future' ? 'PPTX' : 'PDF',
+          status: renderJobQuery.data.status,
+        })
+      : '',
+    renderJobQuery.data?.status === 'done' && (renderJobQuery.data.result?.warnings?.length || 0) > 0
+      ? t('editor.exportWarnings', { count: renderJobQuery.data.result?.warnings?.length || 0 })
+      : '',
+  ]
     .filter(Boolean)
     .join(' · ');
   const datasetModalDirty = useMemo(
@@ -758,6 +773,9 @@ export function EditorPage() {
           </select>
           <Button variant="primary" size="small" onClick={() => startPdfMutation.mutate()}>
             {t('editor.exportPdf')}
+          </Button>
+          <Button variant="primary" size="small" onClick={() => startPptxMutation.mutate()}>
+            {t('editor.exportPptx')}
           </Button>
         </div>
       </header>
