@@ -91,7 +91,7 @@ export const client = {
     }),
   startPdf: (presentationId: string) =>
     apiPost<RenderJob, Record<string, never>>(`/api/v1/presentations/${presentationId}/render/pdf`, {}),
-  startPptx: (presentationId: string, mode: 'hybrid_native' | 'raster' = 'hybrid_native') =>
-    apiPost<RenderJob, { mode: 'hybrid_native' | 'raster' }>(`/api/v1/presentations/${presentationId}/render/pptx`, { mode }),
+  startPptx: (presentationId: string, mode: 'hybrid_native' | 'hybrid_blocks' | 'raster' = 'hybrid_blocks') =>
+    apiPost<RenderJob, { mode: 'hybrid_native' | 'hybrid_blocks' | 'raster' }>(`/api/v1/presentations/${presentationId}/render/pptx`, { mode }),
   getRenderJob: (jobId: string) => apiGet<RenderJob>(`/api/v1/render-jobs/${jobId}`),
 };

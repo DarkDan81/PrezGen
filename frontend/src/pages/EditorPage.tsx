@@ -242,6 +242,7 @@ export function EditorPage() {
   const [previewUrl, setPreviewUrl] = useState('');
   const [previewNonce, setPreviewNonce] = useState(0);
   const [renderJobId, setRenderJobId] = useState('');
+  const [pptxMode, setPptxMode] = useState<'hybrid_blocks' | 'hybrid_native' | 'raster'>('hybrid_blocks');
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>(() => {
     if (typeof window === 'undefined') return 'light';
     return window.localStorage.getItem('prezgen-ui-mode') === 'dark' ? 'dark' : 'light';
@@ -492,7 +493,7 @@ export function EditorPage() {
     onSuccess: (job) => setRenderJobId(job.id),
   });
   const startPptxMutation = useMutation({
-    mutationFn: () => client.startPptx(presentationId),
+    mutationFn: () => client.startPptx(presentationId, pptxMode),
     onSuccess: (job) => setRenderJobId(job.id),
   });
 
@@ -730,6 +731,51 @@ export function EditorPage() {
     return uploaded.url;
   };
 
+  const downloadRenderArtifact = async () => {
+    const result = renderJobQuery.data?.result;
+    if (!result?.path) return;
+    const resp = await fetch(result.path);
+    if (!resp.ok) throw new Error(`artifact fetch failed: ${resp.status}`);
+    const blob = await resp.blob();
+    const suggestedName = result.fileName || (renderJobQuery.data?.type === 'export_pptx_future' ? 'export.pptx' : 'export.pdf');
+    const ext = suggestedName.toLowerCase().endsWith('.pptx') ? 'pptx' : suggestedName.toLowerCase().endsWith('.pdf') ? 'pdf' : '';
+
+    type SavePickerWindow = Window & {
+      showSaveFilePicker?: (options: {
+        suggestedName?: string;
+        types?: Array<{ description?: string; accept: Record<string, string[]> }>;
+      }) => Promise<{
+        createWritable: () => Promise<{ write: (data: Blob) => Promise<void>; close: () => Promise<void> }>;
+      }>;
+    };
+
+    const pickerWindow = window as SavePickerWindow;
+    if (pickerWindow.showSaveFilePicker) {
+      const handle = await pickerWindow.showSaveFilePicker({
+        suggestedName,
+        types:
+          ext === 'pptx'
+            ? [{ description: 'PowerPoint', accept: { 'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'] } }]
+            : ext === 'pdf'
+              ? [{ description: 'PDF', accept: { 'application/pdf': ['.pdf'] } }]
+              : undefined,
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      return;
+    }
+
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = suggestedName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(blobUrl);
+  };
+
   return (
     <div className="editor-page">
       <header className="editor-header">
@@ -751,6 +797,16 @@ export function EditorPage() {
           <Button variant="secondary" size="small" onClick={() => setThemeMode(themeMode === 'light' ? 'dark' : 'light')}>
             {themeMode === 'light' ? t('editor.darkUi') : t('editor.lightUi')}
           </Button>
+          <select
+            className="ui-select compact-header-select"
+            value={pptxMode}
+            aria-label={t('editor.pptxMode')}
+            onChange={(e) => setPptxMode(e.target.value as 'hybrid_blocks' | 'hybrid_native' | 'raster')}
+          >
+            <option value="hybrid_blocks">{t('editor.pptxModeHybridBlocks')}</option>
+            <option value="hybrid_native">{t('editor.pptxModeHybridNative')}</option>
+            <option value="raster">{t('editor.pptxModeRaster')}</option>
+          </select>
           <select
             className="ui-select compact-header-select"
             value={locale}
@@ -777,6 +833,11 @@ export function EditorPage() {
           <Button variant="primary" size="small" onClick={() => startPptxMutation.mutate()}>
             {t('editor.exportPptx')}
           </Button>
+          {renderJobQuery.data?.status === 'done' && renderJobQuery.data?.result?.path ? (
+            <Button variant="secondary" size="small" onClick={() => void downloadRenderArtifact()}>
+              {t('editor.downloadExport')}
+            </Button>
+          ) : null}
         </div>
       </header>
 

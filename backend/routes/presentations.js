@@ -864,11 +864,11 @@ router.post('/presentations/:presentationId/render/pptx', (req, res, next) => {
         const presentation = getPresentationById(presentationId);
         if (!presentation) throw notFound('Presentation not found');
         const mode = req.body?.mode;
-        if (mode !== undefined && mode !== 'hybrid_native' && mode !== 'raster') {
+        if (mode !== undefined && mode !== 'hybrid_native' && mode !== 'hybrid_blocks' && mode !== 'raster') {
             throw validationError([{
                 path: 'mode',
                 rule: 'enum',
-                message: 'mode must be one of hybrid_native or raster',
+                message: 'mode must be one of hybrid_native, hybrid_blocks or raster',
             }]);
         }
 

@@ -36,7 +36,7 @@ module.exports = (block) => {
         }
     };
 
-    return `<div class="block-wrapper chart-block" ${style}>
+    return `<div class="block-wrapper chart-block" data-block-id="${String(block._blockId || '').replace(/"/g, '&quot;')}" data-block-type="${String(block._blockType || '').replace(/"/g, '&quot;')}" ${style}>
         <canvas data-type="line" data-config='${JSON.stringify(chartConfig).replace(/'/g, "&apos;")}'></canvas>
     </div>`;
 };

@@ -196,7 +196,7 @@ export type RenderJob = {
     | {
         fileName: string;
         path: string;
-        mode?: 'hybrid_native' | 'raster';
+        mode?: 'hybrid_native' | 'hybrid_blocks' | 'raster';
         warnings?: Array<{ code: string; message: string; slideIndex?: number | null; blockId?: string | null }>;
       }
     | null;

@@ -446,6 +446,24 @@ function renderTextBlock(slideOut, block, rect, tokens) {
     });
 }
 
+function renderTextAtRect(slideOut, htmlText, rect, tokens) {
+    const text = htmlToPlainText(htmlText || '');
+    if (!text.trim()) return;
+    slideOut.addText(text, {
+        x: pxToInX(rect.x + 6),
+        y: pxToInY(rect.y + 6),
+        w: pxToInX(rect.w - 12),
+        h: pxToInY(rect.h - 12),
+        color: toHexColor(tokens.color.textPrimary, 'E7EDF6'),
+        fontFace: pickFontFace(tokens),
+        fontSize: clamp(tokens.typography.bodySize, 10, 48, 28),
+        breakLine: true,
+        valign: 'top',
+        autoFit: true,
+        shrinkText: true,
+    });
+}
+
 function renderImageBlock(slideOut, block, rect, warnings, slideIndex) {
     const source = toLocalImageSource(block.image || '');
     if (!source) {
@@ -753,6 +771,107 @@ function buildNativePptxDeck({ pptx, presentationId }) {
     return { warnings, slidesCount: slides.length };
 }
 
+function buildHybridBlocksPptxDeck({ pptx, presentationId, slideAssets }) {
+    const model = buildRenderModelByPresentationId(presentationId);
+    if (!model) return { warnings: [], slidesCount: 0 };
+    const normalized = normalizeThemeTokens(model.meta?.themeTokens || {});
+    const tokens = normalized.tokens || THEME_TOKEN_DEFAULTS;
+    const warnings = [...(normalized.warnings || [])].map((warning) => ({
+        slideIndex: null,
+        blockId: null,
+        code: 'TOKEN_NORMALIZED',
+        message: warning.message,
+    }));
+
+    const bg = toHexColor(tokens.color.bgCanvas, '05080D');
+    const slides = Array.isArray(model.slides) ? model.slides : [];
+    slides.forEach((slideData, index) => {
+        const slideOut = pptx.addSlide();
+        slideOut.background = { color: bg };
+        const asset = Array.isArray(slideAssets) ? slideAssets[index] : null;
+        if (asset?.backgroundPath) {
+            slideOut.addImage({
+                path: asset.backgroundPath,
+                x: 0,
+                y: 0,
+                w: PPTX_WIDTH,
+                h: PPTX_HEIGHT,
+            });
+        }
+
+        if (slideData.type === 'title') {
+            addTitleSlide(slideOut, slideData, tokens, warnings, index + 1);
+        } else {
+            const textColor = toHexColor(tokens.color.textPrimary, 'E7EDF6');
+            const accent = toHexColor(tokens.color.accent, 'FF7B1F');
+            const accent2 = toHexColor(tokens.color.accentSecondary, '39A8FF');
+            const fontFace = pickFontFace(tokens);
+            const rects = splitBodyRect(slideData, tokens);
+
+            slideOut.addShape('rect', {
+                x: pxToInX(rects.header.x),
+                y: pxToInY(rects.header.y + 4),
+                w: pxToInX(7),
+                h: pxToInY(Math.max(64, clamp(tokens.typography.titleSize, 18, 96, 64) * 0.95)),
+                line: { color: accent, pt: 0, transparency: 100 },
+                fill: { color: accent, transparency: 0 },
+            });
+            slideOut.addText(String(slideData.title || ''), {
+                x: pxToInX(rects.header.x + 20),
+                y: pxToInY(rects.header.y),
+                w: pxToInX(rects.header.w - 30),
+                h: pxToInY(Math.max(70, rects.header.h * 0.55)),
+                fontFace,
+                bold: true,
+                color: textColor,
+                fontSize: clamp(tokens.typography.titleSize, 18, 96, 64),
+            });
+            if (slideData.subtitle) {
+                slideOut.addText(String(slideData.subtitle), {
+                    x: pxToInX(rects.header.x + 20),
+                    y: pxToInY(rects.header.y + Math.max(66, rects.header.h * 0.52)),
+                    w: pxToInX(rects.header.w - 30),
+                    h: pxToInY(34),
+                    fontFace,
+                    bold: true,
+                    color: accent2,
+                    fontSize: clamp(tokens.typography.subtitleSize, 12, 72, 30),
+                });
+            }
+        }
+
+        const byId = new Map((Array.isArray(slideData.blocks) ? slideData.blocks : []).map((b) => [String(b._blockId || ''), b]));
+        const items = Array.isArray(asset?.blocks) ? asset.blocks : [];
+        items.forEach((item) => {
+            const rect = item?.rect;
+            if (!rect) return;
+            if (item.blockType === 'text') {
+                const block = byId.get(String(item.blockId || ''));
+                renderTextAtRect(slideOut, block?.text || '', rect, tokens);
+                return;
+            }
+            if (item.imagePath) {
+                slideOut.addImage({
+                    path: item.imagePath,
+                    x: pxToInX(rect.x),
+                    y: pxToInY(rect.y),
+                    w: pxToInX(rect.w),
+                    h: pxToInY(rect.h),
+                });
+                return;
+            }
+            warnings.push({
+                slideIndex: index + 1,
+                blockId: item.blockId || null,
+                code: 'BLOCK_ASSET_MISSING',
+                message: `Block asset is missing for ${item.blockType || 'unknown'} block`,
+            });
+        });
+    });
+    return { warnings, slidesCount: slides.length };
+}
+
 module.exports = {
     buildNativePptxDeck,
+    buildHybridBlocksPptxDeck,
 };

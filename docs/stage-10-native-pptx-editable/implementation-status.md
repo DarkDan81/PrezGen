@@ -25,19 +25,28 @@ Implemented (v1 hybrid-native mapper) and validated.
 
 1. New mode is available in PPTX endpoint payload:
 - `mode: "hybrid_native"` (default),
+- `mode: "hybrid_blocks"` (recommended, text native + non-text blocks as separate raster objects),
 - `mode: "raster"` (Stage 9-compatible fallback).
 2. Endpoint remains:
 - `POST /api/v1/presentations/:presentationId/render/pptx`.
 3. Job result now includes:
 - `mode`,
 - `warnings[]` with optional `slideIndex` and `blockId`.
-4. Implemented native mappers:
+4. Editor UI updates:
+- PPTX export mode selector (`hybrid_blocks` / `hybrid_native` / `raster`);
+- explicit `Download` action for completed export;
+- browser save picker integration (`showSaveFilePicker`) where supported.
+5. Implemented native mappers:
 - title/content shell,
 - text/image/table/cards/chart blocks,
 - token-driven decor primitives (grid/line/triangle/blob/badge).
-5. Fallback behavior:
+6. Implemented `hybrid_blocks` mode:
+- slide decor/background captured as raster layer;
+- non-text blocks exported as separate raster objects;
+- text blocks exported as native editable PPT text objects.
+7. Fallback behavior:
 - on native mapper failure export falls back to raster and returns `NATIVE_EXPORT_FALLBACK` warning.
-6. Automated checks run:
+8. Automated checks run:
 - `npm run frontend:build` -> OK
 - `npm run api:verify` -> OK
 - `npm run api:smoke` -> OK

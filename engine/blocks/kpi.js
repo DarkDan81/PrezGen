@@ -120,7 +120,7 @@ module.exports = (block) => {
     }).join('');
 
     return `
-        <div class="block-wrapper kpi-wrapper" ${style}>
+        <div class="block-wrapper kpi-wrapper" data-block-id="${escapeHtml(block._blockId || '')}" data-block-type="${escapeHtml(block._blockType || '')}" ${style}>
             <div class="kpi-grid-auto" data-kpi-count="${count}" ${gridStyle}>${cardsHtml}</div>
         </div>
     `;

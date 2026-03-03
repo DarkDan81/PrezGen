@@ -43,10 +43,12 @@ function resolveObjectPosition(basePosition, offsetX, offsetY, zoom) {
 
 module.exports = (block) => {
     const style = `style="flex: ${block.flexWidth || 1}"`;
+    const blockId = escapeAttr(block._blockId || '');
+    const blockType = escapeAttr(block._blockType || '');
 
     if (block.text) {
         const denseClass = textLength(block.text) > 900 ? 'dense' : '';
-        return `<div class="block-wrapper text-block ${denseClass}" ${style}><div class="block-text">${block.text}</div></div>`;
+        return `<div class="block-wrapper text-block ${denseClass}" data-block-id="${blockId}" data-block-type="${blockType}" ${style}><div class="block-text">${block.text}</div></div>`;
     }
 
     if (block.image) {
@@ -64,7 +66,7 @@ module.exports = (block) => {
             : String(basePosition || 'center center');
         const transform = isCover ? `scale(${safeZoom / 100})` : 'scale(1)';
         return `
-            <div class="block-wrapper image-block" ${style}>
+            <div class="block-wrapper image-block" data-block-id="${blockId}" data-block-type="${blockType}" ${style}>
                 <div class="image-container"><img src="${escapeAttr(block.image)}" alt="" style="object-fit:${fit};object-position:${position};transform:${escapeAttr(transform)};"></div>
             </div>`;
     }
