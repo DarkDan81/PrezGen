@@ -313,7 +313,7 @@ export function ThemesPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedThemeId, setSelectedThemeId] = useState('');
-  const [baseThemeId, setBaseThemeId] = useState('theme-factory-blueprint');
+  const [baseThemeId, setBaseThemeId] = useState('theme-universal-warm');
   const [name, setName] = useState('Custom Theme');
   const [tokens, setTokens] = useState<ThemeTokens>(defaultTokens());
   const [baselineTokens, setBaselineTokens] = useState<ThemeTokens>(defaultTokens());
@@ -347,7 +347,7 @@ export function ThemesPage() {
     setName(theme.name);
     setTokens(normalized);
     setBaselineTokens(normalized);
-    setBaseThemeId(theme.baseThemeId || (theme.isSystem ? theme.id : 'theme-factory-blueprint'));
+    setBaseThemeId(theme.baseThemeId || (theme.isSystem ? theme.id : 'theme-universal-warm'));
     setWarnings([]);
     setError('');
   };
@@ -395,7 +395,7 @@ export function ThemesPage() {
       const next = normalizeTokens(duplicated.tokens as ThemeTokens);
       setTokens(next);
       setBaselineTokens(next);
-      setBaseThemeId(duplicated.baseThemeId || 'theme-factory-blueprint');
+      setBaseThemeId(duplicated.baseThemeId || 'theme-universal-warm');
       await refreshThemes();
       setError('');
     },
@@ -410,7 +410,7 @@ export function ThemesPage() {
       const base = defaultTokens();
       setTokens(base);
       setBaselineTokens(base);
-      setBaseThemeId('theme-factory-blueprint');
+      setBaseThemeId('theme-universal-warm');
       await refreshThemes();
       setError('');
     },
@@ -436,7 +436,7 @@ export function ThemesPage() {
       const next = normalizeTokens(created.tokens as ThemeTokens);
       setTokens(next);
       setBaselineTokens(next);
-      setBaseThemeId(created.baseThemeId || 'theme-factory-blueprint');
+      setBaseThemeId(created.baseThemeId || 'theme-universal-warm');
       await refreshThemes();
       setError('');
     },
@@ -588,7 +588,7 @@ export function ThemesPage() {
             onClick={() => {
               setSelectedThemeId('');
               setName('Custom Theme');
-              setBaseThemeId('theme-factory-blueprint');
+              setBaseThemeId('theme-universal-warm');
               const base = defaultTokens();
               setTokens(base);
               setBaselineTokens(base);

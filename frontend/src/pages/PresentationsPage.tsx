@@ -13,7 +13,7 @@ export function PresentationsPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [name, setName] = useState(t('presentations.newName'));
-  const [themeId, setThemeId] = useState('theme-eurofoods');
+  const [themeId, setThemeId] = useState('theme-universal-warm');
   const [error, setError] = useState('');
 
   const themesQuery = useQuery({ queryKey: ['themes'], queryFn: client.listThemes });

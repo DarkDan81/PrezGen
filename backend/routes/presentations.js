@@ -782,7 +782,7 @@ router.post('/themes/preview', (req, res, next) => {
             if (typeof baseThemeId === 'string' && baseThemeId) return baseThemeId;
             if (baseTheme?.baseThemeId) return baseTheme.baseThemeId;
             if (baseTheme?.isSystem) return baseTheme.id;
-            return 'theme-factory-blueprint';
+            return 'theme-universal-warm';
         })();
 
         const html = buildThemePreviewHtml({

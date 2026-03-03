@@ -72,7 +72,7 @@ function buildRenderModelByPresentationId(presentationId) {
     if (!presentation) return null;
     const selectedTheme = getThemeById(presentation.themeId);
     const baseThemeId = selectedTheme?.baseThemeId || presentation.themeId;
-    const resolvedThemeSlug = normalizeThemeId(baseThemeId) || normalizeThemeId(presentation.themeId) || 'eurofoods';
+    const resolvedThemeSlug = normalizeThemeId(baseThemeId) || normalizeThemeId(presentation.themeId) || 'universal-warm';
 
     const slides = listSlidesByPresentation(presentationId);
     const datasets = listDatasetsByPresentation(presentationId);

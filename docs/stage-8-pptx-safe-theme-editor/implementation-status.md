@@ -118,6 +118,15 @@ Completed.
   - `--pg-grid-color` (from `accentSecondary`),
   making color tuning possible from editor without CSS edits.
 
+14. Universal default theme:
+- added new system theme `universal-warm` (warm neutral, business-safe),
+  implemented purely via token set on top of shared style contract;
+- set as default fallback for:
+  - new presentation creation UI,
+  - editor/theme selector fallback,
+  - backend render model fallback,
+  - theme preview fallback base.
+
 ## Not yet tokenized (remaining hardcoded layer)
 
 1. Exact gradient formulas and blend curves for decor primitives (we expose safe style presets, not raw formula editing).

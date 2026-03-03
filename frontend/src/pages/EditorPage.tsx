@@ -531,7 +531,7 @@ export function EditorPage() {
     [datasetDraftColumns, datasetDraftName, datasetDraftRows, datasetModalSnapshot],
   );
   const selectedLayoutPreset = (layoutPresetsQuery.data || []).find((preset) => preset.id === slideLayoutPresetId) || null;
-  const selectedTheme = (themesQuery.data || []).find((theme) => theme.id === (presentationQuery.data?.themeId || 'theme-eurofoods'));
+  const selectedTheme = (themesQuery.data || []).find((theme) => theme.id === (presentationQuery.data?.themeId || 'theme-universal-warm'));
   const themeColors = useMemo(() => extractThemeColors((selectedTheme?.tokens as Record<string, unknown> | undefined) || undefined), [selectedTheme]);
 
   useEffect(() => {
@@ -747,7 +747,7 @@ export function EditorPage() {
           </select>
           <select
             className="ui-select compact-header-select"
-            value={presentationQuery.data?.themeId || 'theme-eurofoods'}
+            value={presentationQuery.data?.themeId || 'theme-universal-warm'}
             onChange={(e) => patchPresentationMutation.mutate(e.target.value)}
           >
             {(themesQuery.data || []).map((theme) => (
