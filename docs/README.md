@@ -13,6 +13,7 @@ Current scope:
 - Stage 7: strict separation of theme skin from structural layout behavior.
 - Stage 8: PPTX-safe theme editor contract (visual capabilities constrained to exportable model).
 - Stage 9: export pipeline hardening (PDF parity) and PPTX export implementation.
+- Stage 10: native editable PPTX export (hybrid native/raster strategy with explicit fallback policy).
 
 Structure:
 
@@ -54,4 +55,9 @@ Structure:
 - `stage-9-export-pipeline/implementation-plan.md` - phased implementation plan and risk gates.
 - `stage-9-export-pipeline/execution-order.md` - strict step-by-step runbook for safe delivery.
 - `stage-9-export-pipeline/implementation-status.md` - progress/status tracker for stage 9.
+- `stage-10-native-pptx-editable/README.md` - stage overview and acceptance criteria for editable PPTX export.
+- `stage-10-native-pptx-editable/decisions.md` - approved decisions for native-first mapping and fallback.
+- `stage-10-native-pptx-editable/implementation-plan.md` - phased implementation plan for editable PPTX.
+- `stage-10-native-pptx-editable/execution-order.md` - strict execution runbook for Stage 10.
+- `stage-10-native-pptx-editable/implementation-status.md` - progress/status tracker for stage 10.
 - `qa-demo-deck-assets.md` - source image naming and run instructions for QA demo deck seed script.
