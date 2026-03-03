@@ -209,3 +209,15 @@ Deliverable:
 7. Keep top toolbar compact and single-line where screen width allows.
 8. Ensure triangle orientation changes correctly when anchor is moved to left corners.
 9. Replace service-tag-only badge model with optional image logo (`logoImageUrl`) in editor and runtime render.
+
+## Recent tokenization additions (executed)
+
+1. Add PPTX-safe decor toggles for global grid and per-element effects:
+- `gridEnabled`,
+- `textGlowEnabled`,
+- `cardShadowEnabled`,
+- `tableShadowEnabled`,
+- `chartShadowEnabled`,
+- `imageShadowEnabled`.
+2. Bind toggles into runtime class contract so all three reference themes react uniformly.
+3. Group editor controls by semantics (palette, typography/surfaces, chart, table, decor core, grid/effects, badge/logo, shapes) for faster navigation.

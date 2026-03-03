@@ -82,7 +82,16 @@ function buildThemeBodyClasses(tokens) {
     const tableMode = sanitizeClassToken(tokens?.table?.mode || 'normal');
     const typeProfile = sanitizeClassToken(tokens?.typography?.profile || 'technical');
     const presetPack = sanitizeClassToken(tokens?.decor?.presetPack || 'balanced');
-    return `theme-chart-${chartMode} theme-table-${tableMode} theme-type-${typeProfile} theme-pack-${presetPack}`.trim();
+    const decor = (tokens && typeof tokens === 'object' && tokens.decor && typeof tokens.decor === 'object') ? tokens.decor : {};
+    const toggles = [
+        decor.gridEnabled === false ? 'theme-grid-off' : 'theme-grid-on',
+        decor.textGlowEnabled === false ? 'theme-fx-text-glow-off' : 'theme-fx-text-glow-on',
+        decor.cardShadowEnabled === false ? 'theme-fx-card-shadow-off' : 'theme-fx-card-shadow-on',
+        decor.tableShadowEnabled === false ? 'theme-fx-table-shadow-off' : 'theme-fx-table-shadow-on',
+        decor.chartShadowEnabled === false ? 'theme-fx-chart-shadow-off' : 'theme-fx-chart-shadow-on',
+        decor.imageShadowEnabled === false ? 'theme-fx-image-shadow-off' : 'theme-fx-image-shadow-on',
+    ];
+    return `theme-chart-${chartMode} theme-table-${tableMode} theme-type-${typeProfile} theme-pack-${presetPack} ${toggles.join(' ')}`.trim();
 }
 
 function resolveAnchorPositions(anchor, defaults) {
@@ -106,11 +115,12 @@ function renderThemeBadge(tokens, options = {}) {
     const imageUrl = typeof decor.logoImageUrl === 'string' ? decor.logoImageUrl.trim() : '';
     const variant = sanitizeClassToken(decor.badgeVariant || 'outlined');
     const anchor = sanitizeClassToken(decor.logoAnchor || 'top-right');
+    const hasImageClass = imageUrl ? 'has-image' : '';
     const badgeInner = imageUrl
         ? `<img src="${escapeAttr(imageUrl)}" class="badge-image" alt="logo">`
         : `<span class="badge-main">${main}</span>`;
     return `
-        <div class="theme-badge variant-${variant} anchor-${anchor}">
+        <div class="theme-badge variant-${variant} anchor-${anchor} ${hasImageClass}">
             ${badgeInner}
         </div>
     `;
@@ -257,6 +267,12 @@ function buildThemeVarsCss(tokens) {
     push('--pg-decor-safe-zone-alpha', String(asFiniteNumber(decor.safeZoneAlpha, 0.08)));
     push('--pg-decor-title-mult', String(asFiniteNumber(decor.titleMultiplier, 1.25)));
     push('--pg-decor-content-mult', String(asFiniteNumber(decor.contentMultiplier, 1)));
+    push('--pg-grid-enabled', decor.gridEnabled === false ? '0' : '1');
+    push('--pg-fx-text-glow-enabled', decor.textGlowEnabled === false ? '0' : '1');
+    push('--pg-fx-card-shadow-enabled', decor.cardShadowEnabled === false ? '0' : '1');
+    push('--pg-fx-table-shadow-enabled', decor.tableShadowEnabled === false ? '0' : '1');
+    push('--pg-fx-chart-shadow-enabled', decor.chartShadowEnabled === false ? '0' : '1');
+    push('--pg-fx-image-shadow-enabled', decor.imageShadowEnabled === false ? '0' : '1');
     push('--pg-logo-enabled', decor.logoEnabled === false ? '0' : '1');
     push('--pg-logo-size', `${asFiniteNumber(decor.logoSize, 14)}px`);
     push('--pg-logo-opacity', String(asFiniteNumber(decor.logoOpacity, 0.95)));

@@ -54,6 +54,12 @@ function defaultTokens(): ThemeTokens {
       safeZoneAlpha: 0.08,
       titleMultiplier: 1.25,
       contentMultiplier: 1,
+      gridEnabled: true,
+      textGlowEnabled: true,
+      cardShadowEnabled: true,
+      tableShadowEnabled: true,
+      chartShadowEnabled: true,
+      imageShadowEnabled: true,
       logoEnabled: true,
       logoText: 'DARKDAN',
       logoImageUrl: '',
@@ -92,6 +98,12 @@ function normalizeTokens(input?: ThemeTokens): ThemeTokens {
     safeZoneAlpha: typeof nextDecor.safeZoneAlpha === 'number' ? nextDecor.safeZoneAlpha : baseDecor.safeZoneAlpha,
     titleMultiplier: typeof nextDecor.titleMultiplier === 'number' ? nextDecor.titleMultiplier : baseDecor.titleMultiplier,
     contentMultiplier: typeof nextDecor.contentMultiplier === 'number' ? nextDecor.contentMultiplier : baseDecor.contentMultiplier,
+    gridEnabled: typeof nextDecor.gridEnabled === 'boolean' ? nextDecor.gridEnabled : baseDecor.gridEnabled,
+    textGlowEnabled: typeof nextDecor.textGlowEnabled === 'boolean' ? nextDecor.textGlowEnabled : baseDecor.textGlowEnabled,
+    cardShadowEnabled: typeof nextDecor.cardShadowEnabled === 'boolean' ? nextDecor.cardShadowEnabled : baseDecor.cardShadowEnabled,
+    tableShadowEnabled: typeof nextDecor.tableShadowEnabled === 'boolean' ? nextDecor.tableShadowEnabled : baseDecor.tableShadowEnabled,
+    chartShadowEnabled: typeof nextDecor.chartShadowEnabled === 'boolean' ? nextDecor.chartShadowEnabled : baseDecor.chartShadowEnabled,
+    imageShadowEnabled: typeof nextDecor.imageShadowEnabled === 'boolean' ? nextDecor.imageShadowEnabled : baseDecor.imageShadowEnabled,
     logoEnabled: typeof nextDecor.logoEnabled === 'boolean' ? nextDecor.logoEnabled : baseDecor.logoEnabled,
     logoText: typeof nextDecor.logoText === 'string' ? nextDecor.logoText : baseDecor.logoText,
     logoImageUrl: typeof nextDecor.logoImageUrl === 'string' ? nextDecor.logoImageUrl : baseDecor.logoImageUrl,
@@ -450,6 +462,17 @@ export function ThemesPage() {
     };
   }, [selectedThemeId, baseThemeId, tokens, baselineTokens]);
 
+  useEffect(() => {
+    const onWheelCapture = (event: WheelEvent) => {
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement)) return;
+      if (target.type !== 'number') return;
+      if (document.activeElement === target) target.blur();
+    };
+    window.addEventListener('wheel', onWheelCapture, { capture: true, passive: true });
+    return () => window.removeEventListener('wheel', onWheelCapture, true);
+  }, []);
+
   const safeState = warnings.length === 0 ? t('themes.safeState') : t('themes.warnState');
   const withRange = (label: string, min: string | number, max: string | number) => `${label} (${min}-${max})`;
   const sceneLabels = {
@@ -491,9 +514,15 @@ export function ThemesPage() {
 
   const handleLogoImageFile = async (file: File) => {
     try {
-      const isImage = file.type.startsWith('image/');
+      const hasImageMime = file.type.startsWith('image/');
+      const hasImageExt = /\.(png|jpe?g|webp|gif|svg)$/i.test(file.name || '');
+      const isImage = hasImageMime || (!file.type && hasImageExt);
       if (!isImage) {
         setError('Logo file must be an image');
+        return;
+      }
+      if (file.size > 20 * 1024 * 1024) {
+        setError('Logo file is too large (max 20 MB)');
         return;
       }
       const dataUrl = await new Promise<string>((resolve, reject) => {
@@ -506,6 +535,7 @@ export function ThemesPage() {
         ...prev,
         decor: {
           ...(prev.decor || {}),
+          logoEnabled: true,
           logoImageUrl: dataUrl,
         },
       }));
@@ -601,6 +631,8 @@ export function ThemesPage() {
               <details className="theme-accordion">
                 <summary>{isRu ? 'Основные настройки (всегда на слайде)' : 'Core settings (always visible)'}</summary>
                 <div className="token-grid token-grid-single">
+                <div className="theme-token-group">
+                  <h3>{t('themes.groupPalette')}</h3>
                 <ColorField
                   label={t('themes.canvasBg')}
                   value={tokens.color.bgCanvas}
@@ -636,6 +668,9 @@ export function ThemesPage() {
                   value={tokens.color.info || '#55b8ff'}
                   onChange={(value) => setTokens((prev) => ({ ...prev, color: { ...prev.color, info: value } }))}
                 />
+                </div>
+                <div className="theme-token-group">
+                  <h3>{t('themes.groupTypographySurface')}</h3>
                 <Field label={withRange(t('themes.titleSize'), 18, 96)}>
                   <input
                     className="ui-input"
@@ -728,6 +763,9 @@ export function ThemesPage() {
                     }
                   />
                 </Field>
+                </div>
+                <div className="theme-token-group">
+                  <h3>{t('themes.groupChart')}</h3>
                 <ColorField
                   label={t('themes.chart1')}
                   value={tokens.chart?.palette?.[0] || '#39a8ff'}
@@ -791,6 +829,9 @@ export function ThemesPage() {
                     <option value="dashboard">{t('themes.chartModeDashboard')}</option>
                   </select>
                 </Field>
+                </div>
+                <div className="theme-token-group">
+                  <h3>{t('themes.groupTable')}</h3>
                 <ColorField
                   label={t('themes.tableHeaderBg')}
                   value={tokens.table?.headerBg ? String(tokens.table.headerBg) : '#152135'}
@@ -821,11 +862,14 @@ export function ThemesPage() {
                   </select>
                 </Field>
                 </div>
+                </div>
               </details>
 
               <details className="theme-accordion">
                 <summary>{isRu ? 'Опциональный декор (можно отключать)' : 'Optional decor (toggleable)'}</summary>
                 <div className="token-grid token-grid-single">
+                <div className="theme-token-group">
+                  <h3>{t('themes.groupDecorCore')}</h3>
                 <Field label={t('themes.presetPack')}>
                   <select
                     className="ui-select"
@@ -911,6 +955,102 @@ export function ThemesPage() {
                     }
                   />
                 </Field>
+                </div>
+                <div className="theme-token-group">
+                  <h3>{t('themes.groupGridEffects')}</h3>
+                  <Field label={t('themes.gridEnabled')}>
+                    <select
+                      className="ui-select"
+                      value={tokens.decor?.gridEnabled === false ? '0' : '1'}
+                      onChange={(e) =>
+                        setTokens((prev) => ({
+                          ...prev,
+                          decor: { ...(prev.decor || {}), gridEnabled: e.target.value === '1' },
+                        }))
+                      }
+                    >
+                      <option value="1">{t('themes.yes')}</option>
+                      <option value="0">{t('themes.no')}</option>
+                    </select>
+                  </Field>
+                  <Field label={t('themes.textGlowEnabled')}>
+                    <select
+                      className="ui-select"
+                      value={tokens.decor?.textGlowEnabled === false ? '0' : '1'}
+                      onChange={(e) =>
+                        setTokens((prev) => ({
+                          ...prev,
+                          decor: { ...(prev.decor || {}), textGlowEnabled: e.target.value === '1' },
+                        }))
+                      }
+                    >
+                      <option value="1">{t('themes.yes')}</option>
+                      <option value="0">{t('themes.no')}</option>
+                    </select>
+                  </Field>
+                  <Field label={t('themes.cardShadowEnabled')}>
+                    <select
+                      className="ui-select"
+                      value={tokens.decor?.cardShadowEnabled === false ? '0' : '1'}
+                      onChange={(e) =>
+                        setTokens((prev) => ({
+                          ...prev,
+                          decor: { ...(prev.decor || {}), cardShadowEnabled: e.target.value === '1' },
+                        }))
+                      }
+                    >
+                      <option value="1">{t('themes.yes')}</option>
+                      <option value="0">{t('themes.no')}</option>
+                    </select>
+                  </Field>
+                  <Field label={t('themes.tableShadowEnabled')}>
+                    <select
+                      className="ui-select"
+                      value={tokens.decor?.tableShadowEnabled === false ? '0' : '1'}
+                      onChange={(e) =>
+                        setTokens((prev) => ({
+                          ...prev,
+                          decor: { ...(prev.decor || {}), tableShadowEnabled: e.target.value === '1' },
+                        }))
+                      }
+                    >
+                      <option value="1">{t('themes.yes')}</option>
+                      <option value="0">{t('themes.no')}</option>
+                    </select>
+                  </Field>
+                  <Field label={t('themes.chartShadowEnabled')}>
+                    <select
+                      className="ui-select"
+                      value={tokens.decor?.chartShadowEnabled === false ? '0' : '1'}
+                      onChange={(e) =>
+                        setTokens((prev) => ({
+                          ...prev,
+                          decor: { ...(prev.decor || {}), chartShadowEnabled: e.target.value === '1' },
+                        }))
+                      }
+                    >
+                      <option value="1">{t('themes.yes')}</option>
+                      <option value="0">{t('themes.no')}</option>
+                    </select>
+                  </Field>
+                  <Field label={t('themes.imageShadowEnabled')}>
+                    <select
+                      className="ui-select"
+                      value={tokens.decor?.imageShadowEnabled === false ? '0' : '1'}
+                      onChange={(e) =>
+                        setTokens((prev) => ({
+                          ...prev,
+                          decor: { ...(prev.decor || {}), imageShadowEnabled: e.target.value === '1' },
+                        }))
+                      }
+                    >
+                      <option value="1">{t('themes.yes')}</option>
+                      <option value="0">{t('themes.no')}</option>
+                    </select>
+                  </Field>
+                </div>
+                <div className="theme-token-group">
+                  <h3>{t('themes.groupBadgeLogo')}</h3>
                 <Field label={t('themes.logoEnabled')}>
                   <select
                     className="ui-select"
@@ -1074,8 +1214,9 @@ export function ThemesPage() {
                     <option value="0">{t('themes.no')}</option>
                   </select>
                 </Field>
+                </div>
                 <div className="theme-token-group">
-                  <h3>{isRu ? 'Левая линия' : 'Left line'}</h3>
+                  <h3>{t('themes.shapeLeftLine')}</h3>
                 <Field label={t('themes.shapeLeftLineEnabled')}>
                   <select
                     className="ui-select"
@@ -1141,7 +1282,7 @@ export function ThemesPage() {
                 </div>
 
                 <div className="theme-token-group">
-                  <h3>{isRu ? 'Треугольник' : 'Triangle'}</h3>
+                  <h3>{t('themes.shapeTriangle')}</h3>
                 <Field label={t('themes.shapeTriangleEnabled')}>
                   <select
                     className="ui-select"
@@ -1212,7 +1353,7 @@ export function ThemesPage() {
                 </div>
 
                 <div className="theme-token-group">
-                  <h3>{isRu ? 'Пятно' : 'Blob'}</h3>
+                  <h3>{t('themes.shapeBlob')}</h3>
                 <Field label={t('themes.shapeBlobEnabled')}>
                   <select
                     className="ui-select"

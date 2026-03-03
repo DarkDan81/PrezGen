@@ -100,6 +100,12 @@ export type ThemeTokens = {
     safeZoneAlpha?: number;
     titleMultiplier?: number;
     contentMultiplier?: number;
+    gridEnabled?: boolean;
+    textGlowEnabled?: boolean;
+    cardShadowEnabled?: boolean;
+    tableShadowEnabled?: boolean;
+    chartShadowEnabled?: boolean;
+    imageShadowEnabled?: boolean;
     logoEnabled?: boolean;
     logoText?: string;
     logoImageUrl?: string;

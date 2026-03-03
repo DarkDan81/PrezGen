@@ -122,6 +122,10 @@
   font-size: 13px;
 }
 
+.token-grid-single > .theme-token-group {
+  grid-column: 1 / -1;
+}
+
 .theme-accordion {
   border: 1px solid var(--border);
   border-radius: 10px;

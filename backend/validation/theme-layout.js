@@ -74,6 +74,12 @@ const THEME_TOKEN_DEFAULTS = {
         safeZoneAlpha: 0.08,
         titleMultiplier: 1.25,
         contentMultiplier: 1,
+        gridEnabled: true,
+        textGlowEnabled: true,
+        cardShadowEnabled: true,
+        tableShadowEnabled: true,
+        chartShadowEnabled: true,
+        imageShadowEnabled: true,
         logoEnabled: true,
         logoText: 'DARKDAN',
         logoImageUrl: '',
@@ -112,6 +118,12 @@ const ALLOWED_GROUP_KEYS = {
         'safeZoneAlpha',
         'titleMultiplier',
         'contentMultiplier',
+        'gridEnabled',
+        'textGlowEnabled',
+        'cardShadowEnabled',
+        'tableShadowEnabled',
+        'chartShadowEnabled',
+        'imageShadowEnabled',
         'logoEnabled',
         'logoText',
         'logoImageUrl',
@@ -146,6 +158,7 @@ const ALLOWED_PRESET_PACKS = new Set(['compact', 'balanced', 'bold']);
 const ALLOWED_TYPO_PROFILES = new Set(['executive', 'technical', 'sales']);
 const ALLOWED_CHART_MODES = new Set(['contrast', 'minimal', 'dashboard']);
 const ALLOWED_TABLE_MODES = new Set(['dense', 'normal', 'boardroom']);
+const MAX_LOGO_IMAGE_URL_LENGTH = 30_000_000;
 
 function findUnknownTokenKeys(tokens) {
     const details = [];
@@ -334,7 +347,20 @@ function validateThemeTokens(tokens) {
         });
     }
 
-    ['logoEnabled', 'badgeOnTitle', 'badgeOnContent', 'shapeLeftLineEnabled', 'shapeTriangleEnabled', 'shapeBlobEnabled'].forEach((key) => {
+    [
+        'gridEnabled',
+        'textGlowEnabled',
+        'cardShadowEnabled',
+        'tableShadowEnabled',
+        'chartShadowEnabled',
+        'imageShadowEnabled',
+        'logoEnabled',
+        'badgeOnTitle',
+        'badgeOnContent',
+        'shapeLeftLineEnabled',
+        'shapeTriangleEnabled',
+        'shapeBlobEnabled',
+    ].forEach((key) => {
         if (decor[key] !== undefined && typeof decor[key] !== 'boolean') {
             details.push({
                 path: `tokens.decor.${key}`,
@@ -358,11 +384,11 @@ function validateThemeTokens(tokens) {
             message: 'logoImageUrl must be a string',
         });
     }
-    if (typeof decor.logoImageUrl === 'string' && decor.logoImageUrl.length > 500000) {
+    if (typeof decor.logoImageUrl === 'string' && decor.logoImageUrl.length > MAX_LOGO_IMAGE_URL_LENGTH) {
         details.push({
             path: 'tokens.decor.logoImageUrl',
             rule: 'length',
-            message: 'logoImageUrl is too long (max 500000 chars)',
+            message: `logoImageUrl is too long (max ${MAX_LOGO_IMAGE_URL_LENGTH} chars)`,
         });
     }
     if (decor.serviceTag !== undefined && typeof decor.serviceTag !== 'string') {
@@ -448,9 +474,15 @@ function normalizeThemeTokens(tokens, options = {}) {
         safeZoneAlpha: clamp(merged.decor.safeZoneAlpha, 0, 0.35, THEME_TOKEN_DEFAULTS.decor.safeZoneAlpha),
         titleMultiplier: clamp(merged.decor.titleMultiplier, 0.8, 2, THEME_TOKEN_DEFAULTS.decor.titleMultiplier),
         contentMultiplier: clamp(merged.decor.contentMultiplier, 0.6, 1.6, THEME_TOKEN_DEFAULTS.decor.contentMultiplier),
+        gridEnabled: merged.decor.gridEnabled !== false,
+        textGlowEnabled: merged.decor.textGlowEnabled !== false,
+        cardShadowEnabled: merged.decor.cardShadowEnabled !== false,
+        tableShadowEnabled: merged.decor.tableShadowEnabled !== false,
+        chartShadowEnabled: merged.decor.chartShadowEnabled !== false,
+        imageShadowEnabled: merged.decor.imageShadowEnabled !== false,
         logoEnabled: merged.decor.logoEnabled !== false,
         logoText: String(merged.decor.logoText || THEME_TOKEN_DEFAULTS.decor.logoText).trim().slice(0, 32) || THEME_TOKEN_DEFAULTS.decor.logoText,
-        logoImageUrl: String(merged.decor.logoImageUrl || '').trim().slice(0, 500000),
+        logoImageUrl: String(merged.decor.logoImageUrl || '').trim().slice(0, MAX_LOGO_IMAGE_URL_LENGTH),
         serviceTag: String(merged.decor.serviceTag || THEME_TOKEN_DEFAULTS.decor.serviceTag).trim().slice(0, 42),
         logoAnchor: ALLOWED_DECOR_ANCHORS.has(String(merged.decor.logoAnchor))
             ? String(merged.decor.logoAnchor)
