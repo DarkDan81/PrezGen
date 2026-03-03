@@ -49,6 +49,18 @@ async function renderPdfFromHtml(html, outputPath) {
     }
 }
 
+function setJobProgress(jobId, progress, patch = {}) {
+    const now = new Date().toISOString();
+    updateRenderJob(jobId, {
+        status: 'running',
+        result: {
+            progress: Math.max(0, Math.min(100, Math.round(Number(progress) || 0))),
+            ...(patch || {}),
+        },
+        updatedAt: now,
+    });
+}
+
 async function captureSlidesAsPng(html, exportDir, prefix) {
     const browser = await puppeteer.launch({ headless: 'new' });
     try {
@@ -257,24 +269,28 @@ async function buildHybridBlocksPptx(presentationId, html, exportDir, baseName, 
 
 async function processPdfJob(job) {
     const now = new Date().toISOString();
-    updateRenderJob(job.id, { status: 'running', updatedAt: now });
+    updateRenderJob(job.id, { status: 'running', result: { progress: 2 }, updatedAt: now });
 
     try {
         const html = buildPreviewHtml(job.presentationId);
         if (!html) {
             throw new Error('Presentation not found for rendering');
         }
+        setJobProgress(job.id, 20);
 
         const exportDir = ensureExportDir();
         const fileName = `presentation_${job.presentationId}_${job.id}.pdf`;
         const outputPath = path.join(exportDir, fileName);
+        setJobProgress(job.id, 45);
         await renderPdfFromHtml(html, outputPath);
+        setJobProgress(job.id, 92);
 
         updateRenderJob(job.id, {
             status: 'done',
             result: {
                 fileName,
                 path: `/dist/export/${fileName}`,
+                progress: 100,
             },
             error: null,
             updatedAt: new Date().toISOString(),
@@ -290,7 +306,7 @@ async function processPdfJob(job) {
 
 async function processPptxJob(job) {
     const now = new Date().toISOString();
-    updateRenderJob(job.id, { status: 'running', updatedAt: now });
+    updateRenderJob(job.id, { status: 'running', result: { progress: 2 }, updatedAt: now });
 
     let tempImages = [];
     let tempHybridFiles = [];
@@ -303,15 +319,18 @@ async function processPptxJob(job) {
         const mode = requestedMode === 'raster' ? 'raster' : requestedMode === 'hybrid_blocks' ? 'hybrid_blocks' : 'hybrid_native';
         const warnings = [];
         const html = buildPreviewHtml(job.presentationId);
+        setJobProgress(job.id, 12, { mode });
 
         if (mode === 'raster') {
             if (!html) {
                 throw new Error('Presentation not found for rendering');
             }
+            setJobProgress(job.id, 28, { mode });
             tempImages = await captureSlidesAsPng(html, exportDir, baseName);
             if (!tempImages.length) {
                 throw new Error('No slides found for PPTX export');
             }
+            setJobProgress(job.id, 68, { mode });
             await buildPptxFromSlideImages(tempImages, outputPath);
             warnings.push({
                 code: 'SAFE_RASTER_EXPORT',
@@ -319,16 +338,19 @@ async function processPptxJob(job) {
             });
         } else if (mode === 'hybrid_native') {
             try {
+                setJobProgress(job.id, 30, { mode });
                 const nativeResult = await buildNativePptx(job.presentationId, outputPath);
                 warnings.push(...(nativeResult.warnings || []));
             } catch (nativeError) {
                 if (!html) {
                     throw nativeError;
                 }
+                setJobProgress(job.id, 42, { mode });
                 tempImages = await captureSlidesAsPng(html, exportDir, baseName);
                 if (!tempImages.length) {
                     throw nativeError;
                 }
+                setJobProgress(job.id, 72, { mode });
                 await buildPptxFromSlideImages(tempImages, outputPath);
                 warnings.push({
                     code: 'NATIVE_EXPORT_FALLBACK',
@@ -344,6 +366,7 @@ async function processPptxJob(job) {
                 if (!html) {
                     throw new Error('Presentation not found for rendering');
                 }
+                setJobProgress(job.id, 26, { mode });
                 const hybridResult = await buildHybridBlocksPptx(job.presentationId, html, exportDir, baseName, outputPath);
                 warnings.push(...(hybridResult.warnings || []));
                 tempHybridFiles = hybridResult.tempFiles || [];
@@ -351,10 +374,12 @@ async function processPptxJob(job) {
                 if (!html) {
                     throw hybridError;
                 }
+                setJobProgress(job.id, 44, { mode });
                 tempImages = await captureSlidesAsPng(html, exportDir, baseName);
                 if (!tempImages.length) {
                     throw hybridError;
                 }
+                setJobProgress(job.id, 72, { mode });
                 await buildPptxFromSlideImages(tempImages, outputPath);
                 warnings.push({
                     code: 'HYBRID_BLOCKS_FALLBACK',
@@ -374,6 +399,7 @@ async function processPptxJob(job) {
                 path: `/dist/export/${fileName}`,
                 mode,
                 warnings,
+                progress: 100,
             },
             error: null,
             updatedAt: new Date().toISOString(),

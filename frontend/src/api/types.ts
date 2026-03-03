@@ -194,8 +194,9 @@ export type RenderJob = {
   status: 'queued' | 'running' | 'done' | 'failed';
   result:
     | {
-        fileName: string;
-        path: string;
+        fileName?: string;
+        path?: string;
+        progress?: number;
         mode?: 'hybrid_native' | 'hybrid_blocks' | 'raster';
         warnings?: Array<{ code: string; message: string; slideIndex?: number | null; blockId?: string | null }>;
       }

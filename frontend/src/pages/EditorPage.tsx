@@ -242,7 +242,6 @@ export function EditorPage() {
   const [previewUrl, setPreviewUrl] = useState('');
   const [previewNonce, setPreviewNonce] = useState(0);
   const [renderJobId, setRenderJobId] = useState('');
-  const [pptxMode, setPptxMode] = useState<'hybrid_blocks' | 'raster'>('hybrid_blocks');
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>(() => {
     if (typeof window === 'undefined') return 'light';
     return window.localStorage.getItem('prezgen-ui-mode') === 'dark' ? 'dark' : 'light';
@@ -493,7 +492,7 @@ export function EditorPage() {
     onSuccess: (job) => setRenderJobId(job.id),
   });
   const startPptxMutation = useMutation({
-    mutationFn: () => client.startPptx(presentationId, pptxMode),
+    mutationFn: (mode: 'hybrid_blocks' | 'raster') => client.startPptx(presentationId, mode),
     onSuccess: (job) => setRenderJobId(job.id),
   });
 
@@ -542,6 +541,18 @@ export function EditorPage() {
   ]
     .filter(Boolean)
     .join(' · ');
+  const exportProgress = Math.max(
+    0,
+    Math.min(
+      100,
+      Number.isFinite(Number(renderJobQuery.data?.result?.progress))
+        ? Number(renderJobQuery.data?.result?.progress)
+        : renderJobQuery.data?.status === 'done'
+          ? 100
+          : 0,
+    ),
+  );
+  const isExportInProgress = renderJobQuery.data?.status === 'queued' || renderJobQuery.data?.status === 'running';
   const datasetModalDirty = useMemo(
     () => buildDatasetDraftSignature(datasetDraftName, datasetDraftColumns, datasetDraftRows) !== datasetModalSnapshot,
     [datasetDraftColumns, datasetDraftName, datasetDraftRows, datasetModalSnapshot],
@@ -789,23 +800,21 @@ export function EditorPage() {
           </Button>
         </div>
         <div className="editor-header-center">
-          <span className={`save-state ${saveStatusClass}`} aria-live="polite">
-            {headerStatusText || '\u00A0'}
-          </span>
+          <div className="header-status-stack">
+            <span className={`save-state ${saveStatusClass}`} aria-live="polite">
+              {headerStatusText || '\u00A0'}
+            </span>
+            {isExportInProgress ? (
+              <div className="export-progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={exportProgress}>
+                <div className="export-progress-fill" style={{ width: `${exportProgress}%` }} />
+              </div>
+            ) : null}
+          </div>
         </div>
         <div className="editor-header-right">
           <Button variant="secondary" size="small" onClick={() => setThemeMode(themeMode === 'light' ? 'dark' : 'light')}>
             {themeMode === 'light' ? t('editor.darkUi') : t('editor.lightUi')}
           </Button>
-          <select
-            className="ui-select compact-header-select"
-            value={pptxMode}
-            aria-label={t('editor.pptxMode')}
-              onChange={(e) => setPptxMode(e.target.value as 'hybrid_blocks' | 'raster')}
-            >
-              <option value="hybrid_blocks">{t('editor.pptxModeHybridBlocks')}</option>
-              <option value="raster">{t('editor.pptxModeRaster')}</option>
-            </select>
           <select
             className="ui-select compact-header-select"
             value={locale}
@@ -829,8 +838,11 @@ export function EditorPage() {
           <Button variant="primary" size="small" onClick={() => startPdfMutation.mutate()}>
             {t('editor.exportPdf')}
           </Button>
-          <Button variant="primary" size="small" onClick={() => startPptxMutation.mutate()}>
-            {t('editor.exportPptx')}
+          <Button variant="primary" size="small" onClick={() => startPptxMutation.mutate('raster')}>
+            {t('editor.exportPptxRaster')}
+          </Button>
+          <Button variant="primary" size="small" onClick={() => startPptxMutation.mutate('hybrid_blocks')}>
+            {t('editor.exportPptxBlocks')}
           </Button>
           {renderJobQuery.data?.status === 'done' && renderJobQuery.data?.result?.path ? (
             <Button variant="secondary" size="small" onClick={() => void downloadRenderArtifact()}>

@@ -25,6 +25,11 @@ function pxToPt(px, fallback) {
     return Math.max(1, n * PX_TO_PT);
 }
 
+function pxToReadablePt(px, fallback, scale = 1) {
+    const base = pxToPt(px, fallback);
+    return Math.max(1, base * scale);
+}
+
 function toHexColor(value, fallback) {
     if (typeof value !== 'string') return fallback;
     const v = value.trim();
@@ -385,6 +390,22 @@ function splitBodyRect(slide, tokens) {
     };
 }
 
+function getContentHeaderTextLayout(tokens, headerRect, hasSubtitle) {
+    const titleSize = clamp(tokens.typography.titleSize, 18, 96, 64);
+    const subtitleSize = clamp(tokens.typography.subtitleSize, 12, 72, 30);
+    const titleBoxHeight = Math.max(76, titleSize * 1.18);
+    const subtitleGap = 10;
+    const subtitleBoxHeight = hasSubtitle ? Math.max(32, subtitleSize * 1.2) : 0;
+    const titleY = headerRect.y;
+    const subtitleY = titleY + titleBoxHeight + subtitleGap;
+    return {
+        titleY,
+        titleBoxHeight,
+        subtitleY,
+        subtitleBoxHeight,
+    };
+}
+
 function addTitleSlide(slideOut, slideData, tokens, warnings, slideIndex) {
     const textColor = toHexColor(tokens.color.textPrimary, 'E7EDF6');
     const accent = toHexColor(tokens.color.accentSecondary, '39A8FF');
@@ -415,6 +436,37 @@ function addTitleSlide(slideOut, slideData, tokens, warnings, slideIndex) {
         bold: true,
         fontFace,
         fontSize: pxToPt(clamp(tokens.typography.subtitleSize, 12, 72, 30), 22),
+    });
+}
+
+function addTitleTextOnly(slideOut, slideData, tokens) {
+    const textColor = toHexColor(tokens.color.textPrimary, 'E7EDF6');
+    const accent = toHexColor(tokens.color.accentSecondary, '39A8FF');
+    const fontFace = pickFontFace(tokens);
+
+    slideOut.addText(String(slideData.title || ''), {
+        x: pxToInX(160),
+        y: pxToInY(440),
+        w: pxToInX(1600),
+        h: pxToInY(120),
+        align: 'center',
+        valign: 'middle',
+        color: textColor,
+        bold: true,
+        fontFace,
+        fontSize: pxToReadablePt(clamp(tokens.typography.titleSize, 18, 96, 64), 48, 0.9),
+    });
+    slideOut.addText(String(slideData.subtitle || ''), {
+        x: pxToInX(220),
+        y: pxToInY(560),
+        w: pxToInX(1480),
+        h: pxToInY(70),
+        align: 'center',
+        valign: 'middle',
+        color: accent,
+        bold: true,
+        fontFace,
+        fontSize: pxToReadablePt(clamp(tokens.typography.subtitleSize, 12, 72, 30), 22, 0.82),
     });
 }
 
@@ -463,7 +515,7 @@ function renderTextAtRect(slideOut, htmlText, rect, tokens) {
         h: pxToInY(rect.h - 12),
         color: toHexColor(tokens.color.textPrimary, 'E7EDF6'),
         fontFace: pickFontFace(tokens),
-        fontSize: clamp(tokens.typography.bodySize, 10, 48, 28),
+        fontSize: pxToReadablePt(clamp(tokens.typography.bodySize, 10, 48, 28), 18, 0.78),
         breakLine: true,
         valign: 'top',
         autoFit: true,
@@ -694,6 +746,7 @@ function addContentSlide(slideOut, slideData, tokens, warnings, slideIndex) {
     addBadge(slideOut, tokens, false, warnings, slideIndex);
 
     const rects = splitBodyRect(slideData, tokens);
+    const headerTextLayout = getContentHeaderTextLayout(tokens, rects.header, Boolean(slideData.subtitle));
     slideOut.addShape('rect', {
         x: pxToInX(rects.header.x),
         y: pxToInY(rects.header.y + 4),
@@ -704,9 +757,9 @@ function addContentSlide(slideOut, slideData, tokens, warnings, slideIndex) {
     });
     slideOut.addText(String(slideData.title || ''), {
         x: pxToInX(rects.header.x + 20),
-        y: pxToInY(rects.header.y),
+        y: pxToInY(headerTextLayout.titleY),
         w: pxToInX(rects.header.w - 30),
-        h: pxToInY(Math.max(70, rects.header.h * 0.55)),
+        h: pxToInY(headerTextLayout.titleBoxHeight),
         fontFace,
         bold: true,
         color: textColor,
@@ -715,9 +768,9 @@ function addContentSlide(slideOut, slideData, tokens, warnings, slideIndex) {
     if (slideData.subtitle) {
         slideOut.addText(String(slideData.subtitle), {
             x: pxToInX(rects.header.x + 20),
-            y: pxToInY(rects.header.y + Math.max(66, rects.header.h * 0.52)),
+            y: pxToInY(headerTextLayout.subtitleY),
             w: pxToInX(rects.header.w - 30),
-            h: pxToInY(34),
+            h: pxToInY(headerTextLayout.subtitleBoxHeight),
             fontFace,
             bold: true,
             color: accent2,
@@ -806,12 +859,15 @@ function buildHybridBlocksPptxDeck({ pptx, presentationId, slideAssets }) {
             });
         }
 
-        if (slideData.type !== 'title') {
+        if (slideData.type === 'title') {
+            addTitleTextOnly(slideOut, slideData, tokens);
+        } else {
             const textColor = toHexColor(tokens.color.textPrimary, 'E7EDF6');
             const accent = toHexColor(tokens.color.accent, 'FF7B1F');
             const accent2 = toHexColor(tokens.color.accentSecondary, '39A8FF');
             const fontFace = pickFontFace(tokens);
             const rects = splitBodyRect(slideData, tokens);
+            const headerTextLayout = getContentHeaderTextLayout(tokens, rects.header, Boolean(slideData.subtitle));
 
             slideOut.addShape('rect', {
                 x: pxToInX(rects.header.x),
@@ -823,24 +879,24 @@ function buildHybridBlocksPptxDeck({ pptx, presentationId, slideAssets }) {
             });
             slideOut.addText(String(slideData.title || ''), {
                 x: pxToInX(rects.header.x + 20),
-                y: pxToInY(rects.header.y),
+                y: pxToInY(headerTextLayout.titleY),
                 w: pxToInX(rects.header.w - 30),
-                h: pxToInY(Math.max(70, rects.header.h * 0.55)),
+                h: pxToInY(headerTextLayout.titleBoxHeight),
                 fontFace,
                 bold: true,
                 color: textColor,
-                fontSize: pxToPt(clamp(tokens.typography.titleSize, 18, 96, 64), 48),
+                fontSize: pxToReadablePt(clamp(tokens.typography.titleSize, 18, 96, 64), 48, 0.9),
             });
             if (slideData.subtitle) {
                 slideOut.addText(String(slideData.subtitle), {
                     x: pxToInX(rects.header.x + 20),
-                    y: pxToInY(rects.header.y + Math.max(66, rects.header.h * 0.52)),
+                    y: pxToInY(headerTextLayout.subtitleY),
                     w: pxToInX(rects.header.w - 30),
-                    h: pxToInY(34),
+                    h: pxToInY(headerTextLayout.subtitleBoxHeight),
                     fontFace,
                     bold: true,
                     color: accent2,
-                    fontSize: pxToPt(clamp(tokens.typography.subtitleSize, 12, 72, 30), 22),
+                    fontSize: pxToReadablePt(clamp(tokens.typography.subtitleSize, 12, 72, 30), 22, 0.82),
                 });
             }
         }
