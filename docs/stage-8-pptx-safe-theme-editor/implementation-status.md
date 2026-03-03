@@ -75,6 +75,30 @@ Completed.
 - `cyberpunk` (neon),
 - all migrated to the same token contract and badge/decor v2 behavior.
 
+11. Grid and element effects tokenization:
+- added runtime decor toggles for background grid and per-element effects:
+  - `gridEnabled`,
+  - `textGlowEnabled`,
+  - `cardShadowEnabled`,
+  - `tableShadowEnabled`,
+  - `chartShadowEnabled`,
+  - `imageShadowEnabled`;
+- editor exposes these toggles in dedicated grouped section (`Grid and Effects`);
+- runtime adds deterministic body classes and CSS variable flags for each toggle;
+- all three reference themes wired to these toggles.
+- visual policy refinement:
+  - content-area global underlay removed in light/neon themes (`slide-body` is transparent),
+  - table/chart keep local readability surfaces,
+  - cyberpunk KPI cards keep internal neon fill (card-level surface) while slide-wide underlay stays disabled.
+
+## Not yet tokenized (remaining hardcoded layer)
+
+1. Base font family stacks per theme (currently fixed in CSS).
+2. Exact gradient formulas and blend curves for decor primitives.
+3. Theme-specific micro-typography details (some letter-spacing/text-transform constants).
+4. Advanced chart geometry defaults (line thickness/point radius) outside theme tokens.
+5. Theme preview panel chrome styling on `/themes` page (editor UI skin, not slide theme contract).
+
 ## Verification run
 
 Executed and passed:
