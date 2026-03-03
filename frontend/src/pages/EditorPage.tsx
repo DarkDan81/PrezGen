@@ -242,7 +242,7 @@ export function EditorPage() {
   const [previewUrl, setPreviewUrl] = useState('');
   const [previewNonce, setPreviewNonce] = useState(0);
   const [renderJobId, setRenderJobId] = useState('');
-  const [pptxMode, setPptxMode] = useState<'hybrid_blocks' | 'hybrid_native' | 'raster'>('hybrid_blocks');
+  const [pptxMode, setPptxMode] = useState<'hybrid_blocks' | 'raster'>('hybrid_blocks');
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>(() => {
     if (typeof window === 'undefined') return 'light';
     return window.localStorage.getItem('prezgen-ui-mode') === 'dark' ? 'dark' : 'light';
@@ -801,12 +801,11 @@ export function EditorPage() {
             className="ui-select compact-header-select"
             value={pptxMode}
             aria-label={t('editor.pptxMode')}
-            onChange={(e) => setPptxMode(e.target.value as 'hybrid_blocks' | 'hybrid_native' | 'raster')}
-          >
-            <option value="hybrid_blocks">{t('editor.pptxModeHybridBlocks')}</option>
-            <option value="hybrid_native">{t('editor.pptxModeHybridNative')}</option>
-            <option value="raster">{t('editor.pptxModeRaster')}</option>
-          </select>
+              onChange={(e) => setPptxMode(e.target.value as 'hybrid_blocks' | 'raster')}
+            >
+              <option value="hybrid_blocks">{t('editor.pptxModeHybridBlocks')}</option>
+              <option value="raster">{t('editor.pptxModeRaster')}</option>
+            </select>
           <select
             className="ui-select compact-header-select"
             value={locale}

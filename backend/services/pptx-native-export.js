@@ -9,6 +9,7 @@ const PPTX_WIDTH = 13.333;
 const PPTX_HEIGHT = 7.5;
 const PX_TO_IN_X = PPTX_WIDTH / CANVAS_WIDTH;
 const PX_TO_IN_Y = PPTX_HEIGHT / CANVAS_HEIGHT;
+const PX_TO_PT = 72 / 96;
 
 function pxToInX(px) {
     return px * PX_TO_IN_X;
@@ -16,6 +17,12 @@ function pxToInX(px) {
 
 function pxToInY(px) {
     return px * PX_TO_IN_Y;
+}
+
+function pxToPt(px, fallback) {
+    const n = Number(px);
+    if (!Number.isFinite(n)) return fallback;
+    return Math.max(1, n * PX_TO_PT);
 }
 
 function toHexColor(value, fallback) {
@@ -395,7 +402,7 @@ function addTitleSlide(slideOut, slideData, tokens, warnings, slideIndex) {
         color: textColor,
         bold: true,
         fontFace,
-        fontSize: clamp(tokens.typography.titleSize, 18, 96, 64),
+        fontSize: pxToPt(clamp(tokens.typography.titleSize, 18, 96, 64), 48),
     });
     slideOut.addText(String(slideData.subtitle || ''), {
         x: pxToInX(220),
@@ -407,7 +414,7 @@ function addTitleSlide(slideOut, slideData, tokens, warnings, slideIndex) {
         color: accent,
         bold: true,
         fontFace,
-        fontSize: clamp(tokens.typography.subtitleSize, 12, 72, 30),
+        fontSize: pxToPt(clamp(tokens.typography.subtitleSize, 12, 72, 30), 22),
     });
 }
 
@@ -438,7 +445,7 @@ function renderTextBlock(slideOut, block, rect, tokens) {
         h: pxToInY(rect.h - 24),
         color: toHexColor(tokens.color.textPrimary, 'E7EDF6'),
         fontFace: pickFontFace(tokens),
-        fontSize: clamp(tokens.typography.bodySize, 10, 48, 28),
+        fontSize: pxToPt(clamp(tokens.typography.bodySize, 10, 48, 28), 20),
         breakLine: true,
         valign: 'top',
         autoFit: true,
@@ -525,7 +532,7 @@ function renderTableBlock(slideOut, block, rect, tokens) {
         h: pxToInY(rect.h - 16),
         border: { type: 'solid', color: 'D5DDE8', pt: 0.6 },
         fontFace: pickFontFace(tokens),
-        fontSize: Math.max(9, clamp(tokens.typography.bodySize, 10, 48, 28) * 0.45),
+        fontSize: Math.max(8, pxToPt(clamp(tokens.typography.bodySize, 10, 48, 28) * 0.45, 11)),
         color: toHexColor(tokens.color.textPrimary, '1E2430'),
         fill: 'FFFFFF',
         valign: 'middle',
@@ -628,7 +635,7 @@ function renderKpiBlock(slideOut, block, rect, tokens) {
             h: pxToInY(cardH * 0.34),
             bold: true,
             fontFace: pickFontFace(tokens),
-            fontSize: Math.max(16, Math.min(28, cardW * 0.07)),
+            fontSize: Math.max(12, pxToPt(Math.max(16, Math.min(28, cardW * 0.07)), 18)),
             color: toHexColor(tokens.color.textPrimary, '2B3340'),
             shrinkText: true,
         });
@@ -799,9 +806,7 @@ function buildHybridBlocksPptxDeck({ pptx, presentationId, slideAssets }) {
             });
         }
 
-        if (slideData.type === 'title') {
-            addTitleSlide(slideOut, slideData, tokens, warnings, index + 1);
-        } else {
+        if (slideData.type !== 'title') {
             const textColor = toHexColor(tokens.color.textPrimary, 'E7EDF6');
             const accent = toHexColor(tokens.color.accent, 'FF7B1F');
             const accent2 = toHexColor(tokens.color.accentSecondary, '39A8FF');
@@ -824,7 +829,7 @@ function buildHybridBlocksPptxDeck({ pptx, presentationId, slideAssets }) {
                 fontFace,
                 bold: true,
                 color: textColor,
-                fontSize: clamp(tokens.typography.titleSize, 18, 96, 64),
+                fontSize: pxToPt(clamp(tokens.typography.titleSize, 18, 96, 64), 48),
             });
             if (slideData.subtitle) {
                 slideOut.addText(String(slideData.subtitle), {
@@ -835,7 +840,7 @@ function buildHybridBlocksPptxDeck({ pptx, presentationId, slideAssets }) {
                     fontFace,
                     bold: true,
                     color: accent2,
-                    fontSize: clamp(tokens.typography.subtitleSize, 12, 72, 30),
+                    fontSize: pxToPt(clamp(tokens.typography.subtitleSize, 12, 72, 30), 22),
                 });
             }
         }
