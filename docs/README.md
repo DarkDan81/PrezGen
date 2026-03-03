@@ -12,6 +12,7 @@ Current scope:
 - Stage 6: editor usability and content authoring improvements (rich text, KPI layout, upload UX unification).
 - Stage 7: strict separation of theme skin from structural layout behavior.
 - Stage 8: PPTX-safe theme editor contract (visual capabilities constrained to exportable model).
+- Stage 9: export pipeline hardening (PDF parity) and PPTX export implementation.
 
 Structure:
 
@@ -48,4 +49,9 @@ Structure:
 - `stage-8-pptx-safe-theme-editor/implementation-plan.md` - phased implementation plan for schema/validation/editor.
 - `stage-8-pptx-safe-theme-editor/implementation-status.md` - current implementation status for stage 8.
 - `stage-8-pptx-safe-theme-editor/pptx-safe-matrix.md` - draft capability matrix (`safe-native`/`safe-raster`/`blocked`).
+- `stage-9-export-pipeline/README.md` - stage overview and acceptance criteria for PDF/PPTX export pipeline.
+- `stage-9-export-pipeline/decisions.md` - approved implementation decisions and output constraints.
+- `stage-9-export-pipeline/implementation-plan.md` - phased implementation plan and risk gates.
+- `stage-9-export-pipeline/execution-order.md` - strict step-by-step runbook for safe delivery.
+- `stage-9-export-pipeline/implementation-status.md` - progress/status tracker for stage 9.
 - `qa-demo-deck-assets.md` - source image naming and run instructions for QA demo deck seed script.
