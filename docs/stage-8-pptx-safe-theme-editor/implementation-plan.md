@@ -208,3 +208,4 @@ Deliverable:
 6. Constrain each preview pane to a 16:9 viewport wrapper (no stretched strip previews).
 7. Keep top toolbar compact and single-line where screen width allows.
 8. Ensure triangle orientation changes correctly when anchor is moved to left corners.
+9. Replace service-tag-only badge model with optional image logo (`logoImageUrl`) in editor and runtime render.

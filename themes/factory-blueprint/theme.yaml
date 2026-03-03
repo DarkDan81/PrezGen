@@ -34,7 +34,6 @@ decor:
   contentMultiplier: 1
   logoEnabled: true
   logoText: "DARKDAN"
-  serviceTag: "SYSTEM v1.0"
   logoAnchor: "top-right"
   logoSize: 14
   logoOpacity: 0.95

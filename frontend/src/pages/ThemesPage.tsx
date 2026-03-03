@@ -56,6 +56,7 @@ function defaultTokens(): ThemeTokens {
       contentMultiplier: 1,
       logoEnabled: true,
       logoText: 'DARKDAN',
+      logoImageUrl: '',
       serviceTag: 'SYSTEM v1.0',
       logoAnchor: 'top-right',
       logoSize: 14,
@@ -93,6 +94,7 @@ function normalizeTokens(input?: ThemeTokens): ThemeTokens {
     contentMultiplier: typeof nextDecor.contentMultiplier === 'number' ? nextDecor.contentMultiplier : baseDecor.contentMultiplier,
     logoEnabled: typeof nextDecor.logoEnabled === 'boolean' ? nextDecor.logoEnabled : baseDecor.logoEnabled,
     logoText: typeof nextDecor.logoText === 'string' ? nextDecor.logoText : baseDecor.logoText,
+    logoImageUrl: typeof nextDecor.logoImageUrl === 'string' ? nextDecor.logoImageUrl : baseDecor.logoImageUrl,
     serviceTag: typeof nextDecor.serviceTag === 'string' ? nextDecor.serviceTag : baseDecor.serviceTag,
     logoAnchor: (nextDecor.logoAnchor as DecorTokens['logoAnchor']) || baseDecor.logoAnchor,
     logoSize: typeof nextDecor.logoSize === 'number' ? nextDecor.logoSize : baseDecor.logoSize,
@@ -211,22 +213,48 @@ function ColorField({ label, value, onChange }: ColorFieldProps) {
 function PreviewPane({ title, preview, isLoading, sceneId, paneClassName }: PreviewPaneProps) {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const html = preview?.html || '';
+  const sceneRef = useRef(sceneId);
+  const scrollRetryRef = useRef<number | null>(null);
+  sceneRef.current = sceneId;
+
+  const clearRetry = () => {
+    if (scrollRetryRef.current !== null) {
+      window.clearTimeout(scrollRetryRef.current);
+      scrollRetryRef.current = null;
+    }
+  };
+
+  const scrollToScene = (attemptsLeft = 0) => {
+    const frame = iframeRef.current;
+    if (!frame) return;
+    try {
+      const sceneIndex = GOLDEN_SCENE_INDEX[sceneRef.current] ?? 0;
+      const target = frame.contentWindow?.document.getElementById(`slide-${sceneIndex}`);
+      if (target) {
+        target.scrollIntoView({ block: 'start' });
+        clearRetry();
+        return;
+      }
+      if (attemptsLeft > 0) {
+        clearRetry();
+        scrollRetryRef.current = window.setTimeout(() => scrollToScene(attemptsLeft - 1), 70);
+      }
+    } catch {
+      if (attemptsLeft > 0) {
+        clearRetry();
+        scrollRetryRef.current = window.setTimeout(() => scrollToScene(attemptsLeft - 1), 70);
+      }
+    }
+  };
 
   useEffect(() => {
     if (!html || !sceneId) return;
-    const frame = iframeRef.current;
-    if (!frame) return;
-    const go = () => {
-      try {
-        const sceneIndex = GOLDEN_SCENE_INDEX[sceneId] ?? 0;
-        const target = frame.contentWindow?.document.getElementById(`slide-${sceneIndex}`);
-        if (target) target.scrollIntoView({ block: 'start' });
-      } catch {
-        // no-op
-      }
+    clearRetry();
+    const timeout = window.setTimeout(() => scrollToScene(6), 80);
+    return () => {
+      window.clearTimeout(timeout);
+      clearRetry();
     };
-    const timeout = window.setTimeout(go, 80);
-    return () => window.clearTimeout(timeout);
   }, [html, sceneId]);
 
   return (
@@ -237,7 +265,13 @@ function PreviewPane({ title, preview, isLoading, sceneId, paneClassName }: Prev
       ) : (
         <div className="themes-preview-viewport">
           <div className="themes-preview-canvas">
-            <iframe ref={iframeRef} className="themes-preview-iframe" srcDoc={html} title={title} />
+            <iframe
+              ref={iframeRef}
+              className="themes-preview-iframe"
+              srcDoc={html}
+              title={title}
+              onLoad={() => scrollToScene(8)}
+            />
           </div>
         </div>
       )}
@@ -259,12 +293,14 @@ export function ThemesPage() {
   const [warnings, setWarnings] = useState<Array<{ path: string; message: string }>>([]);
   const [error, setError] = useState('');
   const [selectedSceneId, setSelectedSceneId] = useState('title');
+  const [compareMode, setCompareMode] = useState(true);
 
   const previewDebounceRef = useRef<number | null>(null);
   const [previewDraft, setPreviewDraft] = useState<ThemePreviewResponse | null>(null);
   const [previewBaseline, setPreviewBaseline] = useState<ThemePreviewResponse | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const importInputRef = useRef<HTMLInputElement | null>(null);
+  const logoImageInputRef = useRef<HTMLInputElement | null>(null);
 
   const themesQuery = useQuery({ queryKey: ['themes'], queryFn: client.listThemes });
   const presentationsQuery = useQuery({ queryKey: ['presentations'], queryFn: client.listPresentations });
@@ -448,6 +484,32 @@ export function ThemesPage() {
       const parsed = JSON.parse(text) as { schemaVersion: number; theme: { name: string; tokens: ThemeTokens; baseThemeId?: string } };
       if (!parsed?.theme?.tokens) throw new Error('Invalid theme file');
       await importThemeMutation.mutateAsync(parsed);
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  };
+
+  const handleLogoImageFile = async (file: File) => {
+    try {
+      const isImage = file.type.startsWith('image/');
+      if (!isImage) {
+        setError('Logo file must be an image');
+        return;
+      }
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(new Error('Failed to read logo file'));
+        reader.readAsDataURL(file);
+      });
+      setTokens((prev) => ({
+        ...prev,
+        decor: {
+          ...(prev.decor || {}),
+          logoImageUrl: dataUrl,
+        },
+      }));
+      setError('');
     } catch (e) {
       setError((e as Error).message);
     }
@@ -871,18 +933,47 @@ export function ThemesPage() {
                     onChange={(e) => setTokens((prev) => ({ ...prev, decor: { ...(prev.decor || {}), logoText: e.target.value } }))}
                   />
                 </Field>
-                <Field label={t('themes.serviceTag')}>
+                <Field label={t('themes.logoImageUrl')}>
                   <input
                     className="ui-input"
-                    value={tokens.decor?.serviceTag ? String(tokens.decor.serviceTag) : ''}
+                    placeholder="https://... or data:image/..."
+                    value={tokens.decor?.logoImageUrl ? String(tokens.decor.logoImageUrl) : ''}
                     onChange={(e) =>
                       setTokens((prev) => ({
                         ...prev,
-                        decor: { ...(prev.decor || {}), serviceTag: e.target.value },
+                        decor: { ...(prev.decor || {}), logoImageUrl: e.target.value },
                       }))
                     }
                   />
                 </Field>
+                <div className="themes-actions">
+                  <Button size="small" variant="secondary" onClick={() => logoImageInputRef.current?.click()}>
+                    {t('themes.uploadLogoImage')}
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="ghost"
+                    onClick={() =>
+                      setTokens((prev) => ({
+                        ...prev,
+                        decor: { ...(prev.decor || {}), logoImageUrl: '' },
+                      }))
+                    }
+                  >
+                    {t('themes.clearLogoImage')}
+                  </Button>
+                  <input
+                    ref={logoImageInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="themes-file-input-hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) void handleLogoImageFile(file);
+                      e.currentTarget.value = '';
+                    }}
+                  />
+                </div>
                 <Field label={t('themes.logoAnchor')}>
                   <select
                     className="ui-select"
@@ -1265,6 +1356,13 @@ export function ThemesPage() {
             <div className="themes-preview-panel">
               <div className="themes-preview-toolbar">
                 <span className={`themes-safe-badge ${warnings.length ? 'is-warning' : 'is-safe'}`}>{safeState}</span>
+                <Button
+                  size="small"
+                  variant="secondary"
+                  onClick={() => setCompareMode((prev) => !prev)}
+                >
+                  {compareMode ? t('themes.previewAfter') : t('themes.compareMode')}
+                </Button>
               </div>
 
               <div className="themes-scenes">
@@ -1280,19 +1378,30 @@ export function ThemesPage() {
                 ))}
               </div>
 
-              <div className="themes-preview-stack is-row">
-                <PreviewPane
-                  title={t('themes.previewBefore')}
-                  preview={previewBaseline}
-                  isLoading={previewLoading}
-                  sceneId={selectedSceneId}
-                />
-                <PreviewPane
-                  title={t('themes.previewAfter')}
-                  preview={previewDraft}
-                  isLoading={previewLoading}
-                  sceneId={selectedSceneId}
-                />
+              <div className={`themes-preview-stack ${compareMode ? 'is-row' : 'is-single'}`.trim()}>
+                {compareMode ? (
+                  <>
+                    <PreviewPane
+                      title={t('themes.previewBefore')}
+                      preview={previewBaseline}
+                      isLoading={previewLoading}
+                      sceneId={selectedSceneId}
+                    />
+                    <PreviewPane
+                      title={t('themes.previewAfter')}
+                      preview={previewDraft}
+                      isLoading={previewLoading}
+                      sceneId={selectedSceneId}
+                    />
+                  </>
+                ) : (
+                  <PreviewPane
+                    title={t('themes.previewAfter')}
+                    preview={previewDraft}
+                    isLoading={previewLoading}
+                    sceneId={selectedSceneId}
+                  />
+                )}
               </div>
             </div>
           </div>

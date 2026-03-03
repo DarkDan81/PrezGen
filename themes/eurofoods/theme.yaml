@@ -34,7 +34,6 @@ decor:
   contentMultiplier: 1
   logoEnabled: true
   logoText: "EUROFOODS"
-  serviceTag: "CORPORATE DECK"
   logoAnchor: "top-right"
   logoSize: 13
   logoOpacity: 0.92

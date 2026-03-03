@@ -102,6 +102,7 @@ export type ThemeTokens = {
     contentMultiplier?: number;
     logoEnabled?: boolean;
     logoText?: string;
+    logoImageUrl?: string;
     serviceTag?: string;
     logoAnchor?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
     logoSize?: number;

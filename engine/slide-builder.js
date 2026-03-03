@@ -103,13 +103,15 @@ function renderThemeBadge(tokens, options = {}) {
     if (!show) return '';
 
     const main = escapeHtml(decor.logoText || 'DARKDAN');
-    const tag = escapeHtml(decor.serviceTag || '');
+    const imageUrl = typeof decor.logoImageUrl === 'string' ? decor.logoImageUrl.trim() : '';
     const variant = sanitizeClassToken(decor.badgeVariant || 'outlined');
     const anchor = sanitizeClassToken(decor.logoAnchor || 'top-right');
+    const badgeInner = imageUrl
+        ? `<img src="${escapeAttr(imageUrl)}" class="badge-image" alt="logo">`
+        : `<span class="badge-main">${main}</span>`;
     return `
         <div class="theme-badge variant-${variant} anchor-${anchor}">
-            <span class="badge-main">${main}</span>
-            ${tag ? `<span class="badge-tag">${tag}</span>` : ''}
+            ${badgeInner}
         </div>
     `;
 }

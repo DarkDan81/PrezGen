@@ -52,6 +52,13 @@ body.viewer-mode {
 }
 
 .theme-badge .badge-main { font-weight: 800; }
+.theme-badge .badge-image {
+    display: block;
+    height: calc(var(--pg-logo-size, 14px) * 2.2);
+    width: auto;
+    max-width: 220px;
+    object-fit: contain;
+}
 .theme-badge .badge-tag { font-size: 0.7em; opacity: 0.78; }
 
 .theme-badge.anchor-top-right { top: var(--pg-logo-top, 30px); right: var(--pg-logo-right, 42px); left: auto; bottom: auto; }

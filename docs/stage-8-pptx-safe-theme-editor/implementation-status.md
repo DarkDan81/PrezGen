@@ -64,7 +64,12 @@ Completed.
 - left-side anchors now use corner-specific clip polygons (not only vertical mirroring),
 - ensuring consistent orientation for `top-left` / `bottom-left`.
 
-9. Three reference themes aligned:
+9. Badge/logo update:
+- service tag line removed from rendered badge;
+- badge now supports image mode via `tokens.decor.logoImageUrl` (image is rendered instead of text);
+- `/themes` editor allows logo image upload and direct URL/data-URL editing.
+
+10. Three reference themes aligned:
 - `factory-blueprint` (dark),
 - `eurofoods` (light),
 - `cyberpunk` (neon),

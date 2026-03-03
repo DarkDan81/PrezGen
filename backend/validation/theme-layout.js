@@ -76,6 +76,7 @@ const THEME_TOKEN_DEFAULTS = {
         contentMultiplier: 1,
         logoEnabled: true,
         logoText: 'DARKDAN',
+        logoImageUrl: '',
         serviceTag: 'SYSTEM v1.0',
         logoAnchor: 'top-right',
         logoSize: 14,
@@ -113,6 +114,7 @@ const ALLOWED_GROUP_KEYS = {
         'contentMultiplier',
         'logoEnabled',
         'logoText',
+        'logoImageUrl',
         'serviceTag',
         'logoAnchor',
         'logoSize',
@@ -349,6 +351,20 @@ function validateThemeTokens(tokens) {
             message: 'logoText must be a non-empty string',
         });
     }
+    if (decor.logoImageUrl !== undefined && typeof decor.logoImageUrl !== 'string') {
+        details.push({
+            path: 'tokens.decor.logoImageUrl',
+            rule: 'string',
+            message: 'logoImageUrl must be a string',
+        });
+    }
+    if (typeof decor.logoImageUrl === 'string' && decor.logoImageUrl.length > 500000) {
+        details.push({
+            path: 'tokens.decor.logoImageUrl',
+            rule: 'length',
+            message: 'logoImageUrl is too long (max 500000 chars)',
+        });
+    }
     if (decor.serviceTag !== undefined && typeof decor.serviceTag !== 'string') {
         details.push({
             path: 'tokens.decor.serviceTag',
@@ -434,6 +450,7 @@ function normalizeThemeTokens(tokens, options = {}) {
         contentMultiplier: clamp(merged.decor.contentMultiplier, 0.6, 1.6, THEME_TOKEN_DEFAULTS.decor.contentMultiplier),
         logoEnabled: merged.decor.logoEnabled !== false,
         logoText: String(merged.decor.logoText || THEME_TOKEN_DEFAULTS.decor.logoText).trim().slice(0, 32) || THEME_TOKEN_DEFAULTS.decor.logoText,
+        logoImageUrl: String(merged.decor.logoImageUrl || '').trim().slice(0, 500000),
         serviceTag: String(merged.decor.serviceTag || THEME_TOKEN_DEFAULTS.decor.serviceTag).trim().slice(0, 42),
         logoAnchor: ALLOWED_DECOR_ANCHORS.has(String(merged.decor.logoAnchor))
             ? String(merged.decor.logoAnchor)
