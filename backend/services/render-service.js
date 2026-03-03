@@ -5,6 +5,17 @@ const PptxGenJS = require('pptxgenjs');
 const { buildPreviewHtml } = require('./preview-service');
 const { updateRenderJob } = require('../repositories/render-job-repository');
 
+function buildExportBaseHref() {
+    const port = Number.parseInt(process.env.PORT, 10) || 3100;
+    return `http://127.0.0.1:${port}/`;
+}
+
+function prepareHtmlForPuppeteer(html) {
+    if (typeof html !== 'string' || !html.includes('<head>')) return html;
+    if (html.includes('<base href=')) return html;
+    return html.replace('<head>', `<head>\n        <base href="${buildExportBaseHref()}">`);
+}
+
 function ensureExportDir() {
     const dir = path.join(__dirname, '../../dist/export');
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -21,7 +32,8 @@ async function renderPdfFromHtml(html, outputPath) {
             deviceScaleFactor: 1,
         });
         await page.emulateMediaType('screen');
-        await page.setContent(html, { waitUntil: 'load', timeout: 0 });
+        await page.setContent(prepareHtmlForPuppeteer(html), { waitUntil: 'networkidle0', timeout: 0 });
+        await new Promise((resolve) => setTimeout(resolve, 1200));
         await page.pdf({
             path: outputPath,
             width: '1920px',
@@ -46,7 +58,7 @@ async function captureSlidesAsPng(html, exportDir, prefix) {
             deviceScaleFactor: 1,
         });
         await page.emulateMediaType('screen');
-        await page.setContent(html, { waitUntil: 'networkidle0', timeout: 0 });
+        await page.setContent(prepareHtmlForPuppeteer(html), { waitUntil: 'networkidle0', timeout: 0 });
         await new Promise((resolve) => setTimeout(resolve, 1200));
         const frameHandles = await page.$$('.slide-frame');
 
