@@ -192,6 +192,13 @@ export type RenderJob = {
   presentationId: string;
   type: 'export_pdf' | 'export_pptx_future';
   status: 'queued' | 'running' | 'done' | 'failed';
-  result: { fileName: string; path: string; warnings?: Array<{ code: string; message: string }> } | null;
+  result:
+    | {
+        fileName: string;
+        path: string;
+        mode?: 'hybrid_native' | 'raster';
+        warnings?: Array<{ code: string; message: string; slideIndex?: number | null; blockId?: string | null }>;
+      }
+    | null;
   error: { message: string } | null;
 };

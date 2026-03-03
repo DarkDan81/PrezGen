@@ -863,6 +863,14 @@ router.post('/presentations/:presentationId/render/pptx', (req, res, next) => {
         const { presentationId } = req.params;
         const presentation = getPresentationById(presentationId);
         if (!presentation) throw notFound('Presentation not found');
+        const mode = req.body?.mode;
+        if (mode !== undefined && mode !== 'hybrid_native' && mode !== 'raster') {
+            throw validationError([{
+                path: 'mode',
+                rule: 'enum',
+                message: 'mode must be one of hybrid_native or raster',
+            }]);
+        }
 
         const now = new Date().toISOString();
         const job = createRenderJob({
@@ -874,6 +882,9 @@ router.post('/presentations/:presentationId/render/pptx', (req, res, next) => {
             error: null,
             createdAt: now,
             updatedAt: now,
+            options: {
+                mode: mode || 'hybrid_native',
+            },
         });
         queuePptxJob(job);
         return sendData(req, res, job, 202);

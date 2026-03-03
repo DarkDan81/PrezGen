@@ -3,6 +3,7 @@ const path = require('path');
 const puppeteer = require('puppeteer');
 const PptxGenJS = require('pptxgenjs');
 const { buildPreviewHtml } = require('./preview-service');
+const { buildNativePptxDeck } = require('./pptx-native-export');
 const { updateRenderJob } = require('../repositories/render-job-repository');
 
 function buildExportBaseHref() {
@@ -94,6 +95,22 @@ async function buildPptxFromSlideImages(imagePaths, outputPath) {
     await pptx.writeFile({ fileName: outputPath });
 }
 
+async function buildNativePptx(presentationId, outputPath) {
+    const pptx = new PptxGenJS();
+    pptx.layout = 'LAYOUT_WIDE'; // 13.333 x 7.5
+    pptx.author = 'PrezGen';
+    pptx.company = 'PrezGen';
+    pptx.subject = 'Presentation Export';
+    pptx.title = 'PrezGen Export';
+
+    const result = buildNativePptxDeck({ pptx, presentationId });
+    if (!result.slidesCount) {
+        throw new Error('No slides found for PPTX export');
+    }
+    await pptx.writeFile({ fileName: outputPath });
+    return result;
+}
+
 async function processPdfJob(job) {
     const now = new Date().toISOString();
     updateRenderJob(job.id, { status: 'running', updatedAt: now });
@@ -133,34 +150,59 @@ async function processPptxJob(job) {
 
     let tempImages = [];
     try {
-        const html = buildPreviewHtml(job.presentationId);
-        if (!html) {
-            throw new Error('Presentation not found for rendering');
-        }
-
         const exportDir = ensureExportDir();
         const baseName = `presentation_${job.presentationId}_${job.id}`;
         const fileName = `${baseName}.pptx`;
         const outputPath = path.join(exportDir, fileName);
+        const mode = job.options?.mode === 'raster' ? 'raster' : 'hybrid_native';
+        const warnings = [];
 
-        tempImages = await captureSlidesAsPng(html, exportDir, baseName);
-        if (!tempImages.length) {
-            throw new Error('No slides found for PPTX export');
+        if (mode === 'raster') {
+            const html = buildPreviewHtml(job.presentationId);
+            if (!html) {
+                throw new Error('Presentation not found for rendering');
+            }
+            tempImages = await captureSlidesAsPng(html, exportDir, baseName);
+            if (!tempImages.length) {
+                throw new Error('No slides found for PPTX export');
+            }
+            await buildPptxFromSlideImages(tempImages, outputPath);
+            warnings.push({
+                code: 'SAFE_RASTER_EXPORT',
+                message: 'PPTX export is generated via deterministic slide rasterization',
+            });
+        } else {
+            try {
+                const nativeResult = await buildNativePptx(job.presentationId, outputPath);
+                warnings.push(...(nativeResult.warnings || []));
+            } catch (nativeError) {
+                const html = buildPreviewHtml(job.presentationId);
+                if (!html) {
+                    throw nativeError;
+                }
+                tempImages = await captureSlidesAsPng(html, exportDir, baseName);
+                if (!tempImages.length) {
+                    throw nativeError;
+                }
+                await buildPptxFromSlideImages(tempImages, outputPath);
+                warnings.push({
+                    code: 'NATIVE_EXPORT_FALLBACK',
+                    message: `Native mapper failed and raster fallback was used: ${nativeError.message}`,
+                });
+                warnings.push({
+                    code: 'SAFE_RASTER_EXPORT',
+                    message: 'PPTX export is generated via deterministic slide rasterization',
+                });
+            }
         }
-
-        await buildPptxFromSlideImages(tempImages, outputPath);
 
         updateRenderJob(job.id, {
             status: 'done',
             result: {
                 fileName,
                 path: `/dist/export/${fileName}`,
-                warnings: [
-                    {
-                        code: 'SAFE_RASTER_EXPORT',
-                        message: 'PPTX export is generated via deterministic slide rasterization',
-                    },
-                ],
+                mode,
+                warnings,
             },
             error: null,
             updatedAt: new Date().toISOString(),
