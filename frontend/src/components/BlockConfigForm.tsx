@@ -5,8 +5,8 @@ import { useI18n } from '../shared/i18n/I18nProvider';
 import { FileUploadControl } from '../shared/ui/FileUploadControl';
 
 const LIMITS = {
-  tableLimit: 14,
-  kpiLimit: 6,
+  tableLimit: 100,
+  kpiLimit: 24,
   textHtmlLength: 6000,
 } as const;
 
@@ -157,6 +157,8 @@ export function BlockConfigForm({
           {(() => {
             const fitMode = asString(config.fitMode) || 'contain';
             const isCover = fitMode === 'cover';
+            const zoom = Number(asNumber(config.zoom) || 100);
+            const maxOffset = Math.max(100, Math.round((zoom - 100) * 2 + 100));
             return (
               <>
           <label>
@@ -205,8 +207,8 @@ export function BlockConfigForm({
                 {t('block.imageOffsetX')}
                 <input
                   type="range"
-                  min={-100}
-                  max={100}
+                  min={-maxOffset}
+                  max={maxOffset}
                   step={1}
                   value={asNumber(config.offsetX) || 0}
                   onChange={(e) => update(config, 'offsetX', Number(e.target.value), onConfigChange)}
@@ -216,8 +218,8 @@ export function BlockConfigForm({
                 {t('block.imageOffsetY')}
                 <input
                   type="range"
-                  min={-100}
-                  max={100}
+                  min={-maxOffset}
+                  max={maxOffset}
                   step={1}
                   value={asNumber(config.offsetY) || 0}
                   onChange={(e) => update(config, 'offsetY', Number(e.target.value), onConfigChange)}

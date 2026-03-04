@@ -79,13 +79,15 @@ function formatCompactNumber(num) {
     return num.toLocaleString('ru-RU');
 }
 
-function pickValueFontSize(valueText) {
+function pickValueFontSize(valueText, compact = false) {
     const length = String(valueText ?? '').trim().length;
-    if (length <= 6) return 54;
-    if (length <= 8) return 48;
-    if (length <= 10) return 42;
-    if (length <= 12) return 36;
-    return 32;
+    let size = 32;
+    if (length <= 5) size = 52;
+    else if (length <= 7) size = 44;
+    else if (length <= 9) size = 38;
+    else if (length <= 11) size = 34;
+    else size = 30;
+    return compact ? Math.max(24, size - 8) : size;
 }
 
 module.exports = (block) => {
@@ -103,16 +105,17 @@ module.exports = (block) => {
         const unit = escapeHtml(kpi?.unit || '');
         const growthRaw = String(kpi?.growth || '').trim();
         const isNegative = growthRaw.startsWith('-');
-        const growthColor = isNegative ? 'var(--ef-red)' : 'var(--ef-green)';
+        const growthColor = isNegative ? 'var(--pg-warn, #ff626f)' : 'var(--pg-success, #37d67a)';
         const arrow = isNegative ? 'v' : '^';
-        const valueFontSize = pickValueFontSize(normalizedValue);
+        const valueFontSize = pickValueFontSize(normalizedValue, Boolean(block.kpi_compact));
+        const unitHtml = unit ? `<span class="unit">${unit}</span>` : '';
 
         return `
             <div class="kpi-card">
                 <div class="label">${label}</div>
                 <div class="kpi-value-row">
                     <span class="value" style="font-size:${valueFontSize}px">${value}</span>
-                    <span class="unit">${unit}</span>
+                    ${unitHtml}
                 </div>
                 ${growthRaw ? `<div class="growth" style="color: ${growthColor}">${arrow} ${escapeHtml(growthRaw)}</div>` : ''}
             </div>
@@ -120,7 +123,7 @@ module.exports = (block) => {
     }).join('');
 
     return `
-        <div class="block-wrapper kpi-wrapper" ${style}>
+        <div class="block-wrapper kpi-wrapper" data-block-id="${escapeHtml(block._blockId || '')}" data-block-type="${escapeHtml(block._blockType || '')}" ${style}>
             <div class="kpi-grid-auto" data-kpi-count="${count}" ${gridStyle}>${cardsHtml}</div>
         </div>
     `;

@@ -64,31 +64,86 @@ export type ThemeTokens = {
     bgCanvas: string;
     textPrimary: string;
     accent: string;
-    [key: string]: string;
+    accentSecondary?: string;
+    success?: string;
+    warn?: string;
+    info?: string;
+    [key: string]: string | undefined;
   };
   typography: {
     titleSize: number;
     subtitleSize: number;
     bodySize: number;
     lineHeight: number;
-    [key: string]: number | string;
+    profile?: 'executive' | 'technical' | 'sales';
+    fontPreset?: 'sans' | 'modern' | 'industrial';
+    [key: string]: number | string | undefined;
   };
   spacing: {
-    slidePadding: number;
-    blockGap: number;
-    cardPadding: number;
     radius: number;
     borderWidth: number;
     [key: string]: number;
   };
   chart?: {
     palette?: string[];
+    mode?: 'contrast' | 'minimal' | 'dashboard';
+    axisLabelSize?: number;
+    dataLabelSize?: number;
+    lineWidth?: number;
+    pointRadius?: number;
     [key: string]: unknown;
   };
   table?: {
+    headerBg?: string;
+    headerText?: string;
+    mode?: 'dense' | 'normal' | 'boardroom';
+    [key: string]: unknown;
+  };
+  decor?: {
+    presetPack?: 'compact' | 'balanced' | 'bold';
+    intensity?: number;
+    safeZoneAlpha?: number;
+    titleMultiplier?: number;
+    contentMultiplier?: number;
+    gridEnabled?: boolean;
+    textGlowEnabled?: boolean;
+    cardShadowEnabled?: boolean;
+    tableShadowEnabled?: boolean;
+    chartShadowEnabled?: boolean;
+    imageShadowEnabled?: boolean;
+    logoEnabled?: boolean;
+    logoText?: string;
+    logoImageUrl?: string;
+    serviceTag?: string;
+    logoAnchor?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
+    logoSize?: number;
+    logoOpacity?: number;
+    badgeVariant?: 'minimal' | 'outlined' | 'signal';
+    badgeOnTitle?: boolean;
+    badgeOnContent?: boolean;
+    shapeLeftLineEnabled?: boolean;
+    shapeLeftLineAnchor?: 'left' | 'right';
+    shapeLeftLineSize?: number;
+    shapeLeftLineOpacity?: number;
+    shapeTriangleEnabled?: boolean;
+    shapeTriangleAnchor?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
+    shapeTriangleSize?: number;
+    shapeTriangleOpacity?: number;
+    shapeBlobEnabled?: boolean;
+    shapeBlobAnchor?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
+    shapeBlobSize?: number;
+    shapeBlobOpacity?: number;
+    shapeStyle?: 'soft' | 'crisp' | 'glow';
     [key: string]: unknown;
   };
   [key: string]: unknown;
+};
+
+export type ThemePreviewResponse = {
+  html: string;
+  warnings?: ValidationWarning[];
+  mode: string;
+  sceneIds: string[];
 };
 
 export type LayoutPreset = {
@@ -135,8 +190,16 @@ export type Dataset = {
 export type RenderJob = {
   id: string;
   presentationId: string;
-  type: 'export_pdf';
+  type: 'export_pdf' | 'export_pptx_future';
   status: 'queued' | 'running' | 'done' | 'failed';
-  result: { fileName: string; path: string } | null;
+  result:
+    | {
+        fileName?: string;
+        path?: string;
+        progress?: number;
+        mode?: 'hybrid_native' | 'hybrid_blocks' | 'raster';
+        warnings?: Array<{ code: string; message: string; slideIndex?: number | null; blockId?: string | null }>;
+      }
+    | null;
   error: { message: string } | null;
 };

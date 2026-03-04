@@ -28,6 +28,11 @@
 .presentations-card {
   margin-bottom: 16px;
 }
+.demo-status {
+  margin: 0 0 12px;
+  font-size: 13px;
+  opacity: 0.85;
+}
 
 .grid-row {
   display: grid;

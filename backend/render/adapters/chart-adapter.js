@@ -1,4 +1,4 @@
-﻿const MAX_CHART_POINTS = 12;
+﻿const MAX_CHART_POINTS = 24;
 const MAX_CATEGORY_SERIES = 6;
 const MAX_LABEL_LENGTH = 28;
 
@@ -124,3 +124,4 @@ function chartAdapter(block, dataset) {
 }
 
 module.exports = { chartAdapter };
+

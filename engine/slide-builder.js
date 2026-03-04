@@ -77,6 +77,57 @@ function sanitizeClassToken(value) {
         .replace(/^-+|-+$/g, '');
 }
 
+function buildThemeBodyClasses(tokens) {
+    const chartMode = sanitizeClassToken(tokens?.chart?.mode || 'contrast');
+    const tableMode = sanitizeClassToken(tokens?.table?.mode || 'normal');
+    const typeProfile = sanitizeClassToken(tokens?.typography?.profile || 'technical');
+    const fontPreset = sanitizeClassToken(tokens?.typography?.fontPreset || 'sans');
+    const presetPack = sanitizeClassToken(tokens?.decor?.presetPack || 'balanced');
+    const shapeStyle = sanitizeClassToken(tokens?.decor?.shapeStyle || 'soft');
+    const decor = (tokens && typeof tokens === 'object' && tokens.decor && typeof tokens.decor === 'object') ? tokens.decor : {};
+    const toggles = [
+        decor.gridEnabled === false ? 'theme-grid-off' : 'theme-grid-on',
+        decor.textGlowEnabled === false ? 'theme-fx-text-glow-off' : 'theme-fx-text-glow-on',
+        decor.cardShadowEnabled === false ? 'theme-fx-card-shadow-off' : 'theme-fx-card-shadow-on',
+        decor.tableShadowEnabled === false ? 'theme-fx-table-shadow-off' : 'theme-fx-table-shadow-on',
+        decor.chartShadowEnabled === false ? 'theme-fx-chart-shadow-off' : 'theme-fx-chart-shadow-on',
+        decor.imageShadowEnabled === false ? 'theme-fx-image-shadow-off' : 'theme-fx-image-shadow-on',
+    ];
+    return `theme-chart-${chartMode} theme-table-${tableMode} theme-type-${typeProfile} theme-font-${fontPreset} theme-pack-${presetPack} theme-shape-style-${shapeStyle} ${toggles.join(' ')}`.trim();
+}
+
+function resolveAnchorPositions(anchor, defaults) {
+    const byAnchor = {
+        'top-left': { top: defaults.top, right: 'auto', left: defaults.left, bottom: 'auto' },
+        'top-right': { top: defaults.top, right: defaults.right, left: 'auto', bottom: 'auto' },
+        'bottom-left': { top: 'auto', right: 'auto', left: defaults.left, bottom: defaults.bottom },
+        'bottom-right': { top: 'auto', right: defaults.right, left: 'auto', bottom: defaults.bottom },
+    };
+    return byAnchor[String(anchor || '')] || byAnchor['top-right'];
+}
+
+function renderThemeBadge(tokens, options = {}) {
+    const decor = (tokens && typeof tokens === 'object' && tokens.decor && typeof tokens.decor === 'object') ? tokens.decor : {};
+    const isTitle = options.isTitle === true;
+    const show = decor.logoEnabled !== false
+        && ((isTitle && decor.badgeOnTitle !== false) || (!isTitle && decor.badgeOnContent !== false));
+    if (!show) return '';
+
+    const main = escapeHtml(decor.logoText || 'DARKDAN');
+    const imageUrl = typeof decor.logoImageUrl === 'string' ? decor.logoImageUrl.trim() : '';
+    const variant = sanitizeClassToken(decor.badgeVariant || 'outlined');
+    const anchor = sanitizeClassToken(decor.logoAnchor || 'top-right');
+    const hasImageClass = imageUrl ? 'has-image' : '';
+    const badgeInner = imageUrl
+        ? `<img src="${escapeAttr(imageUrl)}" class="badge-image" alt="logo">`
+        : `<span class="badge-main">${main}</span>`;
+    return `
+        <div class="theme-badge variant-${variant} anchor-${anchor} ${hasImageClass}">
+            ${badgeInner}
+        </div>
+    `;
+}
+
 function renderBlocksWithLayout(slide) {
     const preset = resolveLayoutPreset(slide);
     if (!preset) {
@@ -143,21 +194,228 @@ function loadThemeCss(themeName) {
     }
 }
 
+function loadStructureCss() {
+    try {
+        const structurePath = path.join(__dirname, 'structure.css');
+        return fs.readFileSync(structurePath, 'utf8');
+    } catch (_e) {
+        return '';
+    }
+}
+
+function isHexColor(value) {
+    return typeof value === 'string' && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(value.trim());
+}
+
+function hexToRgb(hex) {
+    if (!isHexColor(hex)) return null;
+    const raw = hex.trim().replace('#', '');
+    const normalized = raw.length === 3
+        ? raw.split('').map((c) => c + c).join('')
+        : raw.slice(0, 6);
+    return {
+        r: Number.parseInt(normalized.slice(0, 2), 16),
+        g: Number.parseInt(normalized.slice(2, 4), 16),
+        b: Number.parseInt(normalized.slice(4, 6), 16),
+    };
+}
+
+function rgbaFromHex(hex, alpha, fallback) {
+    const rgb = hexToRgb(hex);
+    if (!rgb) return fallback;
+    return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
+}
+
+function asFiniteNumber(value, fallback) {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : fallback;
+}
+
+function buildThemeVarsCss(tokens) {
+    if (!tokens || typeof tokens !== 'object') return '';
+
+    const color = (tokens.color && typeof tokens.color === 'object') ? tokens.color : {};
+    const typography = (tokens.typography && typeof tokens.typography === 'object') ? tokens.typography : {};
+    const spacing = (tokens.spacing && typeof tokens.spacing === 'object') ? tokens.spacing : {};
+    const chart = (tokens.chart && typeof tokens.chart === 'object') ? tokens.chart : {};
+    const table = (tokens.table && typeof tokens.table === 'object') ? tokens.table : {};
+    const decor = (tokens.decor && typeof tokens.decor === 'object') ? tokens.decor : {};
+
+    const vars = [];
+    const push = (name, value) => {
+        if (value === undefined || value === null || value === '') return;
+        vars.push(`${name}:${value};`);
+    };
+
+    if (isHexColor(color.bgCanvas)) push('--pg-bg-canvas', String(color.bgCanvas).trim());
+    if (isHexColor(color.textPrimary)) push('--pg-text-primary', String(color.textPrimary).trim());
+    if (isHexColor(color.accent)) push('--pg-accent', String(color.accent).trim());
+    if (isHexColor(color.accentSecondary)) push('--pg-accent-secondary', String(color.accentSecondary).trim());
+    if (isHexColor(color.success)) push('--pg-success', String(color.success).trim());
+    if (isHexColor(color.warn)) push('--pg-warn', String(color.warn).trim());
+    if (isHexColor(color.info)) push('--pg-info', String(color.info).trim());
+
+    push('--pg-title-size', `${asFiniteNumber(typography.titleSize, 64)}px`);
+    push('--pg-subtitle-size', `${asFiniteNumber(typography.subtitleSize, 30)}px`);
+    push('--pg-body-size', `${asFiniteNumber(typography.bodySize, 28)}px`);
+    push('--pg-line-height', String(asFiniteNumber(typography.lineHeight, 1.38)));
+    const fontPreset = String(typography.fontPreset || 'sans');
+    if (fontPreset === 'modern') {
+        push('--pg-font-family', '"Trebuchet MS", "Segoe UI", Roboto, Helvetica, Arial, sans-serif');
+    } else if (fontPreset === 'industrial') {
+        push('--pg-font-family', '"Bahnschrift", "Segoe UI", Tahoma, Arial, sans-serif');
+    } else {
+        push('--pg-font-family', '"Segoe UI", Roboto, Helvetica, Arial, sans-serif');
+    }
+
+    push('--pg-radius', `${asFiniteNumber(spacing.radius, 8)}px`);
+    push('--pg-border-width', `${asFiniteNumber(spacing.borderWidth, 1)}px`);
+
+    const palette = Array.isArray(chart.palette) ? chart.palette : [];
+    palette.slice(0, 4).forEach((entry, index) => {
+        if (isHexColor(entry)) push(`--pg-chart-${index + 1}`, String(entry).trim());
+    });
+    if (isHexColor(palette[0])) push('--pg-accent-alt', String(palette[0]).trim());
+
+    if (isHexColor(table.headerBg)) push('--pg-table-header-bg', String(table.headerBg).trim());
+    if (isHexColor(table.headerText)) push('--pg-table-header-text', String(table.headerText).trim());
+
+    const textColor = isHexColor(color.textPrimary) ? String(color.textPrimary).trim() : '#e7edf6';
+    const accentSecondary = isHexColor(color.accentSecondary) ? String(color.accentSecondary).trim() : '#39a8ff';
+    const accent = isHexColor(color.accent) ? String(color.accent).trim() : '#ff7b1f';
+    push('--pg-shadow-color', rgbaFromHex(textColor, 0.2, 'rgba(20, 30, 45, 0.2)'));
+    push('--pg-glow-color', rgbaFromHex(accent, 0.34, 'rgba(255, 123, 31, 0.34)'));
+    push('--pg-grid-color', rgbaFromHex(accentSecondary, 0.14, 'rgba(57, 168, 255, 0.14)'));
+
+    const chartMode = String(chart.mode || 'contrast');
+    if (chartMode === 'minimal') {
+        push('--pg-chart-axis', rgbaFromHex(textColor, 0.72, '#8798b1'));
+        push('--pg-chart-label', rgbaFromHex(textColor, 0.86, '#b7c6dc'));
+    } else if (chartMode === 'dashboard') {
+        push('--pg-chart-axis', rgbaFromHex(textColor, 0.9, '#d4dff0'));
+        push('--pg-chart-label', rgbaFromHex(textColor, 1, '#eef5ff'));
+    } else {
+        push('--pg-chart-axis', rgbaFromHex(textColor, 0.82, '#bdcae0'));
+        push('--pg-chart-label', rgbaFromHex(textColor, 0.96, '#e8f0ff'));
+    }
+    push('--pg-chart-axis-size', `${asFiniteNumber(chart.axisLabelSize, 22)}px`);
+    push('--pg-chart-datalabel-size', `${asFiniteNumber(chart.dataLabelSize, 20)}px`);
+    push('--pg-chart-line-width', String(asFiniteNumber(chart.lineWidth, 8)));
+    push('--pg-chart-point-radius', String(asFiniteNumber(chart.pointRadius, 6)));
+
+    push('--pg-decor-intensity', String(asFiniteNumber(decor.intensity, 2)));
+    push('--pg-decor-safe-zone-alpha', String(asFiniteNumber(decor.safeZoneAlpha, 0.08)));
+    push('--pg-decor-title-mult', String(asFiniteNumber(decor.titleMultiplier, 1.25)));
+    push('--pg-decor-content-mult', String(asFiniteNumber(decor.contentMultiplier, 1)));
+    push('--pg-grid-enabled', decor.gridEnabled === false ? '0' : '1');
+    push('--pg-fx-text-glow-enabled', decor.textGlowEnabled === false ? '0' : '1');
+    push('--pg-fx-card-shadow-enabled', decor.cardShadowEnabled === false ? '0' : '1');
+    push('--pg-fx-table-shadow-enabled', decor.tableShadowEnabled === false ? '0' : '1');
+    push('--pg-fx-chart-shadow-enabled', decor.chartShadowEnabled === false ? '0' : '1');
+    push('--pg-fx-image-shadow-enabled', decor.imageShadowEnabled === false ? '0' : '1');
+    push('--pg-logo-enabled', decor.logoEnabled === false ? '0' : '1');
+    push('--pg-logo-size', `${asFiniteNumber(decor.logoSize, 14)}px`);
+    push('--pg-logo-opacity', String(asFiniteNumber(decor.logoOpacity, 0.95)));
+
+    const anchor = String(decor.logoAnchor || 'top-right');
+    if (anchor === 'top-left') {
+        push('--pg-logo-top', '28px');
+        push('--pg-logo-right', 'auto');
+        push('--pg-logo-left', '38px');
+        push('--pg-logo-bottom', 'auto');
+    } else if (anchor === 'bottom-right') {
+        push('--pg-logo-top', 'auto');
+        push('--pg-logo-right', '38px');
+        push('--pg-logo-left', 'auto');
+        push('--pg-logo-bottom', '28px');
+    } else if (anchor === 'bottom-left') {
+        push('--pg-logo-top', 'auto');
+        push('--pg-logo-right', 'auto');
+        push('--pg-logo-left', '38px');
+        push('--pg-logo-bottom', '28px');
+    } else {
+        push('--pg-logo-top', '28px');
+        push('--pg-logo-right', '38px');
+        push('--pg-logo-left', 'auto');
+        push('--pg-logo-bottom', 'auto');
+    }
+    push('--pg-badge-on-title', decor.badgeOnTitle === false ? '0' : '1');
+    push('--pg-badge-on-content', decor.badgeOnContent === false ? '0' : '1');
+    push('--pg-shape-left-line-enabled', decor.shapeLeftLineEnabled === false ? '0' : '1');
+    push('--pg-shape-left-line-scale', String(asFiniteNumber(decor.shapeLeftLineSize, 1)));
+    push('--pg-shape-left-line-opacity', String(asFiniteNumber(decor.shapeLeftLineOpacity, 1)));
+    push('--pg-shape-triangle-enabled', decor.shapeTriangleEnabled === false ? '0' : '1');
+    push('--pg-shape-triangle-scale', String(asFiniteNumber(decor.shapeTriangleSize, 1)));
+    push('--pg-shape-triangle-opacity', String(asFiniteNumber(decor.shapeTriangleOpacity, 1)));
+    push('--pg-shape-blob-enabled', decor.shapeBlobEnabled === false ? '0' : '1');
+    push('--pg-shape-blob-scale', String(asFiniteNumber(decor.shapeBlobSize, 1)));
+    push('--pg-shape-blob-opacity', String(asFiniteNumber(decor.shapeBlobOpacity, 1)));
+
+    const leftLineAnchor = String(decor.shapeLeftLineAnchor || 'left');
+    if (leftLineAnchor === 'right') {
+        push('--pg-left-line-left', 'auto');
+        push('--pg-left-line-right', '0');
+    } else {
+        push('--pg-left-line-left', '0');
+        push('--pg-left-line-right', 'auto');
+    }
+
+    const tri = resolveAnchorPositions(String(decor.shapeTriangleAnchor || 'bottom-right'), {
+        top: '0',
+        right: '0',
+        left: '0',
+        bottom: '0',
+    });
+    push('--pg-triangle-top', tri.top);
+    push('--pg-triangle-right', tri.right);
+    push('--pg-triangle-left', tri.left);
+    push('--pg-triangle-bottom', tri.bottom);
+    const triAnchor = String(decor.shapeTriangleAnchor || 'bottom-right');
+    let triClip = 'polygon(100% 0, 100% 100%, 0 100%)';
+    if (triAnchor === 'top-left') triClip = 'polygon(0 0, 100% 0, 0 100%)';
+    if (triAnchor === 'top-right') triClip = 'polygon(100% 0, 100% 100%, 0 0)';
+    if (triAnchor === 'bottom-left') triClip = 'polygon(0 0, 100% 100%, 0 100%)';
+    push('--pg-triangle-clip', triClip);
+
+    const blob = resolveAnchorPositions(String(decor.shapeBlobAnchor || 'top-right'), {
+        top: '-220px',
+        right: '-240px',
+        left: '-240px',
+        bottom: '-220px',
+    });
+    push('--pg-blob-top', blob.top);
+    push('--pg-blob-right', blob.right);
+    push('--pg-blob-left', blob.left);
+    push('--pg-blob-bottom', blob.bottom);
+
+    return vars.length ? `:root{${vars.join('')}}` : '';
+}
+
 function buildSlides(data) {
     const themeName = data.meta.theme;
     const logoPath = data.meta.logoPath || '';
     const charactersMap = data.meta.characters || {};
     const themeCss = loadThemeCss(themeName);
+    const structureCss = loadStructureCss();
+    const themeVarsCss = buildThemeVarsCss(data.meta.themeTokens);
+
+    const themeTokens = data.meta.themeTokens || {};
+    const decorTokens = (themeTokens.decor && typeof themeTokens.decor === 'object') ? themeTokens.decor : {};
 
     const slidesHtml = data.slides.map((slide, index) => {
         const isTitle = slide.type === 'title';
         const characterHtml = renderCharacter(slide, charactersMap);
         const layoutRender = renderBlocksWithLayout(slide);
+        const leftLineAnchorClass = `anchor-${sanitizeClassToken(decorTokens.shapeLeftLineAnchor || 'left')}`;
+        const triangleAnchorClass = `anchor-${sanitizeClassToken(decorTokens.shapeTriangleAnchor || 'bottom-right')}`;
+        const blobAnchorClass = `anchor-${sanitizeClassToken(decorTokens.shapeBlobAnchor || 'top-right')}`;
 
         const slideContent = isTitle
             ? `
-                <div class="decor-blob"></div>
-                <div class="decor-line-left"></div>
+                <div class="decor-blob ${blobAnchorClass}"></div>
+                <div class="decor-line-left ${leftLineAnchorClass}"></div>
+                <div class="slide-decor-line ${triangleAnchorClass}"></div>
+                ${renderThemeBadge(themeTokens, { isTitle: true })}
                 ${logoPath ? `<img src="${logoPath}" class="title-logo" alt="logo">` : ''}
                 <div class="title-content">
                     <h1>${escapeHtml(slide.title || '')}</h1>
@@ -166,9 +424,10 @@ function buildSlides(data) {
                 ${characterHtml}`
             : `
                 ${logoPath ? `<img src="${logoPath}" class="corner-logo" alt="logo">` : ''}
-                <div class="decor-blob"></div>
-                <div class="decor-line-left"></div>
-                <div class="slide-decor-line"></div>
+                ${renderThemeBadge(themeTokens, { isTitle: false })}
+                <div class="decor-blob ${blobAnchorClass}"></div>
+                <div class="decor-line-left ${leftLineAnchorClass}"></div>
+                <div class="slide-decor-line ${triangleAnchorClass}"></div>
                 <div class="slide-header">
                     <h2>${escapeHtml(slide.title || '')}</h2>
                     ${slide.subtitle ? `<div class="slide-subtitle">${escapeHtml(slide.subtitle)}</div>` : ''}
@@ -183,6 +442,7 @@ function buildSlides(data) {
         </div>`;
     }).join('');
 
+    const bodyThemeClasses = buildThemeBodyClasses(themeTokens);
     return `
     <!DOCTYPE html>
     <html lang="ru">
@@ -190,10 +450,12 @@ function buildSlides(data) {
         <meta charset="UTF-8">
         <link rel="stylesheet" href="/themes/${themeName}/styles.css">
         ${themeCss ? `<style>${themeCss}</style>` : ''}
+        ${structureCss ? `<style>${structureCss}</style>` : ''}
+        ${themeVarsCss ? `<style>${themeVarsCss}</style>` : ''}
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     </head>
-    <body class="viewer-mode">
+    <body class="viewer-mode ${bodyThemeClasses}">
         <div id="presentation-viewport">${slidesHtml}</div>
 
         <script>
@@ -215,6 +477,14 @@ function buildSlides(data) {
                 const isHorizontal = config.horizontal === true;
                 const labelsCount = config.data?.labels?.length || 0;
                 const denseLabels = labelsCount > 8;
+                const rootStyles = getComputedStyle(document.documentElement);
+                const axisColor = rootStyles.getPropertyValue('--pg-chart-axis').trim() || '#f4f8ff';
+                const labelColor = rootStyles.getPropertyValue('--pg-chart-label').trim() || '#ffffff';
+                const baseAxisSize = Number.parseFloat(rootStyles.getPropertyValue('--pg-chart-axis-size')) || 22;
+                const baseDataLabelSize = Number.parseFloat(rootStyles.getPropertyValue('--pg-chart-datalabel-size')) || 20;
+                const axisTickSize = denseLabels ? Math.max(12, baseAxisSize - 3) : baseAxisSize;
+                const yTickSize = denseLabels ? Math.max(12, baseAxisSize - 5) : Math.max(12, baseAxisSize - 2);
+                const dataLabelSize = denseLabels ? Math.max(12, baseDataLabelSize - 3) : baseDataLabelSize;
                 return {
                     indexAxis: isHorizontal ? 'y' : 'x',
                     responsive: true,
@@ -225,14 +495,16 @@ function buildSlides(data) {
                         x: {
                             grid: { display: false },
                             ticks: {
-                                font: { size: denseLabels ? 18 : 22, weight: 'bold' },
+                                color: axisColor,
+                                font: { size: axisTickSize, weight: 'bold' },
                                 maxRotation: isHorizontal ? 0 : 35,
                                 minRotation: isHorizontal ? 0 : 35,
                             },
                         },
                         y: {
                             ticks: {
-                                font: { size: denseLabels ? 16 : 20, weight: 'bold' },
+                                color: axisColor,
+                                font: { size: yTickSize, weight: 'bold' },
                             },
                         },
                     },
@@ -240,7 +512,7 @@ function buildSlides(data) {
                         legend: {
                             display: (config.data?.datasets || []).length > 1,
                             position: 'bottom',
-                            labels: { font: { size: 18, weight: 'bold' } },
+                            labels: { color: axisColor, font: { size: 18, weight: 'bold' } },
                         },
                         datalabels: {
                             display: config.showLabels !== false,
@@ -250,8 +522,8 @@ function buildSlides(data) {
                                 return ctx.dataset.data[ctx.dataIndex] >= 0 ? 'top' : 'bottom';
                             },
                             offset: 8,
-                            color: '#333',
-                            font: { size: denseLabels ? 16 : 20, weight: '700' },
+                            color: labelColor,
+                            font: { size: dataLabelSize, weight: '700' },
                             formatter: (v) => {
                                 if (v === null || v === undefined) return '';
                                 if (config.shorten && Math.abs(v) >= 1000000) {
@@ -265,10 +537,50 @@ function buildSlides(data) {
             }
 
             function initCharts() {
+                const rootStyles = getComputedStyle(document.documentElement);
+                const palette = [
+                    rootStyles.getPropertyValue('--pg-chart-1').trim(),
+                    rootStyles.getPropertyValue('--pg-chart-2').trim(),
+                    rootStyles.getPropertyValue('--pg-chart-3').trim(),
+                    rootStyles.getPropertyValue('--pg-chart-4').trim(),
+                ].filter(Boolean);
+                const chartLineWidth = Number.parseFloat(rootStyles.getPropertyValue('--pg-chart-line-width')) || 8;
+                const chartPointRadius = Number.parseFloat(rootStyles.getPropertyValue('--pg-chart-point-radius')) || 6;
+                function applyThemePalette(config) {
+                    if (!palette.length) return;
+                    const datasets = Array.isArray(config?.data?.datasets) ? config.data.datasets : [];
+                    datasets.forEach((dataset, datasetIndex) => {
+                        const baseColor = palette[datasetIndex % palette.length];
+                        const altColor = palette[(datasetIndex + 1) % palette.length];
+
+                        if (Array.isArray(dataset.backgroundColor)) {
+                            dataset.backgroundColor = dataset.backgroundColor.map((_value, pointIndex) =>
+                                palette[(datasetIndex + pointIndex) % palette.length]
+                            );
+                        } else {
+                            dataset.backgroundColor = baseColor;
+                        }
+
+                        if (Array.isArray(dataset.borderColor)) {
+                            dataset.borderColor = dataset.borderColor.map((_value, pointIndex) =>
+                                palette[(datasetIndex + pointIndex) % palette.length]
+                            );
+                        } else {
+                            dataset.borderColor = dataset.borderColor ? baseColor : (dataset.backgroundColor || altColor);
+                        }
+                        if (dataset.type === 'line' || config.type === 'line') {
+                            dataset.borderWidth = chartLineWidth;
+                            dataset.pointRadius = chartPointRadius;
+                        }
+                    });
+                }
+
                 document.querySelectorAll('canvas').forEach((canvas) => {
                     try {
                         const ctx = canvas.getContext('2d');
                         const config = JSON.parse(canvas.dataset.config);
+                        config.type = canvas.dataset.type;
+                        applyThemePalette(config);
                         new Chart(ctx, {
                             type: canvas.dataset.type,
                             data: config.data,

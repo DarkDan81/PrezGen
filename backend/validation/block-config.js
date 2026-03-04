@@ -1,9 +1,9 @@
 ﻿const LIMITS = {
-    chartLimit: 12,
-    tableLimit: 14,
+    chartLimit: 24,
+    tableLimit: 100,
     tableColumns: 8,
-    kpiLimit: 6,
-    kpiManualItems: 6,
+    kpiLimit: 24,
+    kpiManualItems: 24,
     textHtmlLength: 6000,
 };
 

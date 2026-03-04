@@ -30,21 +30,25 @@ function parseFocalToken(token, axis) {
     return 50;
 }
 
-function resolveObjectPosition(basePosition, offsetX, offsetY) {
+function resolveObjectPosition(basePosition, offsetX, offsetY, zoom) {
     const parts = String(basePosition || 'center center').split(/\s+/).filter(Boolean);
     const xToken = parts[0] || 'center';
     const yToken = parts[1] || 'center';
-    const x = clamp(parseFocalToken(xToken, 'x') + offsetX, 0, 100);
-    const y = clamp(parseFocalToken(yToken, 'y') + offsetY, 0, 100);
+    const zoomFactor = Math.max(1, Number(zoom || 100) / 100);
+    const overflow = (zoomFactor - 1) * 50;
+    const x = clamp(parseFocalToken(xToken, 'x') + offsetX, -overflow, 100 + overflow);
+    const y = clamp(parseFocalToken(yToken, 'y') + offsetY, -overflow, 100 + overflow);
     return `${x}% ${y}%`;
 }
 
 module.exports = (block) => {
     const style = `style="flex: ${block.flexWidth || 1}"`;
+    const blockId = escapeAttr(block._blockId || '');
+    const blockType = escapeAttr(block._blockType || '');
 
     if (block.text) {
         const denseClass = textLength(block.text) > 900 ? 'dense' : '';
-        return `<div class="block-wrapper text-block ${denseClass}" ${style}><div class="block-text">${block.text}</div></div>`;
+        return `<div class="block-wrapper text-block ${denseClass}" data-block-id="${blockId}" data-block-type="${blockType}" ${style}><div class="block-text">${block.text}</div></div>`;
     }
 
     if (block.image) {
@@ -58,11 +62,11 @@ module.exports = (block) => {
         const safeZoom = Number.isFinite(zoom) ? Math.max(100, zoom) : 100;
         const isCover = String(block.imageFit || '').toLowerCase() === 'cover';
         const position = isCover
-            ? resolveObjectPosition(basePosition, safeOffsetX, safeOffsetY)
+            ? resolveObjectPosition(basePosition, safeOffsetX, safeOffsetY, safeZoom)
             : String(basePosition || 'center center');
         const transform = isCover ? `scale(${safeZoom / 100})` : 'scale(1)';
         return `
-            <div class="block-wrapper image-block" ${style}>
+            <div class="block-wrapper image-block" data-block-id="${blockId}" data-block-type="${blockType}" ${style}>
                 <div class="image-container"><img src="${escapeAttr(block.image)}" alt="" style="object-fit:${fit};object-position:${position};transform:${escapeAttr(transform)};"></div>
             </div>`;
     }

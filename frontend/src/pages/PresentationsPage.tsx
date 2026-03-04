@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { client } from '../api/client';
+import { clearGuidedDemoState, writeGuidedDemoState } from '../demo/guidedDemoState';
 import { useI18n } from '../shared/i18n/I18nProvider';
 import { Button } from '../shared/ui/Button';
 import { Field } from '../shared/ui/Field';
@@ -13,7 +14,7 @@ export function PresentationsPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [name, setName] = useState(t('presentations.newName'));
-  const [themeId, setThemeId] = useState('theme-eurofoods');
+  const [themeId, setThemeId] = useState('theme-universal-warm');
   const [error, setError] = useState('');
 
   const themesQuery = useQuery({ queryKey: ['themes'], queryFn: client.listThemes });
@@ -41,6 +42,23 @@ export function PresentationsPage() {
       <header className="page-header">
         <h1>{t('app.title')}</h1>
         <div className="page-header-actions">
+          <Button
+            variant="primary"
+            data-demo="main-start-demo"
+            onClick={() => {
+              clearGuidedDemoState();
+              writeGuidedDemoState({
+                active: true,
+                phase: 'themes',
+                stepIndex: 0,
+                showcaseThemeIds: [],
+                paused: false,
+              });
+              navigate('/themes?guidedDemo=1');
+            }}
+          >
+            {t('demo.start')}
+          </Button>
           <Button variant="secondary" onClick={() => navigate('/themes')}>
             {t('nav.themes')}
           </Button>
@@ -82,7 +100,6 @@ export function PresentationsPage() {
         </div>
         {error && <p className="ui-error">{error}</p>}
       </SectionCard>
-
       <SectionCard className="presentations-card" title={t('presentations.listTitle')}>
         <ul className="presentations-list">
           {(presentationsQuery.data || []).map((presentation) => (

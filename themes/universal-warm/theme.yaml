@@ -1,0 +1,67 @@
+color:
+  bgCanvas: "#f7f4ed"
+  textPrimary: "#38342f"
+  accent: "#c86f2a"
+  accentSecondary: "#8f7a5a"
+  success: "#5f8a43"
+  warn: "#b65c3a"
+  info: "#6f8f9b"
+typography:
+  titleSize: 62
+  subtitleSize: 30
+  bodySize: 27
+  lineHeight: 1.42
+  profile: "executive"
+  fontPreset: "modern"
+spacing:
+  radius: 8
+  borderWidth: 1
+chart:
+  palette:
+    - "#c86f2a"
+    - "#8f7a5a"
+    - "#5f8a43"
+    - "#6f8f9b"
+  mode: "contrast"
+  axisLabelSize: 22
+  dataLabelSize: 20
+  lineWidth: 7
+  pointRadius: 5
+table:
+  headerBg: "#ece4d8"
+  headerText: "#38342f"
+  mode: "normal"
+decor:
+  presetPack: "balanced"
+  intensity: 1.7
+  safeZoneAlpha: 0.07
+  titleMultiplier: 1.15
+  contentMultiplier: 0.95
+  gridEnabled: true
+  textGlowEnabled: false
+  cardShadowEnabled: true
+  tableShadowEnabled: true
+  chartShadowEnabled: true
+  imageShadowEnabled: true
+  logoEnabled: false
+  logoText: "DEFAULT"
+  logoAnchor: "top-right"
+  logoSize: 13
+  logoOpacity: 0.9
+  badgeVariant: "minimal"
+  badgeOnTitle: true
+  badgeOnContent: true
+  shapeStyle: "soft"
+  shapeLeftLineEnabled: true
+  shapeLeftLineAnchor: "left"
+  shapeLeftLineSize: 0.9
+  shapeLeftLineOpacity: 0.75
+  shapeTriangleEnabled: true
+  shapeTriangleAnchor: "bottom-right"
+  shapeTriangleSize: 0.9
+  shapeTriangleOpacity: 0.62
+  shapeBlobEnabled: true
+  shapeBlobAnchor: "top-right"
+  shapeBlobSize: 0.95
+  shapeBlobOpacity: 0.6
+

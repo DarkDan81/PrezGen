@@ -1,0 +1,54 @@
+color:
+  bgCanvas: "#05080d"
+  textPrimary: "#e7edf6"
+  accent: "#ff7b1f"
+  accentSecondary: "#39a8ff"
+  success: "#37d67a"
+  warn: "#ff626f"
+  info: "#55b8ff"
+typography:
+  titleSize: 64
+  subtitleSize: 30
+  bodySize: 28
+  lineHeight: 1.38
+  profile: "technical"
+spacing:
+  radius: 8
+  borderWidth: 1
+chart:
+  palette:
+    - "#39a8ff"
+    - "#ff7b1f"
+    - "#69bcff"
+    - "#ff9a4d"
+  mode: "contrast"
+table:
+  headerBg: "#152135"
+  headerText: "#f2f7ff"
+  mode: "normal"
+decor:
+  presetPack: "balanced"
+  intensity: 2
+  safeZoneAlpha: 0.08
+  titleMultiplier: 1.25
+  contentMultiplier: 1
+  logoEnabled: true
+  logoText: "DARKDAN"
+  logoAnchor: "top-right"
+  logoSize: 14
+  logoOpacity: 0.95
+  badgeVariant: "outlined"
+  badgeOnTitle: true
+  badgeOnContent: true
+  shapeLeftLineEnabled: true
+  shapeLeftLineAnchor: "left"
+  shapeLeftLineSize: 1
+  shapeLeftLineOpacity: 1
+  shapeTriangleEnabled: true
+  shapeTriangleAnchor: "bottom-right"
+  shapeTriangleSize: 1
+  shapeTriangleOpacity: 1
+  shapeBlobEnabled: true
+  shapeBlobAnchor: "top-right"
+  shapeBlobSize: 1
+  shapeBlobOpacity: 1

@@ -1,0 +1,54 @@
+color:
+  bgCanvas: "#f8faf6"
+  textPrimary: "#545359"
+  accent: "#e32b22"
+  accentSecondary: "#8cc63f"
+  success: "#5ea428"
+  warn: "#d13029"
+  info: "#6aa63c"
+typography:
+  titleSize: 62
+  subtitleSize: 30
+  bodySize: 27
+  lineHeight: 1.4
+  profile: "executive"
+spacing:
+  radius: 8
+  borderWidth: 1
+chart:
+  palette:
+    - "#8cc63f"
+    - "#e32b22"
+    - "#a7a9ac"
+    - "#5ea428"
+  mode: "dashboard"
+table:
+  headerBg: "#f4f4f4"
+  headerText: "#545359"
+  mode: "normal"
+decor:
+  presetPack: "balanced"
+  intensity: 1.8
+  safeZoneAlpha: 0.08
+  titleMultiplier: 1.2
+  contentMultiplier: 1
+  logoEnabled: true
+  logoText: "EUROFOODS"
+  logoAnchor: "top-right"
+  logoSize: 13
+  logoOpacity: 0.92
+  badgeVariant: "minimal"
+  badgeOnTitle: true
+  badgeOnContent: true
+  shapeLeftLineEnabled: true
+  shapeLeftLineAnchor: "left"
+  shapeLeftLineSize: 1
+  shapeLeftLineOpacity: 0.8
+  shapeTriangleEnabled: true
+  shapeTriangleAnchor: "bottom-right"
+  shapeTriangleSize: 1
+  shapeTriangleOpacity: 0.85
+  shapeBlobEnabled: true
+  shapeBlobAnchor: "top-right"
+  shapeBlobSize: 1
+  shapeBlobOpacity: 0.8

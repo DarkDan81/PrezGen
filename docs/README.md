@@ -10,6 +10,10 @@ Current scope:
 - Stage 4: UX polish planning for constructor consistency and localization prep.
 - Stage 5: theme and layout builder planning (tokens, presets, dedicated editor).
 - Stage 6: editor usability and content authoring improvements (rich text, KPI layout, upload UX unification).
+- Stage 7: strict separation of theme skin from structural layout behavior.
+- Stage 8: PPTX-safe theme editor contract (visual capabilities constrained to exportable model).
+- Stage 9: export pipeline hardening (PDF parity) and PPTX export implementation.
+- Stage 10: native editable PPTX export (hybrid native/raster strategy with explicit fallback policy).
 
 Structure:
 
@@ -37,4 +41,23 @@ Structure:
 - `stage-6-editor-usability-bugs/decisions.md` - approved implementation decisions for usability scope.
 - `stage-6-editor-usability-bugs/implementation-plan.md` - phased implementation plan and commit slicing.
 - `stage-6-editor-usability-bugs/implementation-status.md` - current implementation status for stage 6.
+- `stage-7-theme-structure-separation/README.md` - stage overview and acceptance criteria.
+- `stage-7-theme-structure-separation/decisions.md` - approved decisions for structure vs skin boundary.
+- `stage-7-theme-structure-separation/implementation-plan.md` - phased implementation plan.
+- `stage-7-theme-structure-separation/implementation-status.md` - current implementation status for stage 7.
+- `stage-8-pptx-safe-theme-editor/README.md` - stage overview and acceptance criteria for PPTX-safe theme editing.
+- `stage-8-pptx-safe-theme-editor/decisions.md` - approved export-first constraints and safety model.
+- `stage-8-pptx-safe-theme-editor/implementation-plan.md` - phased implementation plan for schema/validation/editor.
+- `stage-8-pptx-safe-theme-editor/implementation-status.md` - current implementation status for stage 8.
+- `stage-8-pptx-safe-theme-editor/pptx-safe-matrix.md` - draft capability matrix (`safe-native`/`safe-raster`/`blocked`).
+- `stage-9-export-pipeline/README.md` - stage overview and acceptance criteria for PDF/PPTX export pipeline.
+- `stage-9-export-pipeline/decisions.md` - approved implementation decisions and output constraints.
+- `stage-9-export-pipeline/implementation-plan.md` - phased implementation plan and risk gates.
+- `stage-9-export-pipeline/execution-order.md` - strict step-by-step runbook for safe delivery.
+- `stage-9-export-pipeline/implementation-status.md` - progress/status tracker for stage 9.
+- `stage-10-native-pptx-editable/README.md` - stage overview and acceptance criteria for editable PPTX export.
+- `stage-10-native-pptx-editable/decisions.md` - approved decisions for native-first mapping and fallback.
+- `stage-10-native-pptx-editable/implementation-plan.md` - phased implementation plan for editable PPTX.
+- `stage-10-native-pptx-editable/execution-order.md` - strict execution runbook for Stage 10.
+- `stage-10-native-pptx-editable/implementation-status.md` - progress/status tracker for stage 10.
 - `qa-demo-deck-assets.md` - source image naming and run instructions for QA demo deck seed script.

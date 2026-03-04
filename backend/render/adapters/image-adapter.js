@@ -8,8 +8,8 @@ function imageAdapter(block) {
     const fit = typeof block.config?.fitMode === 'string' ? block.config.fitMode : 'contain';
     const position = typeof block.config?.focalPoint === 'string' ? block.config.focalPoint : 'center center';
     const zoom = clampNumber(block.config?.zoom, 100, 300, 100);
-    const offsetX = clampNumber(block.config?.offsetX, -100, 100, 0);
-    const offsetY = clampNumber(block.config?.offsetY, -100, 100, 0);
+    const offsetX = clampNumber(block.config?.offsetX, -500, 500, 0);
+    const offsetY = clampNumber(block.config?.offsetY, -500, 500, 0);
     return {
         image: block.config?.url || block.config?.src || '',
         imageFit: fit,

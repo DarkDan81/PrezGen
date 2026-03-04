@@ -105,6 +105,35 @@ async function run() {
         }
         assert(finalStatus === 'done', `pdf job timeout, status=${finalStatus}`);
 
+        const { resp: pptxStartResp, data: pptxData } = await jsonRequest(
+            `http://localhost:3100/api/v1/presentations/${presentationId}/render/pptx`,
+            'POST',
+            {},
+        );
+        assert(pptxStartResp.status === 202, `pptx start failed: ${pptxStartResp.status}`);
+        const pptxJobId = pptxData.data.id;
+
+        let pptxFinalStatus = 'queued';
+        let pptxArtifactPath = '';
+        for (let i = 0; i < 80; i += 1) {
+            const { resp: jobResp, data: jobData } = await jsonRequest(
+                `http://localhost:3100/api/v1/render-jobs/${pptxJobId}`,
+                'GET',
+            );
+            assert(jobResp.status === 200, `pptx job poll failed: ${jobResp.status}`);
+            pptxFinalStatus = jobData.data.status;
+            if (pptxFinalStatus === 'done') {
+                pptxArtifactPath = jobData.data?.result?.path || '';
+                break;
+            }
+            if (pptxFinalStatus === 'failed') throw new Error('pptx job failed');
+            await sleep(250);
+        }
+        assert(pptxFinalStatus === 'done', `pptx job timeout, status=${pptxFinalStatus}`);
+        assert(Boolean(pptxArtifactPath), 'pptx artifact path missing');
+        const artifactResp = await fetch(`http://localhost:3100${pptxArtifactPath}`);
+        assert(artifactResp.status === 200, `pptx artifact fetch failed: ${artifactResp.status}`);
+
         console.log('API verify: OK');
     } finally {
         server.close();

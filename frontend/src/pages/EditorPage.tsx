@@ -7,6 +7,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { client } from '../api/client';
 import type { Block, Dataset, LayoutPreset, Slide } from '../api/types';
 import { BlockConfigForm, getDefaultConfig } from '../components/BlockConfigForm';
+import { DemoCoach } from '../demo/DemoCoach';
+import { clearGuidedDemoState, readGuidedDemoState, writeGuidedDemoState } from '../demo/guidedDemoState';
 import { useDebouncedEffect } from '../hooks/useDebouncedEffect';
 import { useI18n } from '../shared/i18n/I18nProvider';
 import type { TranslationKey } from '../shared/i18n/dictionaries';
@@ -256,8 +258,14 @@ export function EditorPage() {
   const [datasetModalOpen, setDatasetModalOpen] = useState(false);
   const [datasetModalSnapshot, setDatasetModalSnapshot] = useState('');
   const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [guidedStep, setGuidedStep] = useState(0);
+  const [guidedBusy, setGuidedBusy] = useState(false);
+  const [guidedPaused, setGuidedPaused] = useState(false);
+  const [guidedStatus, setGuidedStatus] = useState('');
   const previewFrameRef = useRef<HTMLIFrameElement | null>(null);
   const previewScrollTopRef = useRef(0);
+  const guidedState = readGuidedDemoState();
+  const guidedActive = Boolean(guidedState?.active && guidedState.phase === 'editor');
 
   const presentationQuery = useQuery({
     queryKey: ['presentation', presentationId],
@@ -491,6 +499,10 @@ export function EditorPage() {
     mutationFn: () => client.startPdf(presentationId),
     onSuccess: (job) => setRenderJobId(job.id),
   });
+  const startPptxMutation = useMutation({
+    mutationFn: (mode: 'hybrid_blocks' | 'raster') => client.startPptx(presentationId, mode),
+    onSuccess: (job) => setRenderJobId(job.id),
+  });
 
   const renderJobQuery = useQuery({
     queryKey: ['render-job', renderJobId],
@@ -523,22 +535,501 @@ export function EditorPage() {
           ? t('common.error')
           : '';
   const saveStatusClass = saveState === 'error' ? 'error' : saveState === 'saved' ? 'saved' : '';
-  const headerStatusText = [saveStatusText, renderJobQuery.data ? t('editor.pdfStatus', { status: renderJobQuery.data.status }) : '']
+  const headerStatusText = [
+    saveStatusText,
+    renderJobQuery.data
+      ? t('editor.exportStatus', {
+          type: renderJobQuery.data.type === 'export_pptx_future' ? 'PPTX' : 'PDF',
+          status: renderJobQuery.data.status,
+        })
+      : '',
+    renderJobQuery.data?.status === 'done' && (renderJobQuery.data.result?.warnings?.length || 0) > 0
+      ? t('editor.exportWarnings', { count: renderJobQuery.data.result?.warnings?.length || 0 })
+      : '',
+  ]
     .filter(Boolean)
     .join(' · ');
+  const exportProgress = Math.max(
+    0,
+    Math.min(
+      100,
+      Number.isFinite(Number(renderJobQuery.data?.result?.progress))
+        ? Number(renderJobQuery.data?.result?.progress)
+        : renderJobQuery.data?.status === 'done'
+          ? 100
+          : 0,
+    ),
+  );
+  const isExportInProgress = renderJobQuery.data?.status === 'queued' || renderJobQuery.data?.status === 'running';
   const datasetModalDirty = useMemo(
     () => buildDatasetDraftSignature(datasetDraftName, datasetDraftColumns, datasetDraftRows) !== datasetModalSnapshot,
     [datasetDraftColumns, datasetDraftName, datasetDraftRows, datasetModalSnapshot],
   );
   const selectedLayoutPreset = (layoutPresetsQuery.data || []).find((preset) => preset.id === slideLayoutPresetId) || null;
-  const selectedTheme = (themesQuery.data || []).find((theme) => theme.id === (presentationQuery.data?.themeId || 'theme-eurofoods'));
+  const selectedTheme = (themesQuery.data || []).find((theme) => theme.id === (presentationQuery.data?.themeId || 'theme-universal-warm'));
   const themeColors = useMemo(() => extractThemeColors((selectedTheme?.tokens as Record<string, unknown> | undefined) || undefined), [selectedTheme]);
+  const wait = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
+  const scrollPreviewToSlide = (slideId: string) => {
+    const orderIndex = slides.findIndex((s) => s.id === slideId);
+    if (orderIndex < 0) return;
+    const attemptScroll = () => {
+      try {
+        const frameWindow = previewFrameRef.current?.contentWindow;
+        const doc = frameWindow?.document;
+        const target = doc?.getElementById(`slide-${orderIndex}`);
+        if (!target) return false;
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return true;
+      } catch {
+        return false;
+      }
+    };
+    if (attemptScroll()) return;
+    let attempts = 0;
+    const timer = window.setInterval(() => {
+      attempts += 1;
+      const ok = attemptScroll();
+      if (ok || attempts > 18) {
+        window.clearInterval(timer);
+      }
+    }, 160);
+  };
+  const scrollToActiveSlideItem = () => {
+    window.setTimeout(() => {
+      const active = document.querySelector('.panel.left .drag-item.active');
+      if (active && active instanceof HTMLElement) {
+        active.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
+  };
+  const selectSlideAndFocus = async (slide: Slide | null) => {
+    if (!slide) return;
+    setSelectedSlideId(slide.id);
+    scrollToActiveSlideItem();
+    await wait(500);
+    scrollPreviewToSlide(slide.id);
+    await wait(500);
+  };
+  const guidedEditorSteps: Array<{
+    selector: string;
+    title: string;
+    description: string;
+    kind: 'info' | 'action';
+    delayMs?: number;
+    run?: () => Promise<void>;
+  }> = [
+    {
+      selector: '[data-demo="editor-slides-panel"]',
+      title: 'Список слайдов',
+      description: 'Здесь вся структура презентации: порядок слайдов, быстрый переход и управление содержанием.',
+      kind: 'info',
+      delayMs: 6200,
+    },
+    {
+      selector: '[data-demo="editor-blocks-section"]',
+      title: 'Блоки выбранного слайда',
+      description: 'В этом блоке добавляются и редактируются текст, таблицы, графики и карточки.',
+      kind: 'info',
+      delayMs: 6200,
+    },
+    {
+      selector: '[data-demo="editor-properties-panel"]',
+      title: 'Свойства и лейаут',
+      description: 'Справа выбираются пресеты лейаута и распределение блоков по слотам.',
+      kind: 'info',
+      delayMs: 6200,
+    },
+    {
+      selector: '[data-demo="editor-blocks-section"]',
+      title: 'Сейчас покажем автосборку',
+      description: 'Подсказка исчезнет, мы добавим блоки по очереди и прокрутим к нужному слайду в превью.',
+      kind: 'info',
+      delayMs: 6400,
+    },
+    {
+      selector: '[data-demo="editor-blocks-section"]',
+      title: 'Создаем блоки автоматически',
+      description: 'Сейчас покажем добавление основных типов блоков: текст, изображение, график, таблица и карточки.',
+      kind: 'action',
+      run: async () => {
+        const constructorSlide = (slidesQuery.data || []).find((slide) => /конструктор блоков/i.test(slide.title || ''));
+        await selectSlideAndFocus(constructorSlide || null);
+        if (!constructorSlide) return;
+
+        const existing = await client.listBlocks(constructorSlide.id);
+        setGuidedStatus('Очищаем слайд конструктора');
+        for (const block of existing) {
+          // eslint-disable-next-line no-await-in-loop
+          await client.deleteBlock(block.id);
+        }
+
+        setGuidedStatus('Добавляем текстовый блок');
+        const textBlock = await client.createBlock(constructorSlide.id, {
+          type: 'text',
+          config: { html: '<h3>Текстовый блок</h3><p>Здесь показываем базовое текстовое содержимое и форматирование.</p>' },
+        });
+        await queryClient.invalidateQueries({ queryKey: ['blocks', constructorSlide.id] });
+        setSelectedBlockId(textBlock.id);
+        scrollToActiveSlideItem();
+        await wait(1700);
+
+        setGuidedStatus('Добавляем блок изображения');
+        const imageBlock = await client.createBlock(constructorSlide.id, {
+          type: 'image',
+          config: {
+            url: 'https://picsum.photos/id/1069/1600/1000',
+            fitMode: 'contain',
+            focalPoint: 'center center',
+            zoom: 100,
+            offsetX: 0,
+            offsetY: 0,
+          },
+        });
+        await queryClient.invalidateQueries({ queryKey: ['blocks', constructorSlide.id] });
+        setSelectedBlockId(imageBlock.id);
+        scrollToActiveSlideItem();
+        await wait(1700);
+
+        setGuidedStatus('Добавляем график из датасета');
+        const chartBlock = await client.createBlock(constructorSlide.id, {
+          type: 'chart',
+          config: {
+            datasetId: datasetsQuery.data?.[0]?.id || '',
+            kind: 'line',
+            xField: 'month',
+            valueField: 'revenue',
+            seriesField: '',
+            filterField: '',
+            filterValues: [],
+            showLabels: true,
+          },
+        });
+        await queryClient.invalidateQueries({ queryKey: ['blocks', constructorSlide.id] });
+        setSelectedBlockId(chartBlock.id);
+        scrollToActiveSlideItem();
+        await wait(1700);
+
+        setGuidedStatus('Добавляем таблицу из датасета');
+        const tableBlock = await client.createBlock(constructorSlide.id, {
+          type: 'table',
+          config: {
+            datasetId: datasetsQuery.data?.[0]?.id || '',
+            limit: 6,
+            transpose: false,
+          },
+        });
+        await queryClient.invalidateQueries({ queryKey: ['blocks', constructorSlide.id] });
+        setSelectedBlockId(tableBlock.id);
+        scrollToActiveSlideItem();
+        await wait(1700);
+
+        setGuidedStatus('Добавляем карточки');
+        const kpiBlock = await client.createBlock(constructorSlide.id, {
+          type: 'kpi',
+          config: {
+            mode: 'dataset',
+            datasetId: datasetsQuery.data?.[0]?.id || '',
+            labelField: 'month',
+            valueField: 'revenue',
+            growthField: 'growth',
+            filterField: '',
+            filterValues: [],
+            limit: 4,
+          },
+        });
+        await queryClient.invalidateQueries({ queryKey: ['blocks', constructorSlide.id] });
+        setSelectedBlockId(kpiBlock.id);
+        scrollToActiveSlideItem();
+        await wait(1800);
+
+        const presets = layoutPresetsQuery.data || [];
+        const constructorPreset =
+          presets.find((preset) => preset.nameKey === 'layout.grid2x2') ||
+          presets.find((preset) => (preset.schema?.slots || []).length >= 4) ||
+          null;
+        if (constructorPreset) {
+          setGuidedStatus('Выбираем лейаут и назначаем блоки в слоты');
+          const slots = constructorPreset.schema?.slots || [];
+          const assignments = [textBlock.id, imageBlock.id, chartBlock.id, tableBlock.id]
+            .map((blockId, index) => {
+              const slot = slots[index];
+              if (!slot?.id) return null;
+              return { slotId: slot.id, blockId };
+            })
+            .filter(Boolean) as Array<{ slotId: string; blockId: string }>;
+          await client.patchSlideLayout(constructorSlide.id, {
+            layoutPresetId: constructorPreset.id,
+            slotAssignments: assignments,
+          });
+          await queryClient.invalidateQueries({ queryKey: ['slides', presentationId] });
+          setSlideLayoutPresetId(constructorPreset.id);
+          setSlideSlotAssignments(assignments);
+          await wait(1500);
+        }
+
+        setGuidedStatus('Обновляем превью и перематываем на собранный слайд');
+        await buildPreviewMutation.mutateAsync();
+        await wait(700);
+        scrollPreviewToSlide(constructorSlide.id);
+        await wait(1100);
+      },
+    },
+    {
+      selector: '[data-demo="editor-blocks-section"]',
+      title: 'Редактирование блоков',
+      description: 'Теперь покажем, где меняются параметры графика, таблицы и изображения. Смотрите на правую панель свойств.',
+      kind: 'info',
+      delayMs: 6400,
+    },
+    {
+      selector: '[data-demo="editor-blocks-section"]',
+      title: 'Показываем настройки блоков',
+      description: 'Сейчас переключим тип графика, обновим таблицу и покажем, где настраиваются изображения и датасеты.',
+      kind: 'action',
+      run: async () => {
+        const constructorSlide = (slidesQuery.data || []).find((slide) => /конструктор блоков/i.test(slide.title || ''));
+        if (!constructorSlide) return;
+        const blocks = await client.listBlocks(constructorSlide.id);
+        const text = blocks.find((b) => b.type === 'text');
+        const chart = blocks.find((b) => b.type === 'chart');
+        const table = blocks.find((b) => b.type === 'table');
+        const image = blocks.find((b) => b.type === 'image');
+        const kpi = blocks.find((b) => b.type === 'kpi');
+        if (chart) {
+          setGuidedStatus('Переключаем тип графика: линия -> столбцы');
+          await client.patchBlock(chart.id, {
+            type: 'chart',
+            config: { ...(chart.config || {}), kind: 'bar' },
+          });
+          setSelectedBlockId(chart.id);
+          scrollToActiveSlideItem();
+          await wait(1800);
+          setGuidedStatus('Переключаем тип графика: столбцы -> горизонтальные');
+          await client.patchBlock(chart.id, {
+            type: 'chart',
+            config: { ...(chart.config || {}), kind: 'horizontalBar' },
+          });
+          await wait(1800);
+        }
+        if (table && datasetsQuery.data?.[0]) {
+          setGuidedStatus('Редактируем строку датасета для таблицы');
+          const dataset = datasetsQuery.data[0];
+          const rows = [...dataset.rows];
+          if (rows[0]) rows[0] = { ...rows[0], revenue: 333000 };
+          await client.patchDataset(dataset.id, { rows });
+          await queryClient.invalidateQueries({ queryKey: ['datasets', presentationId] });
+          setSelectedBlockId(table.id);
+          scrollToActiveSlideItem();
+          await wait(1800);
+        }
+        if (kpi) {
+          const constructorPreset =
+            (layoutPresetsQuery.data || []).find((preset) => preset.nameKey === 'layout.grid2x2') ||
+            (layoutPresetsQuery.data || []).find((preset) => (preset.schema?.slots || []).length >= 4) ||
+            null;
+          if (constructorPreset) {
+            setGuidedStatus('Показываем карточки: меняем 4-й слот на блок карточек');
+            const slots = constructorPreset.schema?.slots || [];
+            const nextAssignments = [text?.id, image?.id, chart?.id, kpi.id]
+              .map((blockId, index) => {
+                const slot = slots[index];
+                if (!slot?.id || !blockId) return null;
+                return { slotId: slot.id, blockId };
+              })
+              .filter(Boolean) as Array<{ slotId: string; blockId: string }>;
+            if (nextAssignments.length) {
+              await client.patchSlideLayout(constructorSlide.id, {
+                layoutPresetId: constructorPreset.id,
+                slotAssignments: nextAssignments,
+              });
+              setSlideLayoutPresetId(constructorPreset.id);
+              setSlideSlotAssignments(nextAssignments);
+              await queryClient.invalidateQueries({ queryKey: ['slides', presentationId] });
+              await wait(1700);
+            }
+          }
+        }
+        if (image) {
+          setGuidedStatus('Переходим к блоку изображения: включаем кроп и показываем сдвиг');
+          await client.patchBlock(image.id, {
+            type: 'image',
+            config: {
+              ...(image.config || {}),
+              fitMode: 'cover',
+              focalPoint: 'right top',
+              zoom: 142,
+              offsetX: -56,
+              offsetY: 18,
+            },
+          });
+          setSelectedBlockId(image.id);
+          scrollToActiveSlideItem();
+          await wait(2000);
+          await client.patchBlock(image.id, {
+            type: 'image',
+            config: {
+              ...(image.config || {}),
+              fitMode: 'cover',
+              zoom: 142,
+              focalPoint: 'center center',
+              offsetX: 24,
+              offsetY: -12,
+            },
+          });
+          await wait(1800);
+        }
+        setGuidedStatus('Обновляем превью с изменениями');
+        await queryClient.invalidateQueries({ queryKey: ['blocks', constructorSlide.id] });
+        await buildPreviewMutation.mutateAsync();
+        await wait(800);
+        scrollPreviewToSlide(constructorSlide.id);
+        await wait(1200);
+      },
+    },
+    {
+      selector: '[data-demo="editor-theme-select"]',
+      title: 'Слайд для сравнения тем',
+      description: 'Переходим на слайд 2x2 с четырьмя блоками. На нем лучше всего видно, как одна и та же структура меняет стиль от темы.',
+      kind: 'info',
+      delayMs: 6600,
+    },
+    {
+      selector: '[data-demo="editor-theme-select"]',
+      title: 'Подготовка слайда для сравнения тем',
+      description: 'Сейчас автоматически выбираем слайд 2x2, чтобы показать визуальную разницу между темами.',
+      kind: 'action',
+      run: async () => {
+        const preferred = (slidesQuery.data || []).find((slide) => /2x2/i.test(slide.title || ''));
+        if (preferred) {
+          setGuidedStatus('Переходим на слайд 2x2');
+          await selectSlideAndFocus(preferred);
+          await buildPreviewMutation.mutateAsync();
+          await wait(700);
+          scrollPreviewToSlide(preferred.id);
+          await wait(1300);
+        }
+      },
+    },
+    {
+      selector: '[data-demo="editor-theme-select"]',
+      title: 'Смена тем в реальном времени',
+      description: 'Сейчас по очереди применим несколько тем и сделаем паузы подольше, чтобы вы успели сравнить контент в одном и том же лейауте.',
+      kind: 'info',
+      delayMs: 6800,
+    },
+    {
+      selector: '[data-demo="editor-theme-select"]',
+      title: 'Быстрая смена темы',
+      description: 'Сейчас покажем, как этот же 2x2 слайд мгновенно меняет стиль при переключении тем.',
+      kind: 'action',
+      run: async () => {
+        const state = readGuidedDemoState();
+        const ids = (state?.showcaseThemeIds || []).slice(0, 3);
+        for (const themeId of ids) {
+          setGuidedStatus(`Применяем тему: ${themeId}`);
+          // eslint-disable-next-line no-await-in-loop
+          await patchPresentationMutation.mutateAsync(themeId);
+          // eslint-disable-next-line no-await-in-loop
+          await buildPreviewMutation.mutateAsync();
+          const preferred = (slidesQuery.data || []).find((slide) => /2x2/i.test(slide.title || ''));
+          if (preferred) {
+            // eslint-disable-next-line no-await-in-loop
+            await wait(600);
+            scrollPreviewToSlide(preferred.id);
+          }
+          // eslint-disable-next-line no-await-in-loop
+          await wait(3400);
+        }
+      },
+    },
+    {
+      selector: '[data-demo="editor-export-group"]',
+      title: 'Экспорт',
+      description: 'Три режима экспорта: PDF, PPTX-картинка и PPTX-блоки. В демо мы только подсвечиваем кнопки без автоскачивания.',
+      kind: 'info',
+      delayMs: 7600,
+    },
+    {
+      selector: '[data-demo="editor-export-group"]',
+      title: 'Демо завершено',
+      description: 'Теперь можно вручную нажать любой режим экспорта и проверить результат.',
+      kind: 'action',
+      run: async () => {
+        clearGuidedDemoState();
+      },
+    },
+  ];
 
   useEffect(() => {
     if (selectedSlide?.type === 'title') {
       setSelectedBlockId('');
     }
   }, [selectedSlide?.id, selectedSlide?.type]);
+
+  useEffect(() => {
+    if (!guidedActive || !guidedState) return;
+    setGuidedStep(Number.isFinite(guidedState.stepIndex) ? guidedState.stepIndex : 0);
+    setGuidedPaused(Boolean(guidedState.paused));
+    const constructorSlide = (slidesQuery.data || []).find((slide) => /конструктор блоков/i.test(slide.title || ''));
+    if (constructorSlide) setSelectedSlideId(constructorSlide.id);
+  }, [guidedActive, guidedState, slidesQuery.data]);
+
+  const nextGuidedEditorStep = () => {
+    const state = readGuidedDemoState();
+    if (!state) return;
+    const next = Math.min(guidedEditorSteps.length - 1, guidedStep + 1);
+    setGuidedStep(next);
+    writeGuidedDemoState({ ...state, stepIndex: next, paused: guidedPaused });
+  };
+
+  const prevGuidedEditorStep = () => {
+    const state = readGuidedDemoState();
+    if (!state) return;
+    const next = Math.max(0, guidedStep - 1);
+    setGuidedStep(next);
+    writeGuidedDemoState({ ...state, stepIndex: next, paused: guidedPaused });
+  };
+
+  useEffect(() => {
+    if (!guidedActive || guidedPaused) return;
+    const step = guidedEditorSteps[Math.min(guidedStep, guidedEditorSteps.length - 1)];
+    if (!step) return;
+    if (step.kind === 'info') setGuidedStatus('Ознакомьтесь с подсказкой...');
+    let canceled = false;
+    const run = async () => {
+      if (step.kind === 'info') {
+        const timeout = window.setTimeout(() => {
+          if (!canceled) nextGuidedEditorStep();
+        }, step.delayMs || 4000);
+        return () => window.clearTimeout(timeout);
+      }
+      try {
+        setGuidedBusy(true);
+        setGuidedStatus('Выполняем действие...');
+        if (step.run) await step.run();
+        if (!canceled) {
+          const timeout = window.setTimeout(() => {
+            if (!canceled) nextGuidedEditorStep();
+          }, 1200);
+          return () => window.clearTimeout(timeout);
+        }
+      } catch (e) {
+        setBlockError((e as Error).message);
+      } finally {
+        setGuidedBusy(false);
+      }
+      return undefined;
+    };
+    let cleanup: (() => void) | undefined;
+    run().then((fn) => {
+      cleanup = fn;
+    });
+    return () => {
+      canceled = true;
+      if (cleanup) cleanup();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [guidedActive, guidedPaused, guidedStep]);
 
   const handleSelectLayoutPreset = (nextPresetId: string) => {
     setSlideLayoutPresetId(nextPresetId);
@@ -715,6 +1206,51 @@ export function EditorPage() {
     return uploaded.url;
   };
 
+  const downloadRenderArtifact = async () => {
+    const result = renderJobQuery.data?.result;
+    if (!result?.path) return;
+    const resp = await fetch(result.path);
+    if (!resp.ok) throw new Error(`artifact fetch failed: ${resp.status}`);
+    const blob = await resp.blob();
+    const suggestedName = result.fileName || (renderJobQuery.data?.type === 'export_pptx_future' ? 'export.pptx' : 'export.pdf');
+    const ext = suggestedName.toLowerCase().endsWith('.pptx') ? 'pptx' : suggestedName.toLowerCase().endsWith('.pdf') ? 'pdf' : '';
+
+    type SavePickerWindow = Window & {
+      showSaveFilePicker?: (options: {
+        suggestedName?: string;
+        types?: Array<{ description?: string; accept: Record<string, string[]> }>;
+      }) => Promise<{
+        createWritable: () => Promise<{ write: (data: Blob) => Promise<void>; close: () => Promise<void> }>;
+      }>;
+    };
+
+    const pickerWindow = window as SavePickerWindow;
+    if (pickerWindow.showSaveFilePicker) {
+      const handle = await pickerWindow.showSaveFilePicker({
+        suggestedName,
+        types:
+          ext === 'pptx'
+            ? [{ description: 'PowerPoint', accept: { 'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'] } }]
+            : ext === 'pdf'
+              ? [{ description: 'PDF', accept: { 'application/pdf': ['.pdf'] } }]
+              : undefined,
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      return;
+    }
+
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = suggestedName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(blobUrl);
+  };
+
   return (
     <div className="editor-page">
       <header className="editor-header">
@@ -728,9 +1264,16 @@ export function EditorPage() {
           </Button>
         </div>
         <div className="editor-header-center">
-          <span className={`save-state ${saveStatusClass}`} aria-live="polite">
-            {headerStatusText || '\u00A0'}
-          </span>
+          <div className="header-status-stack">
+            <span className={`save-state ${saveStatusClass}`} aria-live="polite">
+              {headerStatusText || '\u00A0'}
+            </span>
+            {isExportInProgress ? (
+              <div className="export-progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={exportProgress}>
+                <div className="export-progress-fill" style={{ width: `${exportProgress}%` }} />
+              </div>
+            ) : null}
+          </div>
         </div>
         <div className="editor-header-right">
           <Button variant="secondary" size="small" onClick={() => setThemeMode(themeMode === 'light' ? 'dark' : 'light')}>
@@ -747,7 +1290,8 @@ export function EditorPage() {
           </select>
           <select
             className="ui-select compact-header-select"
-            value={presentationQuery.data?.themeId || 'theme-eurofoods'}
+            value={presentationQuery.data?.themeId || 'theme-universal-warm'}
+            data-demo="editor-theme-select"
             onChange={(e) => patchPresentationMutation.mutate(e.target.value)}
           >
             {(themesQuery.data || []).map((theme) => (
@@ -756,14 +1300,27 @@ export function EditorPage() {
               </option>
             ))}
           </select>
-          <Button variant="primary" size="small" onClick={() => startPdfMutation.mutate()}>
-            {t('editor.exportPdf')}
-          </Button>
+          <div className="export-group" data-demo="editor-export-group">
+            <Button variant="primary" size="small" onClick={() => startPdfMutation.mutate()}>
+              {t('editor.exportPdf')}
+            </Button>
+            <Button variant="primary" size="small" onClick={() => startPptxMutation.mutate('raster')}>
+              {t('editor.exportPptxRaster')}
+            </Button>
+            <Button variant="primary" size="small" onClick={() => startPptxMutation.mutate('hybrid_blocks')}>
+              {t('editor.exportPptxBlocks')}
+            </Button>
+          </div>
+          {renderJobQuery.data?.status === 'done' && renderJobQuery.data?.result?.path ? (
+            <Button variant="secondary" size="small" onClick={() => void downloadRenderArtifact()}>
+              {t('editor.downloadExport')}
+            </Button>
+          ) : null}
         </div>
       </header>
 
       <div className="editor-grid">
-        <aside className="panel left">
+        <aside className="panel left" data-demo="editor-slides-panel">
           <div className="panel-row">
             <h3>{t('editor.slides')}</h3>
             <div className="panel-row">
@@ -808,7 +1365,7 @@ export function EditorPage() {
 
           {selectedSlideId && (
             <>
-              <div className="panel-row mt">
+              <div className="panel-row mt" data-demo="editor-blocks-section">
                 <h3>{t('editor.blocks')}</h3>
               </div>
               {isTitleSlide ? (
@@ -911,7 +1468,7 @@ export function EditorPage() {
           />
         </main>
 
-        <aside className="panel right">
+        <aside className="panel right" data-demo="editor-properties-panel">
           <h3>{t('editor.properties')}</h3>
           {selectedSlide && (
             <SectionCard title={t('editor.slideSettings')}>
@@ -1172,6 +1729,30 @@ export function EditorPage() {
           </div>
         </div>
       )}
+      {guidedActive && guidedState ? (
+        <DemoCoach
+          title={guidedEditorSteps[Math.min(guidedStep, guidedEditorSteps.length - 1)]?.title || 'Гид по редактору'}
+          description={guidedEditorSteps[Math.min(guidedStep, guidedEditorSteps.length - 1)]?.description || ''}
+          step={Math.min(guidedStep, guidedEditorSteps.length - 1)}
+          total={guidedEditorSteps.length}
+          selector={guidedEditorSteps[Math.min(guidedStep, guidedEditorSteps.length - 1)]?.selector}
+          busy={guidedBusy}
+          auto
+          paused={guidedPaused}
+          statusText={guidedStatus}
+          hidden={guidedEditorSteps[Math.min(guidedStep, guidedEditorSteps.length - 1)]?.kind === 'action'}
+          onPrev={guidedStep > 0 ? prevGuidedEditorStep : undefined}
+          onNext={() => nextGuidedEditorStep()}
+          onTogglePause={() => {
+            const next = !guidedPaused;
+            setGuidedPaused(next);
+            if (guidedState) writeGuidedDemoState({ ...guidedState, paused: next });
+          }}
+          onSkip={() => {
+            clearGuidedDemoState();
+          }}
+        />
+      ) : null}
     </div>
   );
 }

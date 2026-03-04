@@ -136,7 +136,7 @@ function run() {
         id: presentationId,
         name: DEMO_NAME,
         description: 'Generated demo deck for QA of themes and layout presets.',
-        themeId: 'theme-eurofoods',
+        themeId: 'theme-factory-blueprint',
         themeOverrides: null,
         status: 'draft',
         schemaVersion: SCHEMA_VERSION,

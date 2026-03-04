@@ -36,7 +36,7 @@ module.exports = (block) => {
     }).join('');
 
     return `
-        <div class="block-wrapper table-block ${compactClass}" ${style}>
+        <div class="block-wrapper table-block ${compactClass}" data-block-id="${escapeHtml(block._blockId || '')}" data-block-type="${escapeHtml(block._blockType || '')}" ${style}>
             <table class="ef-table">
                 <thead><tr>${headers.map((h) => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead>
                 <tbody>${rowsHtml}</tbody>

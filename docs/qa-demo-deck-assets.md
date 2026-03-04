@@ -48,4 +48,5 @@ Result:
 
 1. Old presentations named `QA Demo Deck` are removed.
 2. New demo presentation is created with all key layouts/slides.
-3. Found images are copied to `data/presentations/<presentationId>/assets/`.
+3. Demo deck default theme is `factory-blueprint` (industrial dark blueprint style).
+4. Found images are copied to `data/presentations/<presentationId>/assets/`.

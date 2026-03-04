@@ -70,6 +70,22 @@ function seedLayoutPresets(db) {
 
     const presets = [
         {
+            id: 'layout-single-full',
+            name: 'Single Full',
+            nameKey: 'layout.singleFull',
+            schema: {
+                grid: {
+                    columns: '1fr',
+                    rows: '1fr',
+                    areas: ['main'],
+                    gap: 20,
+                },
+                slots: [
+                    { id: 'slot_main', area: 'main', allowedBlockTypes: anyBlock },
+                ],
+            },
+        },
+        {
             id: 'layout-single-column',
             name: 'Single Column',
             nameKey: 'layout.singleColumn',

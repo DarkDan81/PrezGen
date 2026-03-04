@@ -7,7 +7,9 @@ const { sendError, sendData } = require('./utils/response');
 
 function createApp() {
     const app = express();
-    app.use(express.json({ limit: '2mb' }));
+    const bodyLimit = '35mb';
+    app.use(express.json({ limit: bodyLimit }));
+    app.use(express.urlencoded({ limit: bodyLimit, extended: true }));
     app.use(requestMeta);
     app.use('/themes', express.static(path.join(__dirname, '../themes')));
     app.use('/dist', express.static(path.join(__dirname, '../dist')));

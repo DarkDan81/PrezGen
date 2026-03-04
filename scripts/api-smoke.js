@@ -90,6 +90,29 @@ async function run() {
         }
         if (status !== 'done') throw new Error(`pdf job timeout, last status=${status}`);
 
+        const pptxStartResp = await fetch(
+            `http://localhost:3100/api/v1/presentations/${presentationId}/render/pptx`,
+            { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' },
+        );
+        const pptxStartData = await pptxStartResp.json();
+        if (pptxStartResp.status !== 202) throw new Error(`pptx start failed: ${pptxStartResp.status}`);
+        const pptxJobId = pptxStartData.data.id;
+
+        let pptxStatus = 'queued';
+        for (let i = 0; i < 60; i += 1) {
+            const jobResp = await fetch(`http://localhost:3100/api/v1/render-jobs/${pptxJobId}`);
+            const jobData = await jobResp.json();
+            pptxStatus = jobData.data.status;
+            if (pptxStatus === 'done') {
+                const fileResp = await fetch(`http://localhost:3100${jobData.data.result.path}`);
+                if (fileResp.status !== 200) throw new Error(`pptx artifact fetch failed: ${fileResp.status}`);
+                break;
+            }
+            if (pptxStatus === 'failed') throw new Error('pptx job failed');
+            await sleep(500);
+        }
+        if (pptxStatus !== 'done') throw new Error(`pptx job timeout, last status=${pptxStatus}`);
+
         console.log('API smoke: OK');
     } finally {
         server.close();
