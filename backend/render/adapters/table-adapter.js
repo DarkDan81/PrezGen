@@ -1,5 +1,5 @@
 ﻿const MAX_TABLE_COLUMNS = 8;
-const MAX_TABLE_ROWS = 14;
+const MAX_TABLE_ROWS = 100;
 
 function clampPositiveInt(value, fallback, max) {
     const n = Number(value);

@@ -123,6 +123,7 @@
     justify-content: center;
     padding: 30px;
     min-height: 0;
+    min-width: 0;
     overflow: hidden;
     position: relative;
 }
@@ -137,6 +138,14 @@
     display: flex;
     align-items: baseline;
     gap: 10px;
+    min-width: 0;
+}
+
+.kpi-value-row .value {
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;
 }
 
 .slide-body.layout-grid {
@@ -214,13 +223,16 @@
 
 .kpi-grid-auto {
     display: grid;
-    grid-template-columns: repeat(var(--kpi-cols, 2), minmax(240px, 300px));
+    grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
     grid-template-rows: repeat(var(--kpi-rows, 1), auto);
     gap: 14px;
     align-content: center;
-    justify-content: center;
+    justify-content: stretch;
     height: 100%;
+    width: 100%;
     min-height: 0;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .kpi-grid-auto[data-kpi-count="1"] {

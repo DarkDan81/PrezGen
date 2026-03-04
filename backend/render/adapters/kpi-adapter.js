@@ -1,4 +1,4 @@
-﻿const MAX_KPI_CARDS = 6;
+﻿const MAX_KPI_CARDS = 24;
 
 function clampPositiveInt(value, fallback, max) {
     const n = Number(value);
@@ -41,3 +41,4 @@ function kpiAdapter(block, dataset) {
 }
 
 module.exports = { kpiAdapter };
+

@@ -5,8 +5,8 @@ import { useI18n } from '../shared/i18n/I18nProvider';
 import { FileUploadControl } from '../shared/ui/FileUploadControl';
 
 const LIMITS = {
-  tableLimit: 14,
-  kpiLimit: 6,
+  tableLimit: 100,
+  kpiLimit: 24,
   textHtmlLength: 6000,
 } as const;
 

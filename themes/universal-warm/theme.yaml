@@ -43,7 +43,7 @@ decor:
   tableShadowEnabled: true
   chartShadowEnabled: true
   imageShadowEnabled: true
-  logoEnabled: true
+  logoEnabled: false
   logoText: "DEFAULT"
   logoAnchor: "top-right"
   logoSize: 13
