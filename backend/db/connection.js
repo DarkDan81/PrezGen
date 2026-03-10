@@ -1,13 +1,14 @@
 const fs = require('fs');
 const path = require('path');
 const Database = require('better-sqlite3');
+const { config } = require('../config');
 
 let db;
 
 function getDb() {
     if (db) return db;
 
-    const dataDir = path.join(__dirname, '../../data');
+    const dataDir = config.dataDir;
     if (!fs.existsSync(dataDir)) {
         fs.mkdirSync(dataDir, { recursive: true });
     }

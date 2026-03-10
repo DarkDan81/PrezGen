@@ -1,5 +1,7 @@
 import { apiDelete, apiGet, apiPatch, apiPost, apiPostForm } from './http';
 import type {
+  AdminUser,
+  AuthUserPayload,
   Block,
   Dataset,
   LayoutPreset,
@@ -9,10 +11,15 @@ import type {
   Theme,
   ThemePreviewResponse,
   ThemeTokens,
+  User,
   ValidationWarning,
 } from './types';
 
 export const client = {
+  login: (token: string) => apiPost<AuthUserPayload, { token: string }>('/api/v1/auth/login', { token }),
+  me: () => apiGet<AuthUserPayload>('/api/v1/auth/me'),
+  logout: () => apiPost<{ ok: boolean }, Record<string, never>>('/api/v1/auth/logout', {}),
+
   listPresentations: () => apiGet<Presentation[]>('/api/v1/presentations'),
   createPresentation: (payload: { name: string; themeId: string; description?: string }) =>
     apiPost<Presentation, typeof payload>('/api/v1/presentations', payload),
@@ -94,4 +101,12 @@ export const client = {
   startPptx: (presentationId: string, mode: 'hybrid_native' | 'hybrid_blocks' | 'raster' = 'hybrid_blocks') =>
     apiPost<RenderJob, { mode: 'hybrid_native' | 'hybrid_blocks' | 'raster' }>(`/api/v1/presentations/${presentationId}/render/pptx`, { mode }),
   getRenderJob: (jobId: string) => apiGet<RenderJob>(`/api/v1/render-jobs/${jobId}`),
+
+  listUsers: () => apiGet<AdminUser[]>('/api/v1/admin/users'),
+  createUser: (payload: { login: string; name: string; role?: User['role']; quotas?: Record<string, unknown> }) =>
+    apiPost<{ user: User; token: string }, typeof payload>('/api/v1/admin/users', payload),
+  patchUser: (userId: string, payload: Partial<Pick<User, 'login' | 'name' | 'role' | 'isActive' | 'quotas'>>) =>
+    apiPatch<{ user: User }, typeof payload>(`/api/v1/admin/users/${userId}`, payload),
+  resetUserToken: (userId: string, label = 'reset') =>
+    apiPost<{ token: string }, { label: string }>(`/api/v1/admin/users/${userId}/tokens/reset`, { label }),
 };

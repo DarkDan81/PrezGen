@@ -13,6 +13,7 @@ function mapTheme(row) {
 
     return {
         id: row.id,
+        ownerUserId: row.owner_user_id || null,
         name: row.name,
         kind: row.kind,
         isSystem: row.is_system === 1,
@@ -24,11 +25,12 @@ function mapTheme(row) {
     };
 }
 
-function listThemesFromDb() {
+function listThemesFromDb(ownerUserId) {
     const db = getDb();
-    return db
-        .prepare('SELECT * FROM themes ORDER BY is_system DESC, name ASC')
-        .all()
+    const rows = ownerUserId
+        ? db.prepare('SELECT * FROM themes WHERE is_system = 1 OR owner_user_id = ? ORDER BY is_system DESC, name ASC').all(ownerUserId)
+        : db.prepare('SELECT * FROM themes ORDER BY is_system DESC, name ASC').all();
+    return rows
         .map(mapTheme);
 }
 
@@ -42,12 +44,13 @@ function createTheme(theme) {
     const db = getDb();
     db.prepare(`
         INSERT INTO themes (
-            id, name, kind, is_system, base_theme_id, base_css_path, tokens_json, created_at, updated_at
+            id, owner_user_id, name, kind, is_system, base_theme_id, base_css_path, tokens_json, created_at, updated_at
         ) VALUES (
-            @id, @name, @kind, @is_system, @base_theme_id, @base_css_path, @tokens_json, @created_at, @updated_at
+            @id, @owner_user_id, @name, @kind, @is_system, @base_theme_id, @base_css_path, @tokens_json, @created_at, @updated_at
         )
     `).run({
         id: theme.id,
+        owner_user_id: theme.ownerUserId || null,
         name: theme.name,
         kind: theme.kind,
         is_system: theme.isSystem ? 1 : 0,

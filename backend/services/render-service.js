@@ -2,13 +2,13 @@ const fs = require('fs');
 const path = require('path');
 const puppeteer = require('puppeteer');
 const PptxGenJS = require('pptxgenjs');
+const { config } = require('../config');
 const { buildPreviewHtml } = require('./preview-service');
 const { buildNativePptxDeck, buildHybridBlocksPptxDeck } = require('./pptx-native-export');
 const { updateRenderJob } = require('../repositories/render-job-repository');
 
 function buildExportBaseHref() {
-    const port = Number.parseInt(process.env.PORT, 10) || 3100;
-    return `http://127.0.0.1:${port}/`;
+    return `${config.internalBaseUrl.replace(/\/+$/, '')}/`;
 }
 
 function prepareHtmlForPuppeteer(html) {
@@ -289,7 +289,7 @@ async function processPdfJob(job) {
             status: 'done',
             result: {
                 fileName,
-                path: `/dist/export/${fileName}`,
+                path: `/api/v1/render-jobs/${job.id}/download`,
                 progress: 100,
             },
             error: null,
@@ -396,7 +396,7 @@ async function processPptxJob(job) {
             status: 'done',
             result: {
                 fileName,
-                path: `/dist/export/${fileName}`,
+                path: `/api/v1/render-jobs/${job.id}/download`,
                 mode,
                 warnings,
                 progress: 100,

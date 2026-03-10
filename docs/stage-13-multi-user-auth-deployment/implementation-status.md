@@ -2,15 +2,24 @@
 
 ## Current Status
 
-Planned, not started.
+In progress.
 
 ## Confirmed Work Items
 
-1. Production frontend serving path must be fixed.
-2. Auth model must be introduced.
-3. Ownership boundaries must be added to user-generated entities.
-4. Admin panel for user creation/management must be implemented.
-5. Quota-ready scaffolding must be added for future rollout.
+1. Production frontend serving path: implemented.
+2. Cookie-backed token auth with bootstrap admin: implemented.
+3. Ownership boundaries for presentations/custom themes/render jobs: implemented.
+4. Admin panel for user creation/management: implemented.
+5. Quota-ready scaffolding on user model/admin UI: implemented as foundation.
+
+## Remaining Checks
+
+1. Manual browser QA for multi-user isolation on a fresh account set.
+2. Server deployment test behind real `nginx` with HTTPS.
+3. Optional follow-up hardening:
+   - CSRF/session policy review,
+   - rate limits,
+   - richer admin audit metadata.
 
 ## Initial QA Focus
 
@@ -24,4 +33,9 @@ Planned, not started.
 
 1. First hosted pilot can rely on admin-created accounts only.
 2. Full self-service signup is intentionally outside this stage.
-3. Quota enforcement can remain partial if schema and admin controls are already future-ready.
+3. Quota enforcement remains scaffold-only in current implementation.
+4. Smoke checks completed:
+   - backend migrate,
+   - auth login/me flow,
+   - protected presentations route,
+   - frontend production build.

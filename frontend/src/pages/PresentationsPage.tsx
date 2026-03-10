@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { client } from '../api/client';
 import { clearGuidedDemoState, writeGuidedDemoState } from '../demo/guidedDemoState';
+import { AccountToolbar } from '../shared/auth/AccountToolbar';
 import { useI18n } from '../shared/i18n/I18nProvider';
 import { Button } from '../shared/ui/Button';
 import { Field } from '../shared/ui/Field';
@@ -72,6 +73,7 @@ export function PresentationsPage() {
             <option value="ru">🇷🇺 {t('lang.ru')}</option>
             <option value="en">🇺🇸 {t('lang.en')}</option>
           </select>
+          <AccountToolbar />
         </div>
       </header>
 

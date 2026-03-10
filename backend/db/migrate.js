@@ -1,7 +1,10 @@
 const { getDb } = require('./connection');
 const fs = require('fs');
 const path = require('path');
+const { randomUUID } = require('crypto');
 const yaml = require('js-yaml');
+const { config } = require('../config');
+const { hashToken } = require('../services/auth-service');
 
 const THEMES_DIR = path.join(__dirname, '../../themes');
 
@@ -282,12 +285,43 @@ function seedLayoutPresets(db) {
     db.prepare('DELETE FROM layout_presets WHERE id = ?').run('layout-single-column');
 }
 
+function seedBootstrapAdmin(db) {
+    const usersCountRow = db.prepare('SELECT COUNT(*) AS count FROM users').get();
+    if (Number(usersCountRow?.count || 0) > 0) return;
+
+    const now = new Date().toISOString();
+    const adminId = `user-${randomUUID()}`;
+    db.prepare(`
+        INSERT INTO users (id, login, name, role, is_active, quotas_json, created_at, updated_at)
+        VALUES (@id, @login, @name, 'admin', 1, @quotas_json, @created_at, @updated_at)
+    `).run({
+        id: adminId,
+        login: String(config.bootstrapAdminLogin || 'admin').trim().toLowerCase(),
+        name: config.bootstrapAdminName || 'Administrator',
+        quotas_json: JSON.stringify({}),
+        created_at: now,
+        updated_at: now,
+    });
+
+    db.prepare(`
+        INSERT INTO auth_tokens (id, user_id, label, token_hash, is_active, last_used_at, created_at, updated_at)
+        VALUES (@id, @user_id, 'bootstrap', @token_hash, 1, NULL, @created_at, @updated_at)
+    `).run({
+        id: `token-${randomUUID()}`,
+        user_id: adminId,
+        token_hash: hashToken(config.bootstrapAdminToken),
+        created_at: now,
+        updated_at: now,
+    });
+}
+
 function migrate() {
     const db = getDb();
 
     db.exec(`
         CREATE TABLE IF NOT EXISTS presentations (
             id TEXT PRIMARY KEY,
+            owner_user_id TEXT,
             name TEXT NOT NULL,
             description TEXT,
             theme_id TEXT NOT NULL,
@@ -315,6 +349,32 @@ function migrate() {
 
         CREATE INDEX IF NOT EXISTS idx_slides_presentation_order
         ON slides (presentation_id, "order");
+
+        CREATE TABLE IF NOT EXISTS users (
+            id TEXT PRIMARY KEY,
+            login TEXT NOT NULL UNIQUE,
+            name TEXT NOT NULL,
+            role TEXT NOT NULL CHECK (role IN ('admin', 'user')),
+            is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
+            quotas_json TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS auth_tokens (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            label TEXT NOT NULL,
+            token_hash TEXT NOT NULL UNIQUE,
+            is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
+            last_used_at TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_auth_tokens_user
+        ON auth_tokens (user_id, created_at DESC);
 
         CREATE TABLE IF NOT EXISTS datasets (
             id TEXT PRIMARY KEY,
@@ -351,11 +411,13 @@ function migrate() {
 
         CREATE TABLE IF NOT EXISTS render_jobs (
             id TEXT PRIMARY KEY,
+            owner_user_id TEXT,
             presentation_id TEXT NOT NULL,
             type TEXT NOT NULL CHECK (type IN ('preview_html', 'export_pdf', 'export_pptx_future')),
             status TEXT NOT NULL CHECK (status IN ('queued', 'running', 'done', 'failed')),
             result_json TEXT,
             error_json TEXT,
+            options_json TEXT,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL,
             FOREIGN KEY (presentation_id) REFERENCES presentations (id) ON DELETE CASCADE
@@ -366,6 +428,7 @@ function migrate() {
 
         CREATE TABLE IF NOT EXISTS themes (
             id TEXT PRIMARY KEY,
+            owner_user_id TEXT,
             name TEXT NOT NULL,
             kind TEXT NOT NULL CHECK (kind IN ('system', 'custom')),
             is_system INTEGER NOT NULL DEFAULT 0 CHECK (is_system IN (0, 1)),
@@ -397,9 +460,27 @@ function migrate() {
     ensureColumn(db, 'slides', 'layout_preset_id', 'TEXT');
     ensureColumn(db, 'slides', 'slot_assignments_json', 'TEXT');
     ensureColumn(db, 'layout_presets', 'name_key', 'TEXT');
+    ensureColumn(db, 'presentations', 'owner_user_id', 'TEXT');
+    ensureColumn(db, 'render_jobs', 'owner_user_id', 'TEXT');
+    ensureColumn(db, 'render_jobs', 'options_json', 'TEXT');
+    ensureColumn(db, 'themes', 'owner_user_id', 'TEXT');
 
+    seedBootstrapAdmin(db);
     seedSystemThemes(db);
     seedLayoutPresets(db);
+
+    const bootstrapAdmin = db.prepare('SELECT id FROM users ORDER BY created_at ASC LIMIT 1').get();
+    if (bootstrapAdmin?.id) {
+        db.prepare('UPDATE presentations SET owner_user_id = ? WHERE owner_user_id IS NULL').run(bootstrapAdmin.id);
+        db.prepare(`
+            UPDATE render_jobs
+            SET owner_user_id = COALESCE(owner_user_id, (
+                SELECT owner_user_id FROM presentations WHERE presentations.id = render_jobs.presentation_id
+            ))
+            WHERE owner_user_id IS NULL
+        `).run();
+        db.prepare('UPDATE themes SET owner_user_id = ? WHERE is_system = 0 AND owner_user_id IS NULL').run(bootstrapAdmin.id);
+    }
 }
 
 module.exports = { migrate };

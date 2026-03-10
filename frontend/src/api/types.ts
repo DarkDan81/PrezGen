@@ -13,6 +13,7 @@ export type ApiErrorEnvelope = {
 
 export type Presentation = {
   id: string;
+  ownerUserId?: string | null;
   name: string;
   description: string | null;
   themeId: string;
@@ -49,6 +50,7 @@ export type Block = {
 
 export type Theme = {
   id: string;
+  ownerUserId?: string | null;
   name: string;
   kind?: 'system' | 'custom';
   baseCssPath: string | null;
@@ -189,6 +191,7 @@ export type Dataset = {
 
 export type RenderJob = {
   id: string;
+  ownerUserId?: string | null;
   presentationId: string;
   type: 'export_pdf' | 'export_pptx_future';
   status: 'queued' | 'running' | 'done' | 'failed';
@@ -202,4 +205,32 @@ export type RenderJob = {
       }
     | null;
   error: { message: string } | null;
+};
+
+export type UserRole = 'admin' | 'user';
+
+export type User = {
+  id: string;
+  login: string;
+  name: string;
+  role: UserRole;
+  isActive: boolean;
+  quotas?: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AuthUserPayload = {
+  user: User;
+};
+
+export type AdminUser = User & {
+  tokens?: Array<{
+    id: string;
+    label: string;
+    isActive: boolean;
+    createdAt: string;
+    updatedAt: string;
+    lastUsedAt?: string | null;
+  }>;
 };

@@ -6,6 +6,7 @@ import { DemoCoach } from '../demo/DemoCoach';
 import { clearGuidedDemoState, readGuidedDemoState, writeGuidedDemoState } from '../demo/guidedDemoState';
 import { seedGuidedDemo } from '../demo/seedGuidedDemo';
 import type { ThemePreviewResponse, ThemeTokens } from '../api/types';
+import { AccountToolbar } from '../shared/auth/AccountToolbar';
 import { useI18n } from '../shared/i18n/I18nProvider';
 import { Button } from '../shared/ui/Button';
 import { Field } from '../shared/ui/Field';
@@ -910,6 +911,7 @@ export function ThemesPage() {
             <option value="ru">RU {t('lang.ru')}</option>
             <option value="en">EN {t('lang.en')}</option>
           </select>
+          <AccountToolbar compact />
         </div>
       </header>
 

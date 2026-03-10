@@ -10,6 +10,7 @@ import { BlockConfigForm, getDefaultConfig } from '../components/BlockConfigForm
 import { DemoCoach } from '../demo/DemoCoach';
 import { clearGuidedDemoState, readGuidedDemoState, writeGuidedDemoState } from '../demo/guidedDemoState';
 import { useDebouncedEffect } from '../hooks/useDebouncedEffect';
+import { AccountToolbar } from '../shared/auth/AccountToolbar';
 import { useI18n } from '../shared/i18n/I18nProvider';
 import type { TranslationKey } from '../shared/i18n/dictionaries';
 import { Button } from '../shared/ui/Button';
@@ -1316,6 +1317,7 @@ export function EditorPage() {
               {t('editor.downloadExport')}
             </Button>
           ) : null}
+          <AccountToolbar compact />
         </div>
       </header>
 

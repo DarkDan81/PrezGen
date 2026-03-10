@@ -1,12 +1,11 @@
 const { createApp } = require('./app');
 const { migrate } = require('./db/migrate');
-
-const port = Number(process.env.API_PORT || 3100);
+const { config } = require('./config');
 
 migrate();
 const app = createApp();
 
-app.listen(port, () => {
-    console.log(`API listening on http://localhost:${port}`);
+app.listen(config.apiPort, () => {
+    console.log(`API listening on http://localhost:${config.apiPort}`);
 });
 

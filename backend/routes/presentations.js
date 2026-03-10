@@ -3,6 +3,8 @@ const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
 const { randomUUID } = require('crypto');
+const { config } = require('../config');
+const { createAuthToken, deactivateAuthTokensByUser, getActiveAuthTokenByHash, listAuthTokensByUser } = require('../repositories/auth-token-repository');
 const {
     createPresentation,
     deletePresentationById,
@@ -42,10 +44,21 @@ const {
     listThemesFromDb,
     updateThemeById,
 } = require('../repositories/theme-repository');
+const { countUsers, createUser, getUserById, getUserByLogin, listUsers, updateUserById } = require('../repositories/user-repository');
 const { getLayoutPresetById, listLayoutPresets } = require('../repositories/layout-preset-repository');
+const { requireAdmin, requireAuth } = require('../middleware/auth');
+const {
+    assertCanAccessBlock,
+    assertCanAccessDataset,
+    assertCanAccessPresentation,
+    assertCanAccessRenderJob,
+    assertCanAccessSlide,
+    assertCanAccessTheme,
+} = require('../services/access-service');
+const { clearAuthCookie, generateRawToken, hashToken, issueAuthCookie } = require('../services/auth-service');
 const { getThemeById, listThemes, normalizeThemeId } = require('../services/themes-service');
 const { buildPreviewHtml, buildThemePreviewHtml } = require('../services/preview-service');
-const { createRenderJob, getRenderJobById } = require('../repositories/render-job-repository');
+const { createRenderJob } = require('../repositories/render-job-repository');
 const { queuePdfJob, queuePptxJob } = require('../services/render-service');
 const { parseCsvToDatasetShape } = require('../services/csv-service');
 const { sanitizeRichHtml } = require('../services/sanitize-service');
@@ -56,7 +69,7 @@ const {
     normalizeThemeTokens,
     validateThemeTokens,
 } = require('../validation/theme-layout');
-const { validationError, notFound } = require('../utils/errors');
+const { validationError, notFound, unauthorized } = require('../utils/errors');
 const { SCHEMA_VERSION, sendData } = require('../utils/response');
 
 const router = express.Router();
@@ -104,6 +117,171 @@ function sanitizeFileName(name) {
         .slice(0, 120);
 }
 
+function sanitizeLogin(login) {
+    return String(login || '').trim().toLowerCase();
+}
+
+function serializeUser(user) {
+    return {
+        id: user.id,
+        login: user.login,
+        name: user.name,
+        role: user.role,
+        isActive: user.isActive,
+        quotas: user.quotas || {},
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+    };
+}
+
+function serializeAuthTokenMeta(token) {
+    return {
+        id: token.id,
+        label: token.label,
+        isActive: token.isActive,
+        createdAt: token.createdAt,
+        updatedAt: token.updatedAt,
+        lastUsedAt: token.lastUsedAt,
+    };
+}
+
+router.post('/auth/login', (req, res, next) => {
+    try {
+        const token = String(req.body?.token || '').trim();
+        if (!token) {
+            throw validationError([{ path: 'token', rule: 'required', message: 'token is required' }]);
+        }
+        const authToken = getActiveAuthTokenByHash(hashToken(token));
+        if (!authToken) throw unauthorized('Invalid token');
+        const user = getUserById(authToken.userId);
+        if (!user || !user.isActive) throw unauthorized('Invalid token');
+        issueAuthCookie(res, token);
+        return sendData(req, res, { user: serializeUser(user) });
+    } catch (error) {
+        return next(error);
+    }
+});
+
+router.post('/auth/logout', (req, res) => {
+    clearAuthCookie(res);
+    return sendData(req, res, { ok: true });
+});
+
+router.get('/auth/me', requireAuth, (req, res) => {
+    return sendData(req, res, { user: serializeUser(req.user) });
+});
+
+router.get('/admin/users', requireAuth, requireAdmin, (req, res, next) => {
+    try {
+        const data = listUsers().map((user) => ({
+            ...serializeUser(user),
+            tokens: listAuthTokensByUser(user.id).map(serializeAuthTokenMeta),
+        }));
+        return sendData(req, res, data);
+    } catch (error) {
+        return next(error);
+    }
+});
+
+router.post('/admin/users', requireAuth, requireAdmin, (req, res, next) => {
+    try {
+        const login = sanitizeLogin(req.body?.login);
+        const name = String(req.body?.name || '').trim();
+        const role = req.body?.role === 'admin' ? 'admin' : req.body?.role === undefined || req.body?.role === 'user' ? 'user' : null;
+        const details = [];
+        if (!login) details.push({ path: 'login', rule: 'required', message: 'login is required' });
+        if (!name) details.push({ path: 'name', rule: 'required', message: 'name is required' });
+        if (!role) details.push({ path: 'role', rule: 'enum', message: 'role must be admin or user' });
+        if (req.body?.quotas !== undefined && (typeof req.body.quotas !== 'object' || req.body.quotas === null || Array.isArray(req.body.quotas))) {
+            details.push({ path: 'quotas', rule: 'object', message: 'quotas must be an object' });
+        }
+        if (getUserByLogin(login)) details.push({ path: 'login', rule: 'unique', message: 'login already exists' });
+        if (details.length) throw validationError(details);
+
+        const now = new Date().toISOString();
+        const created = createUser({
+            id: `user-${randomUUID()}`,
+            login,
+            name,
+            role,
+            isActive: true,
+            quotas: req.body?.quotas && typeof req.body.quotas === 'object' ? req.body.quotas : {},
+            createdAt: now,
+            updatedAt: now,
+        });
+        const rawToken = generateRawToken();
+        createAuthToken({
+            id: `token-${randomUUID()}`,
+            userId: created.id,
+            label: 'initial',
+            tokenHash: hashToken(rawToken),
+            isActive: true,
+            createdAt: now,
+            updatedAt: now,
+        });
+
+        return sendData(req, res, { user: serializeUser(created), token: rawToken }, 201);
+    } catch (error) {
+        return next(error);
+    }
+});
+
+router.patch('/admin/users/:userId', requireAuth, requireAdmin, (req, res, next) => {
+    try {
+        const current = getUserById(req.params.userId);
+        if (!current) throw notFound('User not found');
+        const login = req.body?.login !== undefined ? sanitizeLogin(req.body.login) : undefined;
+        const details = [];
+        if (login && login !== current.login && getUserByLogin(login)) {
+            details.push({ path: 'login', rule: 'unique', message: 'login already exists' });
+        }
+        if (req.body?.role !== undefined && req.body.role !== 'admin' && req.body.role !== 'user') {
+            details.push({ path: 'role', rule: 'enum', message: 'role must be admin or user' });
+        }
+        if (req.body?.quotas !== undefined && (typeof req.body.quotas !== 'object' || req.body.quotas === null || Array.isArray(req.body.quotas))) {
+            details.push({ path: 'quotas', rule: 'object', message: 'quotas must be an object' });
+        }
+        if (details.length) {
+            throw validationError(details);
+        }
+        const updated = updateUserById(current.id, {
+            login,
+            name: req.body?.name !== undefined ? String(req.body.name || '').trim() : undefined,
+            role: req.body?.role !== undefined ? req.body.role : undefined,
+            isActive: req.body?.isActive !== undefined ? Boolean(req.body.isActive) : undefined,
+            quotas: req.body?.quotas !== undefined ? req.body.quotas : undefined,
+            updatedAt: new Date().toISOString(),
+        });
+        return sendData(req, res, { user: serializeUser(updated) });
+    } catch (error) {
+        return next(error);
+    }
+});
+
+router.post('/admin/users/:userId/tokens/reset', requireAuth, requireAdmin, (req, res, next) => {
+    try {
+        const user = getUserById(req.params.userId);
+        if (!user) throw notFound('User not found');
+        const now = new Date().toISOString();
+        deactivateAuthTokensByUser(user.id, now);
+        const rawToken = generateRawToken();
+        createAuthToken({
+            id: `token-${randomUUID()}`,
+            userId: user.id,
+            label: String(req.body?.label || 'reset'),
+            tokenHash: hashToken(rawToken),
+            isActive: true,
+            createdAt: now,
+            updatedAt: now,
+        });
+        return sendData(req, res, { token: rawToken });
+    } catch (error) {
+        return next(error);
+    }
+});
+
+router.use(requireAuth);
+
 router.post('/presentations', (req, res, next) => {
     try {
         const { name, description, themeId } = req.body || {};
@@ -120,6 +298,7 @@ router.post('/presentations', (req, res, next) => {
         const now = new Date().toISOString();
         const presentation = createPresentation({
             id: randomUUID(),
+            ownerUserId: req.user.id,
             name: name.trim(),
             description: typeof description === 'string' ? description : null,
             themeId: themeId.trim(),
@@ -140,7 +319,7 @@ router.get('/presentations', (req, res, next) => {
     try {
         const status = req.query.status ? String(req.query.status) : undefined;
         const q = req.query.q ? String(req.query.q) : undefined;
-        const data = listPresentations({ status, q });
+        const data = listPresentations({ status, q, ownerUserId: req.user.role === 'admin' ? undefined : req.user.id });
         return sendData(req, res, data);
     } catch (error) {
         return next(error);
@@ -150,8 +329,7 @@ router.get('/presentations', (req, res, next) => {
 router.get('/presentations/:presentationId', (req, res, next) => {
     try {
         const { presentationId } = req.params;
-        const data = getPresentationById(presentationId);
-        if (!data) throw notFound('Presentation not found');
+        const data = assertCanAccessPresentation(req.user, presentationId);
         return sendData(req, res, data);
     } catch (error) {
         return next(error);
@@ -161,8 +339,7 @@ router.get('/presentations/:presentationId', (req, res, next) => {
 router.patch('/presentations/:presentationId', (req, res, next) => {
     try {
         const { presentationId } = req.params;
-        const current = getPresentationById(presentationId);
-        if (!current) throw notFound('Presentation not found');
+        const current = assertCanAccessPresentation(req.user, presentationId);
 
         const { name, description, themeId, themeOverrides, status } = req.body || {};
         const details = [];
@@ -201,6 +378,7 @@ router.patch('/presentations/:presentationId', (req, res, next) => {
 router.delete('/presentations/:presentationId', (req, res, next) => {
     try {
         const { presentationId } = req.params;
+        assertCanAccessPresentation(req.user, presentationId);
         const ok = deletePresentationById(presentationId);
         if (!ok) throw notFound('Presentation not found');
         return res.status(204).send();
@@ -212,8 +390,7 @@ router.delete('/presentations/:presentationId', (req, res, next) => {
 router.post('/presentations/:presentationId/slides', (req, res, next) => {
     try {
         const { presentationId } = req.params;
-        const presentation = getPresentationById(presentationId);
-        if (!presentation) throw notFound('Presentation not found');
+        assertCanAccessPresentation(req.user, presentationId);
 
         const { type, title, subtitle, notes } = req.body || {};
         const details = [];
@@ -246,8 +423,7 @@ router.post('/presentations/:presentationId/slides', (req, res, next) => {
 router.get('/presentations/:presentationId/slides', (req, res, next) => {
     try {
         const { presentationId } = req.params;
-        const presentation = getPresentationById(presentationId);
-        if (!presentation) throw notFound('Presentation not found');
+        assertCanAccessPresentation(req.user, presentationId);
         return sendData(req, res, listSlidesByPresentation(presentationId));
     } catch (error) {
         return next(error);
@@ -257,8 +433,7 @@ router.get('/presentations/:presentationId/slides', (req, res, next) => {
 router.post('/presentations/:presentationId/slides/reorder', (req, res, next) => {
     try {
         const { presentationId } = req.params;
-        const presentation = getPresentationById(presentationId);
-        if (!presentation) throw notFound('Presentation not found');
+        assertCanAccessPresentation(req.user, presentationId);
 
         const { slideIds } = req.body || {};
         if (!Array.isArray(slideIds) || slideIds.length === 0 || slideIds.some((id) => typeof id !== 'string')) {
@@ -283,8 +458,7 @@ router.post('/presentations/:presentationId/slides/reorder', (req, res, next) =>
 router.get('/slides/:slideId', (req, res, next) => {
     try {
         const { slideId } = req.params;
-        const slide = getSlideById(slideId);
-        if (!slide) throw notFound('Slide not found');
+        const slide = assertCanAccessSlide(req.user, slideId);
         return sendData(req, res, slide);
     } catch (error) {
         return next(error);
@@ -294,8 +468,7 @@ router.get('/slides/:slideId', (req, res, next) => {
 router.patch('/slides/:slideId', (req, res, next) => {
     try {
         const { slideId } = req.params;
-        const current = getSlideById(slideId);
-        if (!current) throw notFound('Slide not found');
+        const current = assertCanAccessSlide(req.user, slideId);
 
         const { type, title, subtitle, notes } = req.body || {};
         const details = [];
@@ -330,8 +503,7 @@ router.patch('/slides/:slideId', (req, res, next) => {
 router.patch('/slides/:slideId/layout', (req, res, next) => {
     try {
         const { slideId } = req.params;
-        const slide = getSlideById(slideId);
-        if (!slide) throw notFound('Slide not found');
+        const slide = assertCanAccessSlide(req.user, slideId);
         if (slide.type === 'title') {
             throw validationError([
                 { path: 'slideId', rule: 'slideType', message: 'Title slides do not support layout presets' },
@@ -361,6 +533,7 @@ router.patch('/slides/:slideId/layout', (req, res, next) => {
 router.delete('/slides/:slideId', (req, res, next) => {
     try {
         const { slideId } = req.params;
+        assertCanAccessSlide(req.user, slideId);
         const ok = deleteSlideById(slideId);
         if (!ok) throw notFound('Slide not found');
         return res.status(204).send();
@@ -372,8 +545,7 @@ router.delete('/slides/:slideId', (req, res, next) => {
 router.post('/presentations/:presentationId/datasets', (req, res, next) => {
     try {
         const { presentationId } = req.params;
-        const presentation = getPresentationById(presentationId);
-        if (!presentation) throw notFound('Presentation not found');
+        assertCanAccessPresentation(req.user, presentationId);
 
         const { name, sourceType, columns, rows, meta } = req.body || {};
         const details = [];
@@ -417,8 +589,7 @@ router.post('/presentations/:presentationId/datasets', (req, res, next) => {
 router.post('/presentations/:presentationId/datasets/upload-csv', upload.single('file'), (req, res, next) => {
     try {
         const { presentationId } = req.params;
-        const presentation = getPresentationById(presentationId);
-        if (!presentation) throw notFound('Presentation not found');
+        assertCanAccessPresentation(req.user, presentationId);
 
         const name = req.body?.name;
         const file = req.file;
@@ -460,8 +631,7 @@ router.post('/presentations/:presentationId/datasets/upload-csv', upload.single(
 router.get('/presentations/:presentationId/datasets', (req, res, next) => {
     try {
         const { presentationId } = req.params;
-        const presentation = getPresentationById(presentationId);
-        if (!presentation) throw notFound('Presentation not found');
+        assertCanAccessPresentation(req.user, presentationId);
 
         return sendData(req, res, listDatasetsByPresentation(presentationId));
     } catch (error) {
@@ -472,8 +642,7 @@ router.get('/presentations/:presentationId/datasets', (req, res, next) => {
 router.get('/datasets/:datasetId', (req, res, next) => {
     try {
         const { datasetId } = req.params;
-        const dataset = getDatasetById(datasetId);
-        if (!dataset) throw notFound('Dataset not found');
+        const dataset = assertCanAccessDataset(req.user, datasetId);
         return sendData(req, res, dataset);
     } catch (error) {
         return next(error);
@@ -483,8 +652,7 @@ router.get('/datasets/:datasetId', (req, res, next) => {
 router.patch('/datasets/:datasetId', (req, res, next) => {
     try {
         const { datasetId } = req.params;
-        const current = getDatasetById(datasetId);
-        if (!current) throw notFound('Dataset not found');
+        const current = assertCanAccessDataset(req.user, datasetId);
 
         const { name, columns, rows, meta } = req.body || {};
         const details = [];
@@ -519,6 +687,7 @@ router.patch('/datasets/:datasetId', (req, res, next) => {
 router.delete('/datasets/:datasetId', (req, res, next) => {
     try {
         const { datasetId } = req.params;
+        assertCanAccessDataset(req.user, datasetId);
         const ok = deleteDatasetById(datasetId);
         if (!ok) throw notFound('Dataset not found');
         return res.status(204).send();
@@ -530,8 +699,7 @@ router.delete('/datasets/:datasetId', (req, res, next) => {
 router.post('/presentations/:presentationId/assets/upload-image', upload.single('file'), (req, res, next) => {
     try {
         const { presentationId } = req.params;
-        const presentation = getPresentationById(presentationId);
-        if (!presentation) throw notFound('Presentation not found');
+        assertCanAccessPresentation(req.user, presentationId);
 
         const file = req.file;
         const details = [];
@@ -563,7 +731,7 @@ router.post('/presentations/:presentationId/assets/upload-image', upload.single(
 
 router.get('/themes', (req, res, next) => {
     try {
-        const data = listThemesFromDb();
+        const data = listThemesFromDb(req.user.id);
         return sendData(req, res, data.length ? data : listThemes());
     } catch (error) {
         return next(error);
@@ -573,8 +741,11 @@ router.get('/themes', (req, res, next) => {
 router.get('/themes/:themeId', (req, res, next) => {
     try {
         const { themeId } = req.params;
-        const theme = getThemeById(themeId);
+        const theme = themeId.startsWith('theme-') ? (getThemeByIdFromDb(themeId) || getThemeById(themeId)) : getThemeById(themeId);
         if (!theme) throw notFound('Theme not found');
+        if (!theme.isSystem && req.user.role !== 'admin' && theme.ownerUserId !== req.user.id) {
+            throw notFound('Theme not found');
+        }
         return sendData(req, res, theme);
     } catch (error) {
         return next(error);
@@ -597,6 +768,7 @@ router.post('/themes', (req, res, next) => {
         const now = new Date().toISOString();
         const created = createTheme({
             id: `theme-${randomUUID()}`,
+            ownerUserId: req.user.id,
             name: name.trim(),
             kind: 'custom',
             isSystem: false,
@@ -616,8 +788,7 @@ router.post('/themes', (req, res, next) => {
 router.patch('/themes/:themeId', (req, res, next) => {
     try {
         const { themeId } = req.params;
-        const existing = getThemeByIdFromDb(themeId);
-        if (!existing) throw notFound('Theme not found');
+        const existing = assertCanAccessTheme(req.user, themeId);
         if (existing.isSystem) {
             throw validationError([{ path: 'themeId', rule: 'immutable', message: 'System themes cannot be updated directly' }]);
         }
@@ -651,8 +822,7 @@ router.patch('/themes/:themeId', (req, res, next) => {
 router.delete('/themes/:themeId', (req, res, next) => {
     try {
         const { themeId } = req.params;
-        const existing = getThemeByIdFromDb(themeId);
-        if (!existing) throw notFound('Theme not found');
+        const existing = assertCanAccessTheme(req.user, themeId);
         if (existing.isSystem) {
             throw validationError([{ path: 'themeId', rule: 'immutable', message: 'System themes cannot be deleted directly' }]);
         }
@@ -667,12 +837,16 @@ router.delete('/themes/:themeId', (req, res, next) => {
 router.post('/themes/:themeId/duplicate', (req, res, next) => {
     try {
         const { themeId } = req.params;
-        const source = getThemeById(themeId);
+        const source = themeId.startsWith('theme-') ? (getThemeByIdFromDb(themeId) || getThemeById(themeId)) : getThemeById(themeId);
         if (!source) throw notFound('Theme not found');
+        if (!source.isSystem && req.user.role !== 'admin' && source.ownerUserId !== req.user.id) {
+            throw notFound('Theme not found');
+        }
 
         const now = new Date().toISOString();
         const duplicated = createTheme({
             id: `theme-${randomUUID()}`,
+            ownerUserId: req.user.id,
             name: `${source.name} copy`,
             kind: 'custom',
             isSystem: false,
@@ -691,8 +865,7 @@ router.post('/themes/:themeId/duplicate', (req, res, next) => {
 router.get('/themes/:themeId/export', (req, res, next) => {
     try {
         const { themeId } = req.params;
-        const theme = getThemeById(themeId);
-        if (!theme) throw notFound('Theme not found');
+        const theme = assertCanAccessTheme(req.user, themeId);
 
         const exported = {
             schemaVersion: 2,
@@ -733,6 +906,7 @@ router.post('/themes/import', (req, res, next) => {
         const now = new Date().toISOString();
         const created = createTheme({
             id: `theme-${randomUUID()}`,
+            ownerUserId: req.user.id,
             name: typeof importedTheme.name === 'string' && importedTheme.name.trim()
                 ? importedTheme.name.trim()
                 : `Imported Theme ${now}`,
@@ -766,8 +940,11 @@ router.post('/themes/preview', (req, res, next) => {
         }
 
         const baseTheme = typeof baseThemeId === 'string' && baseThemeId
-            ? getThemeById(baseThemeId)
-            : (typeof themeId === 'string' && themeId ? getThemeById(themeId) : null);
+            ? (getThemeByIdFromDb(baseThemeId) || getThemeById(baseThemeId))
+            : (typeof themeId === 'string' && themeId ? (getThemeByIdFromDb(themeId) || getThemeById(themeId)) : null);
+        if (baseTheme && !baseTheme.isSystem && req.user.role !== 'admin' && baseTheme.ownerUserId !== req.user.id) {
+            throw notFound('Theme not found');
+        }
         if (tokens !== undefined) {
             const inputValidation = validateThemeTokens(tokens);
             details.push(...inputValidation.details);
@@ -823,8 +1000,7 @@ router.get('/layout-presets/:layoutPresetId', (req, res, next) => {
 router.post('/presentations/:presentationId/render/preview', (req, res, next) => {
     try {
         const { presentationId } = req.params;
-        const presentation = getPresentationById(presentationId);
-        if (!presentation) throw notFound('Presentation not found');
+        assertCanAccessPresentation(req.user, presentationId);
 
         return sendData(req, res, {
             previewUrl: `/api/v1/preview/${presentationId}`,
@@ -837,12 +1013,12 @@ router.post('/presentations/:presentationId/render/preview', (req, res, next) =>
 router.post('/presentations/:presentationId/render/pdf', (req, res, next) => {
     try {
         const { presentationId } = req.params;
-        const presentation = getPresentationById(presentationId);
-        if (!presentation) throw notFound('Presentation not found');
+        assertCanAccessPresentation(req.user, presentationId);
 
         const now = new Date().toISOString();
         const job = createRenderJob({
             id: randomUUID(),
+            ownerUserId: req.user.id,
             presentationId,
             type: 'export_pdf',
             status: 'queued',
@@ -861,8 +1037,7 @@ router.post('/presentations/:presentationId/render/pdf', (req, res, next) => {
 router.post('/presentations/:presentationId/render/pptx', (req, res, next) => {
     try {
         const { presentationId } = req.params;
-        const presentation = getPresentationById(presentationId);
-        if (!presentation) throw notFound('Presentation not found');
+        assertCanAccessPresentation(req.user, presentationId);
         const mode = req.body?.mode;
         if (mode !== undefined && mode !== 'hybrid_native' && mode !== 'hybrid_blocks' && mode !== 'raster') {
             throw validationError([{
@@ -875,6 +1050,7 @@ router.post('/presentations/:presentationId/render/pptx', (req, res, next) => {
         const now = new Date().toISOString();
         const job = createRenderJob({
             id: randomUUID(),
+            ownerUserId: req.user.id,
             presentationId,
             type: 'export_pptx_future',
             status: 'queued',
@@ -896,9 +1072,20 @@ router.post('/presentations/:presentationId/render/pptx', (req, res, next) => {
 router.get('/render-jobs/:jobId', (req, res, next) => {
     try {
         const { jobId } = req.params;
-        const job = getRenderJobById(jobId);
-        if (!job) throw notFound('Render job not found');
+        const job = assertCanAccessRenderJob(req.user, jobId);
         return sendData(req, res, job);
+    } catch (error) {
+        return next(error);
+    }
+});
+
+router.get('/render-jobs/:jobId/download', (req, res, next) => {
+    try {
+        const job = assertCanAccessRenderJob(req.user, req.params.jobId);
+        if (!job.result?.fileName) throw notFound('Render artifact not found');
+        const exportPath = path.join(__dirname, '../../dist/export', job.result.fileName);
+        if (!fs.existsSync(exportPath)) throw notFound('Render artifact not found');
+        return res.download(exportPath, job.result.fileName);
     } catch (error) {
         return next(error);
     }
@@ -907,6 +1094,7 @@ router.get('/render-jobs/:jobId', (req, res, next) => {
 router.get('/preview/:presentationId', (req, res, next) => {
     try {
         const { presentationId } = req.params;
+        assertCanAccessPresentation(req.user, presentationId);
         const html = buildPreviewHtml(presentationId);
         if (!html) throw notFound('Presentation not found');
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -919,8 +1107,7 @@ router.get('/preview/:presentationId', (req, res, next) => {
 router.post('/slides/:slideId/blocks', (req, res, next) => {
     try {
         const { slideId } = req.params;
-        const slide = getSlideById(slideId);
-        if (!slide) throw notFound('Slide not found');
+        const slide = assertCanAccessSlide(req.user, slideId);
         if (slide.type === 'title') {
             throw validationError([
                 { path: 'slideId', rule: 'slideType', message: 'Cannot add blocks to title slides' },
@@ -961,8 +1148,7 @@ router.post('/slides/:slideId/blocks', (req, res, next) => {
 router.get('/slides/:slideId/blocks', (req, res, next) => {
     try {
         const { slideId } = req.params;
-        const slide = getSlideById(slideId);
-        if (!slide) throw notFound('Slide not found');
+        assertCanAccessSlide(req.user, slideId);
         return sendData(req, res, listBlocksBySlide(slideId));
     } catch (error) {
         return next(error);
@@ -972,8 +1158,7 @@ router.get('/slides/:slideId/blocks', (req, res, next) => {
 router.post('/slides/:slideId/blocks/reorder', (req, res, next) => {
     try {
         const { slideId } = req.params;
-        const slide = getSlideById(slideId);
-        if (!slide) throw notFound('Slide not found');
+        assertCanAccessSlide(req.user, slideId);
 
         const { blockIds } = req.body || {};
         if (!Array.isArray(blockIds) || blockIds.length === 0 || blockIds.some((id) => typeof id !== 'string')) {
@@ -997,8 +1182,7 @@ router.post('/slides/:slideId/blocks/reorder', (req, res, next) => {
 router.get('/blocks/:blockId', (req, res, next) => {
     try {
         const { blockId } = req.params;
-        const block = getBlockById(blockId);
-        if (!block) throw notFound('Block not found');
+        const block = assertCanAccessBlock(req.user, blockId);
         return sendData(req, res, block);
     } catch (error) {
         return next(error);
@@ -1008,8 +1192,7 @@ router.get('/blocks/:blockId', (req, res, next) => {
 router.patch('/blocks/:blockId', (req, res, next) => {
     try {
         const { blockId } = req.params;
-        const current = getBlockById(blockId);
-        if (!current) throw notFound('Block not found');
+        const current = assertCanAccessBlock(req.user, blockId);
 
         const { type, layout, config } = req.body || {};
         const details = [];
@@ -1041,6 +1224,7 @@ router.patch('/blocks/:blockId', (req, res, next) => {
 router.delete('/blocks/:blockId', (req, res, next) => {
     try {
         const { blockId } = req.params;
+        assertCanAccessBlock(req.user, blockId);
         const ok = deleteBlockById(blockId);
         if (!ok) throw notFound('Block not found');
         return res.status(204).send();

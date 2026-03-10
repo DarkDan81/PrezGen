@@ -1,0 +1,20 @@
+[Unit]
+Description=PrezGen
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/prezgen
+Environment=NODE_ENV=production
+Environment=API_PORT=3100
+Environment=PREZGEN_BOOTSTRAP_ADMIN_LOGIN=admin
+Environment=PREZGEN_BOOTSTRAP_ADMIN_NAME=Administrator
+Environment=PREZGEN_BOOTSTRAP_ADMIN_TOKEN=replace-me
+ExecStart=/usr/bin/node backend/server.js
+Restart=always
+RestartSec=3
+User=www-data
+Group=www-data
+
+[Install]
+WantedBy=multi-user.target

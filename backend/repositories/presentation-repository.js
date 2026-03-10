@@ -3,6 +3,7 @@ const { getDb } = require('../db/connection');
 function mapPresentation(row) {
     return {
         id: row.id,
+        ownerUserId: row.owner_user_id || null,
         name: row.name,
         description: row.description,
         themeId: row.theme_id,
@@ -18,12 +19,13 @@ function createPresentation(presentation) {
     const db = getDb();
     db.prepare(`
         INSERT INTO presentations (
-            id, name, description, theme_id, theme_overrides, status, schema_version, created_at, updated_at
+            id, owner_user_id, name, description, theme_id, theme_overrides, status, schema_version, created_at, updated_at
         ) VALUES (
-            @id, @name, @description, @theme_id, @theme_overrides, @status, @schema_version, @created_at, @updated_at
+            @id, @owner_user_id, @name, @description, @theme_id, @theme_overrides, @status, @schema_version, @created_at, @updated_at
         );
     `).run({
         id: presentation.id,
+        owner_user_id: presentation.ownerUserId || null,
         name: presentation.name,
         description: presentation.description || null,
         theme_id: presentation.themeId,
@@ -37,12 +39,16 @@ function createPresentation(presentation) {
     return presentation;
 }
 
-function listPresentations({ status, q }) {
+function listPresentations({ status, q, ownerUserId }) {
     const db = getDb();
     let sql = `SELECT * FROM presentations`;
     const clauses = [];
     const params = {};
 
+    if (ownerUserId) {
+        clauses.push('owner_user_id = @owner_user_id');
+        params.owner_user_id = ownerUserId;
+    }
     if (status) {
         clauses.push('status = @status');
         params.status = status;
