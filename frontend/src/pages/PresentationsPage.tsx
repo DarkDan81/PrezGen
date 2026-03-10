@@ -44,6 +44,7 @@ export function PresentationsPage() {
         <div className="page-header-actions">
           <Button
             variant="primary"
+            className="ui-action-control"
             data-demo="main-start-demo"
             onClick={() => {
               clearGuidedDemoState();
@@ -59,11 +60,11 @@ export function PresentationsPage() {
           >
             {t('demo.start')}
           </Button>
-          <Button variant="secondary" onClick={() => navigate('/themes')}>
+          <Button variant="secondary" className="ui-action-control" onClick={() => navigate('/themes')}>
             {t('nav.themes')}
           </Button>
           <select
-            className="ui-select lang-select-inline"
+            className="ui-select ui-action-control lang-select-inline"
             value={locale}
             aria-label={t('lang.label')}
             onChange={(e) => setLocale(e.target.value as 'ru' | 'en')}
@@ -80,7 +81,7 @@ export function PresentationsPage() {
             <input className="ui-input" value={name} onChange={(e) => setName(e.target.value)} />
           </Field>
           <Field label={t('presentations.theme')}>
-            <select className="ui-select" value={themeId} onChange={(e) => setThemeId(e.target.value)}>
+            <select className="ui-select ui-action-control" value={themeId} onChange={(e) => setThemeId(e.target.value)}>
               {(themesQuery.data || []).map((theme) => (
                 <option key={theme.id} value={theme.id}>
                   {theme.name}
@@ -90,6 +91,7 @@ export function PresentationsPage() {
           </Field>
           <Button
             variant="primary"
+            className="ui-action-control"
             onClick={() => {
               setError('');
               createMutation.mutate({ name, themeId });

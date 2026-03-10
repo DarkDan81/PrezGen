@@ -49,17 +49,28 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
 }
 
 .export-group {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex: 0 0 auto;
 }
 
 .editor-header .ui-button,
 .editor-header .ui-select {
   white-space: nowrap;
+}
+
+.editor-header .ui-select {
+  width: auto;
+  max-width: 220px;
+}
+
+.editor-header .ui-action-control {
+  flex: 0 0 auto;
 }
 
 .editor-grid {
@@ -324,9 +335,16 @@
 }
 
 .compact-header-select {
-  min-width: 120px;
-  width: 120px;
-  padding: 6px 8px;
+  padding: 0 14px;
+}
+
+.header-language-select {
+  min-width: 148px;
+}
+
+.header-theme-select {
+  min-width: 188px;
+  max-width: 220px;
 }
 
 .dataset-meta {
@@ -460,5 +478,20 @@
 
   .preview-frame {
     min-height: 78vh;
+  }
+}
+
+@media (max-width: 1680px) {
+  .editor-header {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .editor-header-center {
+    justify-content: flex-start;
+  }
+
+  .editor-header-right {
+    flex-wrap: wrap;
   }
 }
