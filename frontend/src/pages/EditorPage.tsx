@@ -1255,11 +1255,11 @@ export function EditorPage() {
     <div className="editor-page">
       <header className="editor-header">
         <div className="editor-header-left">
-          <Button variant="ghost" size="small" onClick={() => navigate('/')}>
+          <Button variant="ghost" size="small" className="ui-action-control" onClick={() => navigate('/')}>
             {t('editor.backToList')}
           </Button>
           <strong className="editor-title">{presentationQuery.data?.name || t('editor.titleFallback')}</strong>
-          <Button variant="secondary" size="small" onClick={() => buildPreviewMutation.mutate()}>
+          <Button variant="secondary" size="small" className="ui-action-control" onClick={() => buildPreviewMutation.mutate()}>
             {t('editor.refreshPreview')}
           </Button>
         </div>
@@ -1276,11 +1276,11 @@ export function EditorPage() {
           </div>
         </div>
         <div className="editor-header-right">
-          <Button variant="secondary" size="small" onClick={() => setThemeMode(themeMode === 'light' ? 'dark' : 'light')}>
+          <Button variant="secondary" size="small" className="ui-action-control" onClick={() => setThemeMode(themeMode === 'light' ? 'dark' : 'light')}>
             {themeMode === 'light' ? t('editor.darkUi') : t('editor.lightUi')}
           </Button>
           <select
-            className="ui-select compact-header-select"
+            className="ui-select ui-action-control compact-header-select header-language-select"
             value={locale}
             aria-label={t('lang.label')}
             onChange={(e) => setLocale(e.target.value as 'ru' | 'en')}
@@ -1289,7 +1289,7 @@ export function EditorPage() {
             <option value="en">🇺🇸 {t('lang.en')}</option>
           </select>
           <select
-            className="ui-select compact-header-select"
+            className="ui-select ui-action-control compact-header-select header-theme-select"
             value={presentationQuery.data?.themeId || 'theme-universal-warm'}
             data-demo="editor-theme-select"
             onChange={(e) => patchPresentationMutation.mutate(e.target.value)}
@@ -1301,13 +1301,13 @@ export function EditorPage() {
             ))}
           </select>
           <div className="export-group" data-demo="editor-export-group">
-            <Button variant="primary" size="small" onClick={() => startPdfMutation.mutate()}>
+            <Button variant="primary" size="small" className="ui-action-control" onClick={() => startPdfMutation.mutate()}>
               {t('editor.exportPdf')}
             </Button>
-            <Button variant="primary" size="small" onClick={() => startPptxMutation.mutate('raster')}>
+            <Button variant="primary" size="small" className="ui-action-control" onClick={() => startPptxMutation.mutate('raster')}>
               {t('editor.exportPptxRaster')}
             </Button>
-            <Button variant="primary" size="small" onClick={() => startPptxMutation.mutate('hybrid_blocks')}>
+            <Button variant="primary" size="small" className="ui-action-control" onClick={() => startPptxMutation.mutate('hybrid_blocks')}>
               {t('editor.exportPptxBlocks')}
             </Button>
           </div>

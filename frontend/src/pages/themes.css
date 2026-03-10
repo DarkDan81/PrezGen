@@ -17,14 +17,14 @@
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--panel-bg);
-  padding: 4px 8px;
-  min-height: 40px;
+  padding: 8px;
+  min-height: 56px;
 }
 
 .themes-header-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   flex-wrap: nowrap;
   min-width: 0;
 }
@@ -296,14 +296,6 @@
   border: none;
   background: #02050a;
   display: block;
-}
-
-.themes-header .ui-button,
-.themes-header .ui-select {
-  min-height: 28px;
-  padding-top: 4px;
-  padding-bottom: 4px;
-  white-space: nowrap;
 }
 
 .themes-header .ui-select {

@@ -852,14 +852,14 @@ export function ThemesPage() {
     <div className="themes-page">
       <header className="themes-header">
         <div className="themes-header-row themes-header-row-main">
-          <Button variant="ghost" onClick={() => navigate('/')}>
+          <Button variant="ghost" className="ui-action-control" onClick={() => navigate('/')}>
             {t('themes.backToList')}
           </Button>
           <h1>{t('themes.title')}</h1>
         </div>
         <div className="themes-header-row">
           <select
-            className="ui-select themes-select-inline"
+            className="ui-select ui-action-control themes-select-inline"
             value={selectedThemeId}
             data-demo="themes-theme-select"
             aria-label={t('themes.listTitle')}
@@ -873,6 +873,7 @@ export function ThemesPage() {
           </select>
           <Button
             variant="secondary"
+            className="ui-action-control"
             onClick={() => {
               setSelectedThemeId('');
               setName('Custom Theme');
@@ -886,7 +887,7 @@ export function ThemesPage() {
           >
             {t('themes.createFromScratch')}
           </Button>
-          <Button variant="secondary" onClick={() => importInputRef.current?.click()}>
+          <Button variant="secondary" className="ui-action-control" onClick={() => importInputRef.current?.click()}>
             {t('themes.importTheme')}
           </Button>
           <input
@@ -901,7 +902,7 @@ export function ThemesPage() {
             }}
           />
           <select
-            className="ui-select lang-select-inline"
+            className="ui-select ui-action-control lang-select-inline"
             value={locale}
             aria-label={t('lang.label')}
             onChange={(e) => setLocale(e.target.value as 'ru' | 'en')}
