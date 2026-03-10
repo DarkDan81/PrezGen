@@ -16,6 +16,7 @@ Current scope:
 - Stage 10: native editable PPTX export (hybrid native/raster strategy with explicit fallback policy).
 - Stage 11: guided demo autoplay and product walkthrough flow.
 - Stage 12: UI control normalization for buttons/dropdowns in key headers and toolbars.
+- Stage 13: multi-user auth, private ownership boundaries, admin panel, and deployment readiness.
 
 Structure:
 
@@ -70,4 +71,9 @@ Structure:
 - `stage-12-ui-control-normalization/README.md` - stage overview and acceptance criteria for action control normalization.
 - `stage-12-ui-control-normalization/decisions.md` - approved decisions for shared button/select sizing rules.
 - `stage-12-ui-control-normalization/implementation-status.md` - progress tracker and QA checklist for stage 12.
+- `stage-13-multi-user-auth-deployment/README.md` - stage overview and acceptance criteria for auth, ownership, and deployment readiness.
+- `stage-13-multi-user-auth-deployment/decisions.md` - approved decisions for user ownership, admin model, and production topology.
+- `stage-13-multi-user-auth-deployment/implementation-plan.md` - phased implementation plan for multi-user rollout.
+- `stage-13-multi-user-auth-deployment/execution-order.md` - safe implementation order and commit slicing for stage 13.
+- `stage-13-multi-user-auth-deployment/implementation-status.md` - progress tracker and hosted pilot QA checklist for stage 13.
 - `qa-demo-deck-assets.md` - source image naming and run instructions for QA demo deck seed script.
